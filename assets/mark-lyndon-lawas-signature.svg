@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="120" viewBox="0 0 360 120">
+  <rect width="360" height="120" fill="white" fill-opacity="0"/>
+  <path d="M28 50 L28 66" fill="none" stroke="#111" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M43 47 C77 66, 112 78, 151 74 C185 71, 214 58, 252 58 C280 58, 309 60, 335 57" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M45 46 C72 57, 98 67, 126 72 C150 77, 171 78, 188 72 C199 68, 207 62, 207 56 C207 50, 200 49, 190 55 C175 64, 161 79, 148 94 C136 107, 122 110, 112 101 C101 91, 102 73, 113 54 C124 34, 141 20, 153 18 C161 17, 165 22, 164 31 C162 47, 149 64, 136 76" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M137 70 C148 58, 161 48, 174 42 C181 39, 185 39, 187 42 C190 47, 181 56, 170 65 C160 72, 155 78, 161 80 C170 83, 188 69, 205 55" fill="none" stroke="#111" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M185 60 C198 48, 211 41, 220 43 C228 45, 225 55, 214 63 C202 72, 189 74, 184 69 C181 66, 182 63, 185 60 Z" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M216 62 C231 54, 248 52, 264 56 C282 61, 298 62, 316 56" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

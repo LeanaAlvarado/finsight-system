@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Module</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html" class="active">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>All modules are connected and ready.</p>
+    <button onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HEADER -->
+<section class="hero">
+  <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+  <h1>Inventory Module</h1>
+  <p>Track materials, monitor stock levels, and manage inventory usage.</p>
+</section>
+
+<!-- KPI -->
+<section class="grid">
+  <div class="card kpi">
+    <small>TOTAL ITEMS</small>
+    <h2 id="totalItems">0</h2>
+    <p>Number of materials recorded.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>INVENTORY VALUE</small>
+    <h2 id="totalValue">PHP 0.00</h2>
+    <p>Total stock value.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>LOW STOCK ITEMS</small>
+    <h2 id="lowStock">0</h2>
+    <p>Items below minimum threshold.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>REVENUE IMPACT</small>
+    <h2 id="totalRevenue">PHP 0.00</h2>
+    <p>Linked from project contracts.</p>
+  </div>
+</section>
+
+<!-- INVENTORY STOCK ENTRY -->
+<section class="card">
+  <h3><span class="num">01</span> Inventory Material Entry</h3>
+  <p class="muted">Add, update, and assign actual stock materials in one record.</p>
+
+  <form id="inventoryForm">
+    <div class="form-grid">
+      <div>
+        <label>Material Picture</label>
+        <input type="file" id="inventory_picture" accept="image/*">
+      </div>
+
+      <div>
+        <label>Existing Material</label>
+        <select id="catalog_material_select">
+          <option value="">Select saved material</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Project Assignment</label>
+        <select id="inventory_project_code">
+          <option value="">Unassigned / General Material</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrap inventory-entry-box">
+      <table class="inventory-entry-table">
+        <thead>
+          <tr>
+            <th>Material Name</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Unit Price</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryItemsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" onclick="addInventoryItemRow()">Add Blank Material</button>
+      <button id="inventorySubmitBtn" type="submit">Save Materials</button>
+      <button id="inventoryCancelEditBtn" type="button" class="secondary-btn" style="display:none;">Cancel Edit</button>
+    </div>
+  </form>
+</section>
+
+<!-- TABLE -->
+<section class="card">
+  <h3><span class="num">02</span> Inventory Per Project</h3>
+  <p class="muted">Review material quantity and cost grouped by project.</p>
+
+  <div id="inventoryProjectSummary" class="inventory-project-summary"></div>
+</section>
+
+<section class="card">
+  <h3><span class="num">03</span> Inventory Materials</h3>
+
+  <div class="table-wrap">
+    <table class="inventory-materials-table">
+      <thead>
+        <tr>
+          <th>Picture</th>
+          <th>Project</th>
+          <th>Material</th>
+          <th>Description</th>
+          <th>Quantity</th>
+          <th>Unit</th>
+          <th>Unit Price</th>
+          <th>Total Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody id="inventoryTable"></tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<!-- SCRIPT -->
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+
+</body>
+</html>
+
+
+

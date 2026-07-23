@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports and Audit Logs</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a class="active" href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>Reports are generated from live project, finance, inventory, payroll, and feedback records.</p>
+    <button type="button" onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<main class="main">
+  <section class="hero">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>Reports and Audit Logs</h1>
+    <p>Generate management summaries and review traceable system activity for thesis evaluation and documentation.</p>
+  </section>
+
+  <section class="grid">
+    <div class="card kpi">
+      <small>Project Records</small>
+      <h2 id="projectReportCount">0</h2>
+      <p>Total monitored projects.</p>
+    </div>
+    <div class="card kpi">
+      <small>Financial Scope</small>
+      <h2 id="financialScope">PHP 0.00</h2>
+      <p>Contract value under monitoring.</p>
+    </div>
+    <div class="card kpi">
+      <small>Expense Records</small>
+      <h2 id="expenseReportCount">0</h2>
+      <p>Recorded payroll and expense entries.</p>
+    </div>
+    <div class="card kpi">
+      <small>Audit Events</small>
+      <h2 id="auditCount">0</h2>
+      <p>Generated traceability entries.</p>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <section class="card">
+      <h3><span class="num">01</span> Management Report Summary</h3>
+      <p class="muted">A consolidated view of the current operational records.</p>
+
+      <div class="mini-grid">
+        <div class="mini-card">
+          <small>Total Revenue</small>
+          <h3 id="reportRevenue">PHP 0.00</h3>
+        </div>
+        <div class="mini-card">
+          <small>Total Expenses</small>
+          <h3 id="reportExpenses">PHP 0.00</h3>
+        </div>
+        <div class="mini-card">
+          <small>Estimated Profit</small>
+          <h3 id="reportProfit">PHP 0.00</h3>
+        </div>
+        <div class="mini-card">
+          <small>Client Feedback</small>
+          <h3 id="reportFeedback">0</h3>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" onclick="window.print()">Print Report</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3><span class="num">02</span> Report Coverage</h3>
+      <p class="muted">The report covers the main information system modules used by the business.</p>
+
+      <div class="permission-grid">
+        <span class="permission-pill">Projects</span>
+        <span class="permission-pill">Inventory</span>
+        <span class="permission-pill">Payroll</span>
+        <span class="permission-pill">Expenses</span>
+        <span class="permission-pill">Taxes & Revenue</span>
+        <span class="permission-pill">Client Feedback</span>
+        <span class="permission-pill">User Access</span>
+      </div>
+    </section>
+  </section>
+
+  <section class="card">
+    <h3><span class="num">03</span> Audit Log</h3>
+    <p class="muted">Traceable activity generated from the latest saved records.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Module</th>
+            <th>Activity</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody id="auditTable"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+</body>
+</html>
+
+

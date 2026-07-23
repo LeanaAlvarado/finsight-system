@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lemyu Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+  <nav class="menu">
+    <a class="active" href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>All business modules are available.</p>
+    <button type="button" onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<main class="main dashboard-main">
+
+  <section class="dashboard-toolbar">
+    <div class="dashboard-title-block">
+      <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+      <h1>Executive Dashboard</h1>
+      <p>Financial management, project performance, and business intelligence overview.</p>
+    </div>
+    <div class="dashboard-toolbar-actions">
+      <button type="button" onclick="window.print()">Print BI Report</button>
+      <div class="signed-user compact-user" aria-label="Current user">
+        <small>Current Account</small>
+        <div class="signed-user-row">
+          <span>Account User</span>
+          <strong id="dashboardUsername">User</strong>
+        </div>
+        <div class="signed-user-row">
+          <span>Role</span>
+          <strong id="dashboardRole">User</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-kpi-grid" aria-label="Financial indicators">
+    <div class="card kpi metric-card metric-revenue">
+      <div class="metric-top">
+        <span class="metric-icon">R</span>
+        <small>Total Revenue</small>
+      </div>
+      <h2 id="totalRevenue">PHP 0.00</h2>
+      <p>Saved project contract value</p>
+    </div>
+
+    <div class="card kpi metric-card metric-expense">
+      <div class="metric-top">
+        <span class="metric-icon">E</span>
+        <small>Total Expenses</small>
+      </div>
+      <h2 id="totalExpenses">PHP 0.00</h2>
+      <p>Recorded operating costs</p>
+    </div>
+
+    <div class="card kpi metric-card metric-profit">
+      <div class="metric-top">
+        <span class="metric-icon">P</span>
+        <small>Net Profit</small>
+      </div>
+      <h2 id="netProfit">PHP 0.00</h2>
+      <p>Revenue less expenses</p>
+    </div>
+
+    <div class="card kpi metric-card metric-projects">
+      <div class="metric-top">
+        <span class="metric-icon">PR</span>
+        <small>Active Projects</small>
+      </div>
+      <h2 id="projectCount">0</h2>
+      <p>Monitored project records</p>
+    </div>
+
+    <div class="card kpi metric-card metric-inventory">
+      <div class="metric-top">
+        <span class="metric-icon">I</span>
+        <small>Inventory Value</small>
+      </div>
+      <h2 id="inventoryValue">PHP 0.00</h2>
+      <p><span id="inventoryCount">0</span> material records</p>
+    </div>
+  </section>
+
+  <section class="dashboard-board" aria-label="Dashboard panels">
+    <div class="card dashboard-panel chart-card overview-panel">
+      <div class="card-head">
+        <div>
+          <h3>Financial Overview</h3>
+          <p class="muted">Revenue and expenses based on current project records.</p>
+        </div>
+        <select class="search compact-select" aria-label="Chart period">
+          <option>Monthly</option>
+          <option>Weekly</option>
+          <option>Yearly</option>
+        </select>
+      </div>
+      <div class="chart-frame chart-frame-sm">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card dashboard-panel expense-breakdown-card expense-panel">
+      <div class="card-head">
+        <div>
+          <h3>Expense Category Breakdown</h3>
+          <p class="muted">Cost distribution by expense group.</p>
+        </div>
+      </div>
+      <div class="expense-breakdown-layout">
+        <div class="chart-frame chart-frame-xs">
+          <canvas id="expenseCategoryChart"></canvas>
+        </div>
+        <div class="expense-breakdown-summary">
+          <div class="summary-row compact-summary-row">
+            <small>Total Categorized Cost</small>
+            <strong id="categoryCostTotal">PHP 0.00</strong>
+          </div>
+          <div id="categoryBreakdownList" class="category-breakdown-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dashboard-panel compact-ranking-panel">
+      <div class="card-head">
+        <div>
+          <h3>Project Profitability</h3>
+          <p class="muted">Top projects by net profit.</p>
+        </div>
+        <a class="dashboard-card-link" href="revenue.html">View all</a>
+      </div>
+      <div id="topProfitabilityList" class="compact-profit-list"></div>
+    </div>
+
+    <div class="card dashboard-panel inventory-panel">
+      <div class="inventory-panel-layout">
+        <div class="inventory-panel-icon">I</div>
+        <div>
+          <h3>Inventory Materials</h3>
+          <strong id="inventoryPanelCount">0</strong>
+          <span>Total material records</span>
+        </div>
+      </div>
+      <div class="inventory-panel-stats">
+        <div>
+          <small>Inventory Value</small>
+          <strong id="inventoryPanelValue">PHP 0.00</strong>
+        </div>
+        <div class="inventory-project-block">
+          <small>Project Material Cost</small>
+          <div id="inventoryProjectList" class="inventory-project-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dashboard-panel summary-card summary-panel">
+      <div class="card-head">
+        <div>
+          <h3>Financial Summary</h3>
+          <p class="muted">Condensed view of connected records.</p>
+        </div>
+      </div>
+      <div class="summary-list">
+        <div class="summary-row">
+          <small>Project Count</small>
+          <strong id="projectMini">0</strong>
+        </div>
+        <div class="summary-row">
+          <small>Revenue</small>
+          <strong id="revenueSmall">PHP 0.00</strong>
+        </div>
+        <div class="summary-row">
+          <small>Expenses</small>
+          <strong id="expenseSmall">PHP 0.00</strong>
+        </div>
+        <div class="summary-row">
+          <small>Profit</small>
+          <strong id="profitSmall">PHP 0.00</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dashboard-panel insight-panel insights-panel">
+      <div class="card-head">
+        <div>
+          <h3>Business Intelligence Insights</h3>
+          <p class="muted">Decision-support messages from current records.</p>
+        </div>
+        <a class="dashboard-card-link" href="reports-audit.html">View reports</a>
+      </div>
+      <div class="bi-mini-grid">
+        <div class="mini-bi metric-profit">
+          <small>Profit Margin</small>
+          <strong id="profitMargin">0.00%</strong>
+        </div>
+        <div class="mini-bi metric-risk">
+          <small>At-Risk Projects</small>
+          <strong id="riskProjectCount">0</strong>
+        </div>
+        <div class="mini-bi metric-best">
+          <small>Best Project</small>
+          <strong id="bestProjectProfit">PHP 0.00</strong>
+          <span id="bestProjectName">No project record yet.</span>
+        </div>
+        <div class="mini-bi metric-cost">
+          <small>Top Cost Driver</small>
+          <strong id="topCostDriver">-</strong>
+          <span id="topCostDriverAmount">PHP 0.00</span>
+        </div>
+      </div>
+      <div id="businessInsightList" class="insight-list"></div>
+    </div>
+
+    <div class="card dashboard-panel alert-panel alerts-panel">
+      <div class="card-head">
+        <div>
+          <h3>Cost Overrun Alerts</h3>
+          <p class="muted">Projects that need owner review before costs reduce profitability.</p>
+        </div>
+      </div>
+      <div id="costAlertList" class="alert-list"></div>
+    </div>
+
+    <div class="card dashboard-panel table-card risk-table-panel">
+      <div class="card-head">
+        <div>
+          <h3>Project Profitability</h3>
+          <p class="muted">Ranks projects by net profit after budget, taxes, expenses, and payroll.</p>
+        </div>
+        <a class="dashboard-card-link" href="revenue.html">View revenue</a>
+      </div>
+      <div class="table-wrap">
+        <table class="bi-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Project</th>
+              <th>Revenue</th>
+              <th>Total Cost</th>
+              <th>Net Profit</th>
+              <th>Margin</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="profitabilityTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+
+</body>
+</html>
+
+
+

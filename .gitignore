@@ -1,0 +1,6 @@
+**/.git_backup/
+.agents/
+finsight-system/
+outputs/
+tmp_*/
+supabase/.temp/

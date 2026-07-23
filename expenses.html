@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll & Expenses</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html" class="active">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>Payroll and expense records are managed in this module.</p>
+    <button type="button" onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<main class="main">
+
+  <section class="hero">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>Payroll & Expenses</h1>
+    <p>Manage employee payroll, project expenses, deductions, and operating costs in one formal workspace.</p>
+  </section>
+
+  <section class="grid">
+    <div class="card kpi">
+      <small>Total Payroll</small>
+      <h2 id="totalPayroll">PHP 0.00</h2>
+      <p>Gross salary amount recorded.</p>
+    </div>
+
+    <div class="card kpi">
+      <small>Total Expenses</small>
+      <h2 id="totalExpenses">PHP 0.00</h2>
+      <p>All recorded expense transactions.</p>
+    </div>
+
+    <div class="card kpi">
+      <small>Net Payroll</small>
+      <h2 id="netPayroll">PHP 0.00</h2>
+      <p>Payroll after deductions.</p>
+    </div>
+
+    <div class="card kpi">
+      <small>Operating Balance</small>
+      <h2 id="operatingBalance">PHP 0.00</h2>
+      <p>Revenue minus all recorded expenses.</p>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <section class="card">
+      <h3><span class="num">01</span> Add Payroll Record</h3>
+      <p class="muted">Record salary details, deductions, payment status, and related project assignment.</p>
+
+      <form id="payrollForm">
+        <div class="form-grid-2">
+          <div>
+            <label>Employee Name</label>
+            <input id="employee_name" placeholder="Employee Name" required>
+          </div>
+
+          <div>
+            <label>Pay Date</label>
+            <input id="pay_date" type="date" required>
+          </div>
+
+          <div>
+            <label>Salary Amount</label>
+            <input id="salary_amount" type="number" placeholder="0.00" required>
+          </div>
+
+          <div>
+            <label>Related Project</label>
+            <select id="project_id">
+              <option value="">No related project</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Deduction Type</label>
+            <select id="deduction_type">
+              <option value="">No Deduction</option>
+              <option>Advance Salary</option>
+              <option>Cash Advance</option>
+              <option>Late Deduction</option>
+              <option>Other Deduction</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Deduction Amount</label>
+            <input id="deduction_amount" type="number" placeholder="0.00" value="0">
+          </div>
+
+          <div>
+            <label>Work Days</label>
+            <input id="work_days" type="number" placeholder="0" value="0">
+          </div>
+
+          <div>
+            <label>Payment Status</label>
+            <select id="payment_status">
+              <option>Paid</option>
+              <option>Pending</option>
+            </select>
+          </div>
+        </div>
+
+        <br>
+
+        <label>Description</label>
+        <textarea id="payroll_description" placeholder="Payroll notes or description"></textarea>
+
+        <div class="form-actions">
+          <button type="submit">Save Payroll</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h3><span class="num">02</span> Add Expense Record</h3>
+      <p class="muted">Record non-payroll project costs and operational expenses.</p>
+
+      <form id="expenseForm">
+        <div class="form-grid-2">
+          <div>
+            <label>Select Project</label>
+            <select id="projectSelect" required></select>
+          </div>
+
+          <div>
+            <label>Expense Category</label>
+            <select id="category" required>
+              <option value="">Select Category</option>
+              <option>Gas</option>
+              <option>Materials</option>
+              <option>Transportation</option>
+              <option>Tools and Equipment</option>
+              <option>Office Supplies</option>
+              <option>Others</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Amount</label>
+            <input type="number" id="amount" placeholder="0.00" required>
+          </div>
+
+          <div>
+            <label>Date</label>
+            <input type="date" id="date" required>
+          </div>
+
+          <div>
+            <label>Proof of Expense</label>
+            <input type="file" id="expenseProof" accept="image/*,.pdf">
+          </div>
+        </div>
+
+        <br>
+
+        <label>Description</label>
+        <textarea id="expense_description" placeholder="Expense details or remarks"></textarea>
+
+        <div class="form-actions">
+          <button type="submit" id="expenseSubmitBtn">Save Expense</button>
+          <button type="button" id="cancelExpenseEditBtn" style="display:none;margin-left:10px;background:#6b7a90;">Cancel Edit</button>
+        </div>
+      </form>
+    </section>
+  </section>
+
+  <section class="card">
+    <h3><span class="num">03</span> Payroll Records</h3>
+    <p class="muted">Review employee payroll, deductions, net pay, and project assignments.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Salary Amount</th>
+            <th>Deduction Type</th>
+            <th>Deduction</th>
+            <th>Net Pay</th>
+            <th>Work Days</th>
+            <th>Related Project</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody id="payrollTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3><span class="num">04</span> Expense Records</h3>
+    <p class="muted">Review payroll-linked and manually recorded expense transactions.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Proof</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="expenseTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+
+</body>
+</html>
+
+
+

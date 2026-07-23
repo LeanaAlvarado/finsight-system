@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Monitoring</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html" class="active">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>All modules are connected and ready.</p>
+    <button onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+
+
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HEADER -->
+  <section class="hero">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>Project Monitoring</h1>
+    <p>Manage project records, smart contract reviews, progress documentation, and project reports in one workspace.</p>
+  </section>
+
+  <section class="grid2">
+    <a class="module-tile active-tile" href="projects.html">
+      <small>Workspace</small>
+      <strong>Project Records</strong>
+      <span>Contracts, status, progress files, project documents, and PPR generation.</span>
+    </a>
+  </section>
+
+  <!-- PROJECT MONITORING LIST -->
+  <section id="projectListSection" class="card">
+    <h3><span class="num">01</span> Project Monitoring List</h3>
+    <p class="muted">Review project progress, quotation type, and available actions in one table.</p>
+
+    <div class="table-wrap">
+      <table class="monitoring-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Title</th>
+            <th>Client</th>
+            <th>Contact</th>
+            <th>Quotation Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody id="projectTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- EDIT PROJECT TEMPLATE -->
+  <section id="editProjectSection" class="card" style="display:none;">
+    <h3><span class="num">01</span> Project Details</h3>
+    <p class="muted">Edit the project fields below and save the latest values back to Project Monitoring.</p>
+
+    <form id="editProjectForm">
+
+      <div class="form-grid">
+
+        <div>
+          <label>Quotation Type</label>
+          <select id="edit_quotation_type">
+            <option value="manpower">Manpower Quotation</option>
+            <option value="cctv">CCTV Quotation with Items</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Project Code</label>
+          <input id="edit_project_code">
+        </div>
+
+        <div>
+          <label>Project Title</label>
+          <input id="edit_project_title">
+        </div>
+
+        <div>
+          <label>Company Name</label>
+          <input id="edit_client_name">
+        </div>
+
+        <div>
+          <label>Client Name</label>
+          <input id="edit_client_contact_name">
+        </div>
+
+        <div>
+        <label>Contact Number</label>
+        <input id="edit_contact_number">
+        </div>
+
+        <div>
+          <label>Location</label>
+          <input id="edit_location">
+        </div>
+
+        <div>
+          <label>Start Date</label>
+          <input id="edit_start_date" type="date">
+        </div>
+
+        <div>
+          <label>Target Completion Date</label>
+          <input id="edit_target_completion" type="date">
+        </div>
+
+        <div>
+          <label>Completed Date</label>
+          <input id="edit_completed_date" type="date">
+        </div>
+
+        <div>
+          <label>Status</label>
+          <select id="edit_status">
+            <option>Pending</option>
+            <option>Ongoing</option>
+            <option>Completed</option>
+            <option>Delayed</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Project Budget</label>
+          <input id="edit_project_budget" type="number">
+        </div>
+
+        <div>
+          <label>Contract Amount</label>
+          <input id="edit_contract_amount" type="number">
+        </div>
+
+        <div>
+          <label>Down Payment</label>
+          <input id="edit_down_payment" type="number">
+        </div>
+
+        <div>
+          <label>Tax Percent</label>
+          <input id="edit_tax_amount" type="number" placeholder="Set in Taxes & Revenue" disabled>
+        </div>
+
+        <div>
+          <label>PPR Prepared By</label>
+          <input id="edit_ppr_prepared_by">
+        </div>
+
+        <div>
+          <label>PPR Noted By</label>
+          <input id="edit_ppr_noted_by">
+        </div>
+
+      </div>
+
+      <div id="editManpowerQuotationPanel" class="quotation-type-panel" style="display:none;">
+        <h4>Manpower Quotation Details</h4>
+        <div class="form-grid">
+          <div>
+            <label>Client Name</label>
+            <input id="edit_manpower_client_name" placeholder="Client Name">
+          </div>
+
+          <div>
+            <label>Client Contact Number</label>
+            <input id="edit_manpower_client_contact" placeholder="09XXXXXXXXX">
+          </div>
+
+          <div>
+            <label>Client Email</label>
+            <input id="edit_manpower_client_email" type="email" placeholder="client@email.com">
+          </div>
+
+          <div>
+            <label>Down Payment Percent</label>
+            <input id="edit_manpower_down_payment" type="number" min="0" max="100" step="0.01" value="0" placeholder="0%">
+          </div>
+
+          <div>
+            <label>Status</label>
+            <select id="edit_manpower_status">
+              <option>Pending</option>
+              <option>Ongoing</option>
+              <option>Completed</option>
+              <option>Delayed</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Prepared By</label>
+            <input id="edit_manpower_prepared_by" placeholder="Prepared By">
+          </div>
+
+          <div>
+            <label>Position</label>
+            <input id="edit_manpower_prepared_position" placeholder="Position">
+          </div>
+
+          <div class="full-row">
+            <label>Terms of Service</label>
+            <textarea id="edit_manpower_terms" placeholder="Terms of service"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Work Description</label>
+            <textarea id="edit_manpower_work_description" placeholder="Work description"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Additional Comments</label>
+            <textarea id="edit_manpower_additional_comments" placeholder="Additional comments"></textarea>
+          </div>
+        </div>
+
+        <div class="table-wrap quotation-items-box">
+          <table class="quotation-items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="editManpowerQuotationItemsBody"></tbody>
+            <tfoot>
+              <tr class="quotation-total-row">
+                <td colspan="3">Total Amount</td>
+                <td id="editManpowerQuotationTotal">PHP 0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div id="editCctvMaterialsPanel" class="quotation-type-panel" style="display:none;">
+        <h4>CCTV Quotation Materials</h4>
+        <p class="muted">Edit the materials linked to this CCTV quotation project.</p>
+
+        <div class="form-grid">
+          <div>
+            <label>Choose Saved Material</label>
+            <select id="edit_cctv_material_select" onchange="handleEditCctvMaterialSelect(this)">
+              <option value="">Select from inventory / material catalog</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap inventory-entry-box">
+          <table class="inventory-entry-table">
+            <thead>
+              <tr>
+                <th>Material Name</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Total Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="editCctvMaterialsBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" style="text-align:right;font-weight:800;">Materials Total</td>
+                <td id="editCctvMaterialsTotal" style="font-weight:800;">PHP 0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" onclick="addEditCctvMaterialRow()">Add Blank Material</button>
+        </div>
+      </div>
+
+      <br>
+
+      <label>Remarks</label>
+      <textarea id="edit_remarks"></textarea>
+
+      <label>Upload Progress Files</label>
+      <input id="progress_files" type="file" multiple>
+
+      <p class="muted">Upload photos or documents for the latest project progress update.</p>
+
+      <div class="uploaded-box">
+        <h4>Uploaded Progress Files</h4>
+        <div id="uploadedProgressFiles"></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">Update Project</button>
+      </div>
+
+    </form>
+  </section>
+
+</main>
+
+<!-- VIEW MODAL -->
+<div id="viewModal" class="modal">
+  <div class="modal-box large-modal">
+    <div class="modal-header">
+      <h2>Project Full Details</h2>
+      <button type="button" onclick="closeViewModal()">Close</button>
+    </div>
+
+    <div id="viewContent"></div>
+  </div>
+</div>
+
+<div id="smartContractModal" class="modal">
+  <div class="modal-box large-modal">
+    <div class="modal-header">
+      <h2>Project Contract Draft</h2>
+      <button type="button" onclick="closeSmartContractModal()">Close</button>
+    </div>
+
+    <div id="smartContractContent"></div>
+
+    <div class="form-actions">
+      <button type="button" onclick="printSmartContract()">Print Contract</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+</body>
+</html>
+
+

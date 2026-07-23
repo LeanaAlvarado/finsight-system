@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owner Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+  <nav class="menu">
+    <a class="active" href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <section class="hero">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>Owner Dashboard</h1>
+    <p>Financial overview and business decision-making panel.</p>
+  </section>
+
+  <section class="grid">
+    <div class="card kpi"><small>Total Projects</small><h2 id="projectCount">0</h2></div>
+    <div class="card kpi"><small>Total Contract</small><h2 id="totalContract">PHP 0.00</h2></div>
+    <div class="card kpi"><small>Total Expenses</small><h2 id="totalExpenses">PHP 0.00</h2></div>
+    <div class="card kpi"><small>Net Profit</small><h2 id="netProfit">PHP 0.00</h2></div>
+  </section>
+</main>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+</body>
+</html>
+
+

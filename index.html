@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lemyu System Login</title>
+
+<style>
+:root{
+  --primary:#1f4e79;
+  --primary-dark:#163a5c;
+  --bg:#f4f6f8;
+  --panel:#ffffff;
+  --text:#17212b;
+  --muted:#657386;
+  --line:#d9e1e8;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Segoe UI", Arial, sans-serif;
+}
+
+body{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.login-shell{
+  width:100%;
+  max-width:440px;
+}
+
+.login-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:34px;
+  box-shadow:0 16px 36px rgba(23,33,43,.08);
+}
+
+.logo-box{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding-bottom:20px;
+  margin-bottom:22px;
+  border-bottom:1px solid var(--line);
+}
+
+.logo-box img{
+  width:48px;
+  height:48px;
+  object-fit:contain;
+}
+
+.system-name{
+  color:var(--primary-dark);
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.system-subtitle{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+h1{
+  margin-bottom:6px;
+  color:var(--text);
+  font-size:24px;
+  font-weight:750;
+}
+
+.subtitle{
+  margin-bottom:24px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.input-group{
+  margin-bottom:16px;
+}
+
+label{
+  display:block;
+  margin-bottom:6px;
+  color:#344456;
+  font-size:12px;
+  font-weight:750;
+}
+
+input{
+  width:100%;
+  height:42px;
+  border:1px solid #c6d1dc;
+  border-radius:6px;
+  padding:10px 12px;
+  background:#fff;
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+}
+
+input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(31,78,121,.14);
+}
+
+button{
+  width:100%;
+  height:42px;
+  margin-top:4px;
+  border:1px solid var(--primary);
+  border-radius:6px;
+  background:var(--primary);
+  color:#fff;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:750;
+}
+
+button:hover{
+  background:var(--primary-dark);
+}
+
+.secondary-btn{
+  background:#ffffff;
+  color:var(--primary);
+  margin-top:10px;
+}
+
+.secondary-btn:hover{
+  background:#eef4f8;
+}
+
+.link-btn{
+  width:auto;
+  height:auto;
+  margin:12px auto 0;
+  padding:0;
+  display:block;
+  border:0;
+  background:transparent;
+  color:var(--primary);
+  font-size:13px;
+  font-weight:750;
+}
+
+.link-btn:hover{
+  background:transparent;
+  color:var(--primary-dark);
+  text-decoration:underline;
+}
+
+.view{
+  display:block;
+}
+
+.view.is-hidden{
+  display:none;
+}
+
+.note{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.4;
+}
+
+.footer{
+  margin-top:18px;
+  color:var(--muted);
+  text-align:center;
+  font-size:12px;
+}
+
+@media(max-width:500px){
+  .login-card{
+    padding:26px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<main class="login-shell">
+  <section class="login-card">
+    <div class="logo-box">
+      <img src="assets/logo.jpg" alt="Lemyu Logo">
+      <div>
+        <div class="system-name">LEMYU</div>
+        <div class="system-subtitle">Financial Management System</div>
+      </div>
+    </div>
+
+    <div id="loginView" class="view">
+      <h1>System Login</h1>
+      <p class="subtitle">
+        Enter your email and password. After the password is verified, Supabase will send a one-time login code to your inbox.
+      </p>
+
+      <form id="loginForm">
+        <div class="input-group">
+          <label for="email">Email Address</label>
+          <input id="email" type="email" placeholder="Enter email address" required>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Enter password" required>
+        </div>
+
+        <button type="submit" id="sendOtpBtn">Login</button>
+        <button type="button" id="forgotPasswordBtn" class="link-btn">Forgot password?</button>
+      </form>
+    </div>
+
+    <div id="resetPasswordView" class="view is-hidden">
+      <h1>Reset Password</h1>
+      <p class="subtitle">
+        Enter your account email and create a new secure password.
+      </p>
+
+      <form id="resetPasswordForm">
+        <div class="input-group">
+          <label for="resetEmail">Email Address</label>
+          <input id="resetEmail" type="email" placeholder="Enter account email" required>
+        </div>
+
+        <div class="input-group">
+          <label for="resetPassword">New Password</label>
+          <input id="resetPassword" type="password" placeholder="Enter new password" required>
+        </div>
+
+        <div class="input-group">
+          <label for="resetConfirmPassword">Confirm Password</label>
+          <input id="resetConfirmPassword" type="password" placeholder="Re-enter new password" required>
+        </div>
+
+        <button type="submit" id="resetPasswordBtn">Save New Password</button>
+        <button type="button" id="backToLoginFromResetBtn" class="secondary-btn">
+          Back to Login
+        </button>
+      </form>
+
+      <p class="note">
+        Password must be at least 10 characters with uppercase, lowercase, and a special character.
+      </p>
+    </div>
+
+    <div id="otpView" class="view is-hidden">
+      <h1>Enter OTP</h1>
+      <p id="otpMessage" class="subtitle">
+        We sent an 8-digit OTP to your email. Please enter the number below.
+      </p>
+
+      <div class="input-group">
+        <label for="otp">OTP Code</label>
+        <input id="otp" type="text" placeholder="Enter 8-digit OTP" inputmode="numeric" pattern="[0-9]{8}" maxlength="8">
+      </div>
+
+      <button type="button" id="verifyOtpBtn">Verify OTP</button>
+
+      <button type="button" id="resendOtpBtn" class="secondary-btn">
+        Resend OTP
+      </button>
+
+      <button type="button" id="backToLoginBtn" class="secondary-btn">
+        Back to Login
+      </button>
+
+      <p class="note">
+        Please check your email inbox or spam folder for the OTP number.
+      </p>
+    </div>
+
+    <div class="footer">
+      Lemyu Fiber Optics Installation & Services
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+</body>
+</html>
+
+

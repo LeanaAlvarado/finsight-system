@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title{font-family:Arial,sans-serif;font-size:34px;font-weight:700;fill:#0f172a}
+      .label{font-family:Arial,sans-serif;font-size:17px;font-weight:700;fill:#111827}
+      .small{font-family:Arial,sans-serif;font-size:13px;fill:#334155}
+      .entity{fill:#f8fafc;stroke:#64748b;stroke-width:2}
+      .process{fill:#eef2ff;stroke:#4f46e5;stroke-width:3}
+      .store{fill:#ecfeff;stroke:#0891b2;stroke-width:2}
+      .flow{fill:none;stroke:#334155;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+
+  <rect width="1800" height="1200" fill="#ffffff"/>
+  <text x="900" y="55" text-anchor="middle" class="title">Level 1 Data Flow Diagram of FinSight</text>
+  <text x="900" y="85" text-anchor="middle" class="small">Major processes, users, and data stores of the proposed system</text>
+
+  <rect x="65" y="130" width="220" height="72" rx="6" class="entity"/>
+  <text x="175" y="160" text-anchor="middle" class="label">Owner / Administrator</text>
+  <text x="175" y="183" text-anchor="middle" class="small">Views project reports</text>
+
+  <rect x="65" y="500" width="220" height="72" rx="6" class="entity"/>
+  <text x="175" y="530" text-anchor="middle" class="label">Staff</text>
+  <text x="175" y="553" text-anchor="middle" class="small">Encodes records and files</text>
+
+  <rect x="65" y="900" width="220" height="72" rx="6" class="entity"/>
+  <text x="175" y="930" text-anchor="middle" class="label">Client / Feedback User</text>
+  <text x="175" y="953" text-anchor="middle" class="small">Submits feedback</text>
+
+  <circle cx="505" cy="160" r="75" class="process"/>
+  <text x="505" y="150" text-anchor="middle" class="label">1.0 User Login</text>
+  <text x="505" y="174" text-anchor="middle" class="small">Access Control</text>
+
+  <circle cx="505" cy="355" r="82" class="process"/>
+  <text x="505" y="342" text-anchor="middle" class="label">2.0 Manage</text>
+  <text x="505" y="365" text-anchor="middle" class="label">Projects and Contracts</text>
+
+  <circle cx="505" cy="570" r="82" class="process"/>
+  <text x="505" y="558" text-anchor="middle" class="label">3.0 Manage</text>
+  <text x="505" y="581" text-anchor="middle" class="label">Inventory Materials</text>
+
+  <circle cx="505" cy="790" r="82" class="process"/>
+  <text x="505" y="778" text-anchor="middle" class="label">4.0 Manage</text>
+  <text x="505" y="801" text-anchor="middle" class="label">Payroll and Expenses</text>
+
+  <circle cx="940" cy="315" r="88" class="process"/>
+  <text x="940" y="302" text-anchor="middle" class="label">5.0 Generate</text>
+  <text x="940" y="325" text-anchor="middle" class="label">Revenue and BI Reports</text>
+
+  <circle cx="940" cy="600" r="88" class="process"/>
+  <text x="940" y="588" text-anchor="middle" class="label">6.0 Generate</text>
+  <text x="940" y="611" text-anchor="middle" class="label">Project Reports</text>
+
+  <circle cx="940" cy="905" r="82" class="process"/>
+  <text x="940" y="894" text-anchor="middle" class="label">7.0 Manage</text>
+  <text x="940" y="917" text-anchor="middle" class="label">Client Feedback</text>
+
+  <circle cx="1330" cy="650" r="82" class="process"/>
+  <text x="1330" y="638" text-anchor="middle" class="label">8.0 Manage</text>
+  <text x="1330" y="661" text-anchor="middle" class="label">File Uploads</text>
+
+  <path d="M 1510 215 C 1625 215, 1625 305, 1510 305 C 1395 305, 1395 215, 1510 215" class="store"/>
+  <line x1="1510" y1="215" x2="1510" y2="305" stroke="#0891b2" stroke-width="2"/>
+  <text x="1510" y="255" text-anchor="middle" class="label">Projects Data Store</text>
+
+  <path d="M 1510 390 C 1625 390, 1625 480, 1510 480 C 1395 480, 1395 390, 1510 390" class="store"/>
+  <line x1="1510" y1="390" x2="1510" y2="480" stroke="#0891b2" stroke-width="2"/>
+  <text x="1510" y="430" text-anchor="middle" class="label">Inventory Data Store</text>
+
+  <path d="M 1510 565 C 1625 565, 1625 655, 1510 655 C 1395 655, 1395 565, 1510 565" class="store"/>
+  <line x1="1510" y1="565" x2="1510" y2="655" stroke="#0891b2" stroke-width="2"/>
+  <text x="1510" y="603" text-anchor="middle" class="label">Payroll and Expenses</text>
+  <text x="1510" y="626" text-anchor="middle" class="small">Data Store</text>
+
+  <path d="M 1510 740 C 1625 740, 1625 830, 1510 830 C 1395 830, 1395 740, 1510 740" class="store"/>
+  <line x1="1510" y1="740" x2="1510" y2="830" stroke="#0891b2" stroke-width="2"/>
+  <text x="1510" y="780" text-anchor="middle" class="label">Feedback Data Store</text>
+
+  <path d="M 1510 910 C 1625 910, 1625 1000, 1510 1000 C 1395 1000, 1395 910, 1510 910" class="store"/>
+  <line x1="1510" y1="910" x2="1510" y2="1000" stroke="#0891b2" stroke-width="2"/>
+  <text x="1510" y="948" text-anchor="middle" class="label">Project Inputs /</text>
+  <text x="1510" y="971" text-anchor="middle" class="small">Report Results</text>
+
+  <path d="M 1510 1060 C 1625 1060, 1625 1150, 1510 1150 C 1395 1150, 1395 1060, 1510 1060" class="store"/>
+  <line x1="1510" y1="1060" x2="1510" y2="1150" stroke="#0891b2" stroke-width="2"/>
+  <text x="1510" y="1101" text-anchor="middle" class="label">File Storage</text>
+
+  <path d="M 285 155 L 430 155" class="flow"/>
+  <text x="315" y="140" class="small">Login credentials</text>
+  <path d="M 430 175 L 285 185" class="flow"/>
+  <text x="315" y="205" class="small">Access permission</text>
+
+  <path d="M 285 520 C 360 420, 405 365, 423 355" class="flow"/>
+  <text x="310" y="430" class="small">Project details</text>
+  <path d="M 587 350 C 755 300, 850 270, 1395 255" class="flow"/>
+  <text x="735" y="280" class="small">Save / update project records</text>
+  <path d="M 1395 285 C 980 310, 745 340, 585 372" class="flow"/>
+  <text x="1040" y="335" class="small">Project records</text>
+
+  <path d="M 285 535 L 423 560" class="flow"/>
+  <text x="305" y="555" class="small">Material details</text>
+  <path d="M 587 570 C 755 530, 940 460, 1395 435" class="flow"/>
+  <text x="720" y="520" class="small">Inventory records</text>
+  <path d="M 1395 455 C 950 520, 735 558, 587 590" class="flow"/>
+
+  <path d="M 285 560 C 360 645, 400 740, 425 780" class="flow"/>
+  <text x="305" y="665" class="small">Salary, deductions, expenses</text>
+  <path d="M 587 790 C 775 760, 980 650, 1395 610" class="flow"/>
+  <text x="710" y="750" class="small">Payroll and expense records</text>
+  <path d="M 1395 635 C 1040 695, 770 770, 587 810" class="flow"/>
+
+  <path d="M 285 170 C 515 220, 720 260, 852 300" class="flow"/>
+  <text x="480" y="235" class="small">Report request</text>
+  <path d="M 852 330 C 745 350, 690 350, 587 355" class="flow"/>
+  <path d="M 1028 305 C 1150 285, 1260 265, 1395 260" class="flow"/>
+  <path d="M 1395 435 C 1240 410, 1130 365, 1020 335" class="flow"/>
+  <path d="M 1395 610 C 1235 565, 1125 430, 1010 350" class="flow"/>
+  <path d="M 1395 785 C 1240 700, 1110 470, 1000 370" class="flow"/>
+  <path d="M 915 230 C 700 180, 470 160, 285 155" class="flow"/>
+  <text x="560" y="185" class="small">Dashboard, revenue reports, BI summaries</text>
+
+  <path d="M 285 145 C 600 430, 735 540, 852 590" class="flow"/>
+  <text x="560" y="495" class="small">Report request / project inputs</text>
+  <path d="M 1028 600 C 1155 640, 1260 890, 1395 950" class="flow"/>
+  <path d="M 1395 970 C 1220 910, 1100 720, 1020 635" class="flow"/>
+  <path d="M 930 688 C 740 810, 470 920, 285 185" class="flow"/>
+  <text x="635" y="885" class="small">Reports, status, recommendations</text>
+
+  <path d="M 285 930 C 485 930, 710 920, 858 905" class="flow"/>
+  <text x="380" y="915" class="small">Ratings, comments, recommendations</text>
+  <path d="M 1022 905 C 1165 870, 1260 800, 1395 785" class="flow"/>
+  <path d="M 1395 805 C 1210 865, 1105 895, 1022 918" class="flow"/>
+  <path d="M 858 930 C 660 990, 430 990, 285 950" class="flow"/>
+  <text x="520" y="1010" class="small">Feedback confirmation</text>
+
+  <path d="M 285 540 C 740 640, 1060 650, 1248 650" class="flow"/>
+  <text x="665" y="640" class="small">Uploaded project files and material pictures</text>
+  <path d="M 1412 665 C 1450 800, 1480 980, 1498 1060" class="flow"/>
+  <path d="M 1498 1060 C 1455 910, 1405 780, 1388 700" class="flow"/>
+  <path d="M 1260 610 C 940 500, 725 390, 585 355" class="flow"/>
+  <path d="M 1260 690 C 970 650, 725 600, 587 580" class="flow"/>
+</svg>

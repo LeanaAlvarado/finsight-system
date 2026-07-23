@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposal / Quotation and Client Feedback</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html" class="active">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>All modules are connected and ready.</p>
+    <button onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HEADER -->
+  <section class="hero">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>Proposal / Quotation and Client Feedback</h1>
+    <p>Create proposal and project contract records, then review client evaluations, QR feedback submissions, ratings, comments, and recommendations.</p>
+  </section>
+
+  <section id="proposalSection" class="card">
+    <h3><span class="num">01</span> Add New Project / Contract</h3>
+    <p class="muted">Create a proposal record that becomes the project contract used by Project Monitoring.</p>
+
+    <form id="proposalForm" novalidate>
+      <div class="form-grid">
+        <div>
+          <label>Quotation Type</label>
+          <select id="quotation_type">
+            <option value="manpower">Manpower Quotation</option>
+            <option value="cctv">CCTV Quotation with Items</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Project Code</label>
+          <input id="project_code" placeholder="Auto-generated" required readonly>
+        </div>
+
+        <div>
+          <label>Project Title</label>
+          <input id="project_title" placeholder="Project Title" required>
+        </div>
+
+        <div>
+          <label>Company Name</label>
+          <input id="client_name" placeholder="Company Name">
+        </div>
+
+        <div>
+          <label>Client Name</label>
+          <input id="client_contact_name" placeholder="Client Name">
+        </div>
+
+        <div>
+          <label>Contact Number</label>
+          <input id="contact_number" placeholder="09XXXXXXXXX">
+        </div>
+
+        <div>
+          <label>Location</label>
+          <input id="location" placeholder="Location">
+        </div>
+
+        <div>
+          <label>Start Date</label>
+          <input id="start_date" type="date">
+        </div>
+
+        <div>
+          <label>Target Completion</label>
+          <input id="target_completion" type="date">
+        </div>
+
+        <div>
+          <label>Status</label>
+          <select id="status">
+            <option>Pending</option>
+            <option>Ongoing</option>
+            <option>Completed</option>
+            <option>Delayed</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Project Budget</label>
+          <input id="project_budget" type="number" value="0">
+        </div>
+
+        <div>
+          <label>Contract Amount</label>
+          <input id="contract_amount" type="number" value="0">
+        </div>
+
+        <div>
+          <label>Down Payment</label>
+          <input id="down_payment" type="number" value="0">
+        </div>
+
+        <div>
+          <label>PPR Prepared By</label>
+          <input id="ppr_prepared_by" placeholder="Prepared By">
+        </div>
+
+        <div>
+          <label>PPR Noted By</label>
+          <input id="ppr_noted_by" placeholder="Noted By">
+        </div>
+
+        <div>
+          <label>Upload File</label>
+          <input id="contract_file" type="file">
+        </div>
+      </div>
+
+      <div id="manpowerQuotationPanel" class="quotation-type-panel">
+        <h4>Manpower Quotation Details</h4>
+        <div class="form-grid">
+          <div>
+            <label>Client Name</label>
+            <input id="manpower_client_name" placeholder="Client Name">
+          </div>
+
+          <div>
+            <label>Client Contact Number</label>
+            <input id="manpower_client_contact" placeholder="09XXXXXXXXX">
+          </div>
+
+          <div>
+            <label>Client Email</label>
+            <input id="manpower_client_email" type="email" placeholder="client@email.com">
+          </div>
+
+          <div>
+            <label>Prepared By</label>
+            <input id="manpower_prepared_by" placeholder="Prepared By">
+          </div>
+
+          <div>
+            <label>Position</label>
+            <input id="manpower_prepared_position" placeholder="Position">
+          </div>
+
+          <div class="full-row">
+            <label>Terms of Service</label>
+            <textarea id="manpower_terms" placeholder="Terms of service"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Work Description</label>
+            <textarea id="manpower_work_description" placeholder="Work description"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Additional Comments</label>
+            <textarea id="manpower_additional_comments" placeholder="Additional comments"></textarea>
+          </div>
+        </div>
+
+        <div class="table-wrap quotation-items-box">
+          <table class="quotation-items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="manpowerQuotationItemsBody"></tbody>
+            <tfoot>
+              <tr class="quotation-total-row">
+                <td colspan="3">Total Amount</td>
+                <td id="manpowerQuotationTotal">PHP 0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div id="cctvQuotationPanel" class="quotation-type-panel" style="display:none;">
+        <h4>CCTV Quotation Details</h4>
+        <p class="muted">Edit the default quotation text, then add the project materials below.</p>
+
+        <div class="form-grid">
+          <div class="full-row">
+            <label>Quotation Introduction</label>
+            <textarea id="cctv_intro"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Installation Charge Remarks</label>
+            <textarea id="cctv_installation_charge"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Summary of Computation Remarks</label>
+            <textarea id="cctv_summary_computation"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Note</label>
+            <textarea id="cctv_note"></textarea>
+          </div>
+
+          <div class="full-row">
+            <label>Terms and Conditions</label>
+            <textarea id="cctv_terms"></textarea>
+          </div>
+        </div>
+
+        <h4>Add Project Materials</h4>
+        <p class="muted">Add materials here so they are linked to the generated project and reflected in Inventory and CCTV quotation reports.</p>
+
+        <div class="form-grid">
+          <div>
+            <label>Choose Saved Material</label>
+            <select id="proposal_material_select">
+              <option value="">Select from material catalog</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap inventory-entry-box">
+          <table class="inventory-entry-table">
+            <thead>
+              <tr>
+                <th>Material Name</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="proposalMaterialsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" onclick="addProposalMaterialRow()">Add Blank Material</button>
+        </div>
+
+      </div>
+
+      <label>Remarks</label>
+      <textarea id="remarks" placeholder="Remarks"></textarea>
+
+      <div class="form-actions">
+        <button type="submit">Save Project</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- KPI -->
+  <section class="grid">
+    <div class="card kpi">
+      <small>FEEDBACK RECORDS</small>
+      <h2 id="feedbackCount">0</h2>
+      <p>Total submitted evaluations.</p>
+    </div>
+
+    <div class="card kpi">
+      <small>AVERAGE RATING</small>
+      <h2 id="avgRating">0/5</h2>
+      <p>Overall client satisfaction score.</p>
+    </div>
+
+    <div class="card kpi">
+      <small>LINKED REVENUE</small>
+      <h2 id="totalRevenue">PHP 0.00</h2>
+      <p>Projects contributing to feedback.</p>
+    </div>
+
+    <div class="card kpi">
+      <small>LATEST STATUS</small>
+      <h2 id="latestStatus">No Data</h2>
+      <p>Latest feedback entry.</p>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="card">
+  <h3><span class="num">03</span> Client Feedback Dashboard</h3>
+  <p class="muted">All feedback submitted through QR/public feedback forms will appear here automatically. Feedback is read-only and cannot be edited.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Client</th>
+            <th>Rating</th>
+            <th>Date</th>
+            <th>Comments</th>
+          </tr>
+        </thead>
+
+        <tbody id="feedbackTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- SCRIPT -->
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+</body>
+</html>
+
+
+

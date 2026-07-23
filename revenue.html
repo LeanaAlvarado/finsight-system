@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taxes and Revenue</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html" class="active">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>All modules are connected and ready.</p>
+    <button onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- HEADER -->
+<section class="hero">
+  <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+  <h1>Taxes and Revenue</h1>
+  <p>Monitor contract value, taxes, expenses, payroll impact, and net revenue performance.</p>
+</section>
+
+<!-- KPI -->
+<section class="grid">
+
+  <div class="card kpi">
+    <small>TOTAL CONTRACT VALUE</small>
+    <h2 id="totalContract">PHP 0.00</h2>
+    <p>Sum of all project contracts.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>OTHER EXPENSES</small>
+    <h2 id="totalExpenses">PHP 0.00</h2>
+    <p>Recorded expenses excluding payroll.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>TOTAL PAYROLL</small>
+    <h2 id="totalPayroll">PHP 0.00</h2>
+    <p>Total employee salaries.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>TOTAL TAX AMOUNT</small>
+    <h2 id="totalTaxes">PHP 0.00</h2>
+    <p>Computed from owner-entered tax percentage.</p>
+  </div>
+
+  <div class="card kpi">
+    <small>NET REVENUE</small>
+    <h2 id="netRevenue">PHP 0.00</h2>
+    <p>Profit after expenses, payroll, and taxes.</p>
+  </div>
+
+</section>
+
+<!-- REVENUE TABLE -->
+<section class="card">
+  <h3><span class="num">01</span> Project Revenue Breakdown</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Client</th>
+          <th>Contract</th>
+          <th>Budget</th>
+          <th>Down Payment</th>
+          <th>Balance</th>
+          <th>Tax Percent</th>
+          <th>Tax Amount</th>
+          <th>Other Expenses</th>
+          <th>Payroll</th>
+          <th>Net Profit</th>
+        </tr>
+      </thead>
+
+      <tbody id="revenueTable"></tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<!-- SCRIPT -->
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+
+</body>
+</html>
+
+
+

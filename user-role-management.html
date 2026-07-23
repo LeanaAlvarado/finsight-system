@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User and Role Management</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Lemyu Logo">
+    <span>LEMYU</span>
+  </div>
+
+  <div class="menu-title">MAIN MENU</div>
+  <nav class="menu">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="expenses.html">Payroll & Expenses</a>
+    <a href="revenue.html">Taxes & Revenue</a>
+    <a href="projects.html">Project Monitoring</a>
+    <a href="feedback.html">Proposal / Quotation & Feedback</a>
+    <a href="reports-audit.html">Reports & Audit Logs</a>
+    <a class="active" href="user-role-management.html">User & Role Management</a>
+    <a href="index.html">Logout</a>
+  </nav>
+
+  <div class="update-box">
+    <h4>System Status</h4>
+    <p>User access and role permissions are managed in this module.</p>
+    <button type="button" onclick="location.reload()">Refresh</button>
+  </div>
+</aside>
+
+<main class="main">
+  <section class="hero">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>User and Role Management</h1>
+    <p>Maintain system users, assign roles, monitor account status, and define module-level access in one admin workspace.</p>
+  </section>
+
+  <section class="grid">
+    <div class="card kpi">
+      <small>Total Users</small>
+      <h2 id="totalUsers">0</h2>
+      <p>Registered system accounts.</p>
+    </div>
+    <div class="card kpi">
+      <small>Active Users</small>
+      <h2 id="activeUsers">0</h2>
+      <p>Accounts allowed to access the system.</p>
+    </div>
+    <div class="card kpi">
+      <small>Roles</small>
+      <h2 id="roleCount">0</h2>
+      <p>Defined responsibility groups.</p>
+    </div>
+    <div class="card kpi">
+      <small>Admin Users</small>
+      <h2 id="adminUsers">0</h2>
+      <p>Users with administrative privileges.</p>
+    </div>
+  </section>
+
+  <section>
+    <section class="card">
+      <h3><span class="num">01</span> Add User</h3>
+      <p class="muted">Create an account record in Supabase and assign the correct system role.</p>
+
+      <form id="userForm">
+        <div class="form-grid-2">
+          <div>
+            <label>Full Name</label>
+            <input id="full_name" required>
+          </div>
+          <div>
+            <label>Email</label>
+            <input id="user_email" type="email" required>
+          </div>
+          <div>
+            <label>Password</label>
+            <input id="user_password" type="password" required>
+          </div>
+          <div>
+            <label>Role</label>
+            <select id="user_role"></select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select id="user_status">
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit">Save User</button>
+        </div>
+      </form>
+    </section>
+  </section>
+
+  <section class="card">
+    <h3><span class="num">02</span> User Accounts</h3>
+    <p class="muted">Review assigned users and account access status.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="userTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3><span class="num">03</span> Roles and Permissions</h3>
+    <p class="muted">Review the module permissions used for access control documentation.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Allowed Modules</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="roleTable"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/app.js?v=20260723-inventory-edit-source-v17"></script>
+
+</body>
+</html>
+
+
