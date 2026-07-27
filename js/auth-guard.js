@@ -17,8 +17,7 @@ const FINANCE_MODULES = [
   "Dashboard",
   "Payroll & Expenses",
   "Taxes & Revenue",
-  "Project Monitoring",
-  "Reports & Audit Logs"
+  "Project Monitoring"
 ];
 
 const FINANCE_ROLE_PATTERN = /(finance|accountant|accounting)/i;

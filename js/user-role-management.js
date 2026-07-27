@@ -41,8 +41,7 @@ const DEFAULT_ROLES = [
       "Dashboard",
       "Payroll & Expenses",
       "Taxes & Revenue",
-      "Project Monitoring",
-      "Reports & Audit Logs"
+      "Project Monitoring"
     ]
   },
   {
