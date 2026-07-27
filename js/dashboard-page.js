@@ -14,10 +14,26 @@ function readLocalJson(key, fallback) {
   }
 }
 
-function useLocalWhenCloudEmpty(cloudRecords = [], localKey, normalize = record => record) {
-  if ((cloudRecords || []).length) return cloudRecords || [];
+function mergeCurrentRecords(cloudRecords = [], localKey, keyFields, normalize = record => record) {
+  const cloud = (cloudRecords || []).map(normalize);
   const localRecords = readLocalJson(localKey, []);
-  return Array.isArray(localRecords) ? localRecords.map(normalize) : [];
+  const merged = [...cloud];
+
+  if (!Array.isArray(localRecords)) return merged;
+
+  localRecords.map(normalize).forEach(localRecord => {
+    const matchIndex = merged.findIndex(cloudRecord => keyFields.some(field => {
+      const localValue = normalizeMatchValue(localRecord?.[field]);
+      const cloudValue = normalizeMatchValue(cloudRecord?.[field]);
+      return localValue && cloudValue && localValue === cloudValue;
+    }));
+
+    if (matchIndex < 0) {
+      merged.push(localRecord);
+    }
+  });
+
+  return merged;
 }
 
 function normalizeMatchValue(value = "") {
@@ -158,7 +174,7 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const materialTotal = inventory
       .filter(item => recordBelongsToProject(item, project))
       .reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
-    const totalCost = budget + tax + expenseTotal + payrollTotal;
+    const totalCost = budget + tax + expenseTotal + payrollTotal + materialTotal;
     const profit = revenue - totalCost;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     const costRatio = revenue > 0 ? (totalCost / revenue) * 100 : 0;
@@ -449,13 +465,13 @@ function renderCategoryBreakdownList(categoryTotals) {
 
 function renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue) {
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
-  const inventoryValue = inventory.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+  const projectMaterialCost = inventory.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
   const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, inventory);
   const categoryTotals = new Map();
 
   expenses.forEach(expense => addCategoryTotal(categoryTotals, expense.category, expense.amount));
   if (payrollTotal > 0) addCategoryTotal(categoryTotals, "Payroll", payrollTotal);
-  if (inventoryValue > 0) addCategoryTotal(categoryTotals, "Inventory Materials", inventoryValue);
+  if (projectMaterialCost > 0) addCategoryTotal(categoryTotals, "Project Materials", projectMaterialCost);
 
   const totalProjectCost = projectAnalytics.reduce((sum, item) => sum + item.totalCost, 0);
   const profit = revenue - totalProjectCost;
@@ -503,14 +519,23 @@ async function loadDashboard(){
     console.warn("Dashboard loaded without expense records.", expenseResult.error);
   }
 
-  const projects = useLocalWhenCloudEmpty(projectResult.error ? [] : projectResult.data, "lemyu_saved_projects");
+  const projects = mergeCurrentRecords(
+    projectResult.error ? [] : projectResult.data,
+    "lemyu_saved_projects",
+    ["id", "project_code"]
+  );
   const expenses = expenseResult.error ? [] : (expenseResult.data || []);
   const payroll = payrollResult.error ? [] : payrollResult.data;
-  const inventory = useLocalWhenCloudEmpty(inventoryResult.error ? [] : inventoryResult.data, "lemyu_saved_inventory", item => ({
-    ...item,
-    material_name: item.material_name || item.name || item.description || "Unnamed Material",
-    name: item.name || item.material_name || item.description || "Unnamed Material"
-  }));
+  const inventory = mergeCurrentRecords(
+    inventoryResult.error ? [] : inventoryResult.data,
+    "lemyu_saved_inventory",
+    ["id"],
+    item => ({
+      ...item,
+      material_name: item.material_name || item.name || item.description || "Unnamed Material",
+      name: item.name || item.material_name || item.description || "Unnamed Material"
+    })
+  );
 
   if (payrollResult.error || inventoryResult.error) {
     console.warn("Dashboard BI loaded without optional payroll or inventory records.", payrollResult.error || inventoryResult.error);
@@ -518,16 +543,20 @@ async function loadDashboard(){
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
-  const inventoryValue = inventory.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
-  const profit = revenue - expenseTotal;
+  const projectMaterialCost = inventory.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+  const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
+  const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
+  const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
+  const totalCost = expenseTotal + payrollTotal + projectMaterialCost + projectBudgetTotal + taxTotal;
+  const profit = revenue - totalCost;
 
   setText("totalRevenue", peso(revenue));
   setText("totalExpenses", peso(expenseTotal));
   setText("netProfit", peso(profit));
   setText("projectCount", projects.length);
-  setText("inventoryValue", peso(inventoryValue));
+  setText("inventoryValue", inventory.length);
   setText("inventoryCount", inventory.length);
-  setText("inventoryPanelValue", peso(inventoryValue));
+  setText("inventoryPanelValue", peso(0));
   setText("inventoryPanelCount", inventory.length);
   setText("projectMini", projects.length);
   setText("revenueSmall", peso(revenue));
@@ -642,10 +671,17 @@ window.addEventListener("focus", () => scheduleDashboardRefresh(0));
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) scheduleDashboardRefresh(0);
 });
-supabase
-  .channel("dashboard-live")
-  .on("postgres_changes", { event: "*", schema: "public" }, () => scheduleDashboardRefresh(0))
-  .subscribe();
+const dashboardChannel = supabase.channel("dashboard-live");
+["projects", "expenses", "payroll", "inventory"].forEach(table => {
+  dashboardChannel.on(
+    "postgres_changes",
+    { event: "*", schema: "public", table },
+    () => scheduleDashboardRefresh(0)
+  );
+});
+dashboardChannel.subscribe(status => {
+  if (status === "SUBSCRIBED") scheduleDashboardRefresh(0);
+});
 
 setInterval(() => {
   if (!document.hidden) scheduleDashboardRefresh(0);

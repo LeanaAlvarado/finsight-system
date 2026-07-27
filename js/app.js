@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260723-inventory-edit-source-v17";
+const appVersion = "20260727-bi-project-materials-v19";
 
 function toTitleCase(value = "") {
   return String(value || "User")
