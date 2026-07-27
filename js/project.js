@@ -819,8 +819,6 @@ async function loadProjects() {
     const quotationLabel = getProjectQuotationLabel(project);
     const actionLinks = isOperations
       ? `
-          <a href="#" onclick="viewProject('${project.id}')">View</a>
-          <a href="#" onclick="printProject('${project.id}')">Generate Project Report</a>
           <a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>
         `
       : isFinanceScope()
@@ -3227,6 +3225,11 @@ if (editProjectForm) {
 
 // PRINT REPORT WITH LOGO
 window.printProject = async function(id) {
+  if (isOperationsScope()) {
+    alert("Project Manager / Operations Staff can generate PPR only.");
+    return;
+  }
+
   const { data: project, error } = await supabase
     .from("projects")
     .select("*")
