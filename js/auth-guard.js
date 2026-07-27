@@ -70,6 +70,7 @@ function getEffectivePermissions(role, permissions) {
 
 function trimSidebarForRole(permissions) {
   const operationsScope = isOperationsRole();
+  const financeScope = isFinanceRole();
   const allowedPages = new Set(
     Object.entries(PAGE_PERMISSIONS)
       .filter(([, permission]) => permissions.includes(permission))
@@ -81,6 +82,10 @@ function trimSidebarForRole(permissions) {
     const page = href.split("/").pop();
 
     if (page === "index.html") return;
+    if (financeScope && page === "reports-audit.html") {
+      link.remove();
+      return;
+    }
     if (operationsScope && page === "projects.html") {
       link.textContent = "Project Monitoring";
     }
