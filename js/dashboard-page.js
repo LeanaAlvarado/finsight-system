@@ -266,7 +266,11 @@ function renderTopProfitabilityList(projectAnalytics) {
 function getInventoryProjectLabel(projects, projectCode = "") {
   const normalizedCode = normalizeMatchValue(projectCode);
   const project = projects.find(item => normalizeMatchValue(item.project_code) === normalizedCode);
-  return project ? getProjectLabel(project) : (projectCode || "Unassigned Materials");
+  return project ? getProjectLabel(project) : projectCode;
+}
+
+function getProjectLinkedMaterials(inventory = []) {
+  return inventory.filter(item => String(item.project_code || "").trim());
 }
 
 function renderInventoryProjectList(projects, inventory) {
@@ -275,10 +279,9 @@ function renderInventoryProjectList(projects, inventory) {
 
   const totals = new Map();
 
-  inventory.forEach(item => {
+  getProjectLinkedMaterials(inventory).forEach(item => {
     const projectCode = String(item.project_code || "").trim();
-    const key = projectCode || "Unassigned Materials";
-    totals.set(key, (totals.get(key) || 0) + (number(item.qty) * number(item.price)));
+    totals.set(projectCode, (totals.get(projectCode) || 0) + (number(item.qty) * number(item.price)));
   });
 
   const rankedProjects = [...totals.entries()]
@@ -465,8 +468,9 @@ function renderCategoryBreakdownList(categoryTotals) {
 
 function renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue) {
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
-  const projectMaterialCost = inventory.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
-  const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, inventory);
+  const projectMaterials = getProjectLinkedMaterials(inventory);
+  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+  const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
   const categoryTotals = new Map();
 
   expenses.forEach(expense => addCategoryTotal(categoryTotals, expense.category, expense.amount));
@@ -492,7 +496,7 @@ function renderBusinessIntelligence(projects, expenses, payroll, inventory, reve
   renderCategoryBreakdownList(categoryTotals);
   renderProfitabilityTable(projectAnalytics);
   renderTopProfitabilityList(projectAnalytics);
-  renderInventoryProjectList(projects, inventory);
+  renderInventoryProjectList(projects, projectMaterials);
   renderCostAlerts(projectAnalytics);
   renderBusinessInsights(projectAnalytics, categoryTotals, {
     revenue,
@@ -543,7 +547,8 @@ async function loadDashboard(){
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
-  const projectMaterialCost = inventory.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+  const projectMaterials = getProjectLinkedMaterials(inventory);
+  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
@@ -554,10 +559,10 @@ async function loadDashboard(){
   setText("totalExpenses", peso(expenseTotal));
   setText("netProfit", peso(profit));
   setText("projectCount", projects.length);
-  setText("inventoryValue", inventory.length);
-  setText("inventoryCount", inventory.length);
+  setText("inventoryValue", projectMaterials.length);
+  setText("inventoryCount", projectMaterials.length);
   setText("inventoryPanelValue", peso(0));
-  setText("inventoryPanelCount", inventory.length);
+  setText("inventoryPanelCount", projectMaterials.length);
   setText("projectMini", projects.length);
   setText("revenueSmall", peso(revenue));
   setText("expenseSmall", peso(expenseTotal));
@@ -631,7 +636,7 @@ async function loadDashboard(){
     }
   });
 
-  renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue);
+  renderBusinessIntelligence(projects, expenses, payroll, projectMaterials, revenue);
 }
 
 function refreshDashboardNow() {

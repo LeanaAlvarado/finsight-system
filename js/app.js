@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260727-bi-project-materials-v19";
+const appVersion = "20260727-bi-linked-materials-v20";
 
 function toTitleCase(value = "") {
   return String(value || "User")
