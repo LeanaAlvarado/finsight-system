@@ -23,8 +23,7 @@ const FINANCE_MODULES = [
 const FINANCE_ROLE_PATTERN = /(finance|accountant|accounting)/i;
 const OPERATIONS_MODULES = [
   "Payroll & Expenses",
-  "Project Monitoring",
-  "Reports & Audit Logs"
+  "Project Monitoring"
 ];
 const OPERATIONS_ROLE_PATTERN = /(project\s*manager|operations?\s*staff|operations?)/i;
 const LEGACY_PROJECT_PERMISSION = `Project Monitoring ${String.fromCharCode(38)} ${String.fromCharCode(65, 110, 97, 108, 121, 116, 105, 99, 115)}`;
@@ -82,7 +81,7 @@ function trimSidebarForRole(permissions) {
     const page = href.split("/").pop();
 
     if (page === "index.html") return;
-    if (financeScope && page === "reports-audit.html") {
+    if ((financeScope || operationsScope) && page === "reports-audit.html") {
       link.remove();
       return;
     }

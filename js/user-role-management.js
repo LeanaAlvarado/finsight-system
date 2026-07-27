@@ -49,8 +49,7 @@ const DEFAULT_ROLES = [
     name: "Project Manager / Operations Staff",
     permissions: [
       "Payroll & Expenses",
-      "Project Monitoring",
-      "Reports & Audit Logs"
+      "Project Monitoring"
     ]
   },
   {

@@ -53,8 +53,7 @@ const FINANCE_PERMISSIONS = [
 
 const OPERATIONS_PERMISSIONS = [
   "Payroll & Expenses",
-  "Project Monitoring",
-  "Reports & Audit Logs"
+  "Project Monitoring"
 ];
 
 function isFinanceRole(roleName = "") {
