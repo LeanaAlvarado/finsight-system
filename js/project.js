@@ -3583,7 +3583,7 @@ window.generatePPR = async function(id) {
         </div>
 
         <div class="sig">
-          ${escapeProjectHtml(project.ppr_noted_by || "") || "&nbsp;"}<br>
+          &nbsp;<br>
           Noted By
         </div>
       </div>
