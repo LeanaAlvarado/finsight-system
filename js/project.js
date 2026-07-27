@@ -3578,12 +3578,12 @@ window.generatePPR = async function(id) {
 
       <div class="signatures">
         <div class="sig">
-          ${project.ppr_prepared_by || "Prepared By"}<br>
+          ${escapeProjectHtml(project.ppr_prepared_by || "") || "&nbsp;"}<br>
           Prepared By
         </div>
 
         <div class="sig">
-          ${project.ppr_noted_by || "Noted By"}<br>
+          ${escapeProjectHtml(project.ppr_noted_by || "") || "&nbsp;"}<br>
           Noted By
         </div>
       </div>

@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260727-operations-no-audit-v24";
+const appVersion = "20260727-ppr-signature-fix-v25";
 
 function toTitleCase(value = "") {
   return String(value || "User")
