@@ -753,15 +753,17 @@ function renderUsers() {
 function renderRoles() {
   const roles = rolesCache;
 
-  roleTable.innerHTML = roles.map(role => `
-    <tr>
-      <td>${escapeHtml(role.name)}</td>
-      <td>${role.permissions.map(permission => `<span class="permission-pill">${escapeHtml(permission)}</span>`).join("")}</td>
-      <td class="action-links">
-        <a href="#" onclick="deleteRole('${role.id}')">Delete</a>
-      </td>
-    </tr>
-  `).join("");
+  if (typeof roleTable !== "undefined" && roleTable) {
+    roleTable.innerHTML = roles.map(role => `
+      <tr>
+        <td>${escapeHtml(role.name)}</td>
+        <td>${role.permissions.map(permission => `<span class="permission-pill">${escapeHtml(permission)}</span>`).join("")}</td>
+        <td class="action-links">
+          <a href="#" onclick="deleteRole('${role.id}')">Delete</a>
+        </td>
+      </tr>
+    `).join("");
+  }
 
   renderRoleSelect(roles);
   renderUsers();
