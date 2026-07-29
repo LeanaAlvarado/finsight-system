@@ -615,7 +615,7 @@ textarea:focus{
 
 .inventory-list-toolbar{
   display:grid;
-  grid-template-columns:minmax(220px, 1.4fr) repeat(5, minmax(145px, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(165px, 1fr));
   gap:10px;
   margin:14px 0;
 }

@@ -41,7 +41,19 @@ const PROPOSAL_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const MATERIAL_CATALOG_KEY = "lemyu_material_catalog";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
+const FEEDBACK_PAGE_SIZE = 10;
 let proposalMaterialOptions = [];
+let feedbackRecords = [];
+let feedbackProjects = [];
+let feedbackCurrentPage = 1;
+let feedbackLoadError = "";
+const feedbackListState = {
+  search: "",
+  rating: "all",
+  status: "all",
+  date: "all",
+  sort: "newest"
+};
 const CCTV_DEFAULTS = {
   intro: "Supply & Installation Quotation of Tiandy CCTV and Witek Communication Solution\n2MP HYBRID IP CCTV W/ FIBER OPTIC INSTALLATION. We are pleased to offer you the following products for consideration.",
   installationCharge: "INSTALLATION CHARGE",
@@ -822,7 +834,185 @@ proposalForm.addEventListener("submit", async event => {
   }
 });
 
+function getFeedbackProject(feedback = {}) {
+  return feedbackProjects.find(project => String(project.id || "") === String(feedback.project_id || ""));
+}
+
+function getFeedbackRating(feedback = {}) {
+  return number(feedback.rating || feedback.overall_satisfaction);
+}
+
+function getFeedbackDate(feedback = {}) {
+  return feedback.date || feedback.feedback_date || feedback.created_at || "";
+}
+
+function getFeedbackStatus(feedback = {}) {
+  return feedback.status || feedback.feedback_status || "Active";
+}
+
+function isWithinFeedbackDateFilter(feedback = {}) {
+  const dateFilter = feedbackListState.date;
+  if (dateFilter === "all") return true;
+
+  const rawDate = getFeedbackDate(feedback);
+  if (!rawDate) return dateFilter === "no_date";
+
+  const feedbackDate = new Date(rawDate);
+  if (Number.isNaN(feedbackDate.getTime())) return dateFilter === "no_date";
+
+  const today = new Date();
+  if (dateFilter === "today") {
+    return feedbackDate.getFullYear() === today.getFullYear()
+      && feedbackDate.getMonth() === today.getMonth()
+      && feedbackDate.getDate() === today.getDate();
+  }
+
+  if (dateFilter === "this_month") {
+    return feedbackDate.getFullYear() === today.getFullYear()
+      && feedbackDate.getMonth() === today.getMonth();
+  }
+
+  if (dateFilter === "this_year") {
+    return feedbackDate.getFullYear() === today.getFullYear();
+  }
+
+  return true;
+}
+
+function getFilteredFeedbackRecords() {
+  const search = feedbackListState.search.trim().toLowerCase();
+
+  return feedbackRecords
+    .filter(feedback => {
+      if (!search) return true;
+
+      const project = getFeedbackProject(feedback);
+      const haystack = [
+        feedback.client_name,
+        feedback.comments,
+        feedback.recommendations,
+        project?.project_title,
+        project?.project_code,
+        project?.client_name
+      ].join(" ").toLowerCase();
+
+      return haystack.includes(search);
+    })
+    .filter(feedback => {
+      if (feedbackListState.rating === "all") return true;
+      return Math.round(getFeedbackRating(feedback)) === Number(feedbackListState.rating);
+    })
+    .filter(feedback => {
+      if (feedbackListState.status === "all") return true;
+      return getFeedbackStatus(feedback).toLowerCase() === feedbackListState.status.toLowerCase();
+    })
+    .filter(feedback => isWithinFeedbackDateFilter(feedback))
+    .sort((a, b) => {
+      const dateA = new Date(getFeedbackDate(a) || 0).getTime() || 0;
+      const dateB = new Date(getFeedbackDate(b) || 0).getTime() || 0;
+      const ratingA = getFeedbackRating(a);
+      const ratingB = getFeedbackRating(b);
+      const clientA = String(a.client_name || "").toLowerCase();
+      const clientB = String(b.client_name || "").toLowerCase();
+
+      if (feedbackListState.sort === "oldest") return dateA - dateB || clientA.localeCompare(clientB);
+      if (feedbackListState.sort === "rating_desc") return ratingB - ratingA || dateB - dateA;
+      if (feedbackListState.sort === "rating_asc") return ratingA - ratingB || dateB - dateA;
+      if (feedbackListState.sort === "client_asc") return clientA.localeCompare(clientB) || dateB - dateA;
+      return dateB - dateA || clientA.localeCompare(clientB);
+    });
+}
+
+function hasActiveFeedbackFilters() {
+  return Boolean(feedbackListState.search.trim())
+    || feedbackListState.rating !== "all"
+    || feedbackListState.status !== "all"
+    || feedbackListState.date !== "all";
+}
+
+function renderFeedbackPagination(totalItems) {
+  const pagination = document.getElementById("feedbackPagination");
+  const summary = document.getElementById("feedbackPaginationSummary");
+  const controls = document.getElementById("feedbackPaginationControls");
+  if (!pagination || !summary || !controls) return;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / FEEDBACK_PAGE_SIZE));
+  feedbackCurrentPage = Math.min(Math.max(feedbackCurrentPage, 1), totalPages);
+  const startIndex = totalItems ? ((feedbackCurrentPage - 1) * FEEDBACK_PAGE_SIZE) + 1 : 0;
+  const endIndex = Math.min(feedbackCurrentPage * FEEDBACK_PAGE_SIZE, totalItems);
+
+  pagination.hidden = false;
+  summary.textContent = totalItems
+    ? `Showing ${startIndex}-${endIndex} of ${totalItems} feedback records`
+    : "Showing 0 of 0 feedback records";
+
+  const pageWindow = 5;
+  const firstPage = Math.max(1, Math.min(feedbackCurrentPage - 2, totalPages - pageWindow + 1));
+  const lastPage = Math.min(totalPages, firstPage + pageWindow - 1);
+  const pageButtons = [];
+
+  for (let page = firstPage; page <= lastPage; page += 1) {
+    pageButtons.push(`
+      <button type="button" class="${page === feedbackCurrentPage ? "active" : ""}" ${page === feedbackCurrentPage ? "aria-current=\"page\"" : ""} onclick="goToFeedbackPage(${page})">${page}</button>
+    `);
+  }
+
+  controls.innerHTML = `
+    <button type="button" onclick="goToFeedbackPage(${feedbackCurrentPage - 1})" ${feedbackCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
+    ${pageButtons.join("")}
+    <button type="button" onclick="goToFeedbackPage(${feedbackCurrentPage + 1})" ${feedbackCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+}
+
+function renderFeedbackTable() {
+  if (!feedbackTable) return;
+
+  if (feedbackLoadError) {
+    feedbackTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Unable to load client feedback records. Please try again.</td></tr>`;
+    renderFeedbackPagination(0);
+    return;
+  }
+
+  const feedbacks = getFilteredFeedbackRecords();
+  const totalItems = feedbacks.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / FEEDBACK_PAGE_SIZE));
+  feedbackCurrentPage = Math.min(Math.max(feedbackCurrentPage, 1), totalPages);
+  const startIndex = (feedbackCurrentPage - 1) * FEEDBACK_PAGE_SIZE;
+  const pageFeedbacks = feedbacks.slice(startIndex, startIndex + FEEDBACK_PAGE_SIZE);
+
+  if (!pageFeedbacks.length) {
+    const message = feedbackRecords.length && hasActiveFeedbackFilters()
+      ? "No feedback records match the selected filters."
+      : "No client feedback records found.";
+    feedbackTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
+    renderFeedbackPagination(totalItems);
+    return;
+  }
+
+  feedbackTable.innerHTML = pageFeedbacks.map(feedback => {
+    const project = getFeedbackProject(feedback);
+    const rating = getFeedbackRating(feedback);
+    const date = getFeedbackDate(feedback) || "-";
+
+    return `
+      <tr>
+        <td>${escapeHtml(project ? project.project_title : "-")}</td>
+        <td>${escapeHtml(feedback.client_name || "-")}</td>
+        <td>${number(rating)} / 5</td>
+        <td>${formatDate(date)}</td>
+        <td>${escapeHtml(feedback.comments || "")}</td>
+      </tr>
+    `;
+  }).join("");
+
+  renderFeedbackPagination(totalItems);
+}
+
 async function loadFeedback(){
+
+  if (feedbackTable) {
+    feedbackTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading client feedback records...</td></tr>`;
+  }
 
   let feedbackResult = await readTable("feedback", { orderBy: "created_at" });
 
@@ -830,41 +1020,60 @@ async function loadFeedback(){
     feedbackResult = await readTable("feedback");
   }
 
-  const feedbacks = feedbackResult.data || [];
+  if (feedbackResult.error) {
+    feedbackLoadError = feedbackResult.error.message || "Unable to load client feedback records.";
+    feedbackRecords = [];
+    renderFeedbackTable();
+    return;
+  }
+
+  feedbackLoadError = "";
+  feedbackRecords = feedbackResult.data || [];
   const { data: projects = [] } = await readTable("projects");
+  feedbackProjects = projects || [];
 
   // revenue
-  const totalRevenueVal = projects.reduce((s,p)=>s + number(p.contract_amount),0);
+  const totalRevenueVal = feedbackProjects.reduce((s,p)=>s + number(p.contract_amount),0);
   setText("totalRevenue", peso(totalRevenueVal));
 
   // stats
-  setText("feedbackCount", feedbacks.length);
+  setText("feedbackCount", feedbackRecords.length);
 
-  const avg = feedbacks.length
-    ? (feedbacks.reduce((s,f)=>s + number(f.rating || f.overall_satisfaction),0)/feedbacks.length).toFixed(1)
+  const avg = feedbackRecords.length
+    ? (feedbackRecords.reduce((s,f)=>s + number(f.rating || f.overall_satisfaction),0)/feedbackRecords.length).toFixed(1)
     : 0;
 
   setText("avgRating", avg + "/5");
 
-  setText("latestStatus", feedbacks.length ? "Active" : "No Data");
+  setText("latestStatus", feedbackRecords.length ? "Active" : "No Data");
+  renderFeedbackTable();
+}
 
-  // table
-  feedbackTable.innerHTML = "";
+window.goToFeedbackPage = function(page) {
+  const totalPages = Math.max(1, Math.ceil(getFilteredFeedbackRecords().length / FEEDBACK_PAGE_SIZE));
+  feedbackCurrentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
+  renderFeedbackTable();
+};
 
-  feedbacks.forEach(f=>{
-    const proj = projects.find(p=>p.id == f.project_id);
-    const rating = f.rating || f.overall_satisfaction || 0;
-    const date = f.date || f.feedback_date || f.created_at || "-";
+function bindFeedbackFilters() {
+  const controls = [
+    ["feedbackSearch", "search"],
+    ["feedbackRatingFilter", "rating"],
+    ["feedbackStatusFilter", "status"],
+    ["feedbackDateFilter", "date"],
+    ["feedbackSort", "sort"]
+  ];
 
-    feedbackTable.innerHTML += `
-      <tr>
-        <td>${escapeHtml(proj ? proj.project_title : "-")}</td>
-        <td>${escapeHtml(f.client_name || "-")}</td>
-        <td>${number(rating)} / 5</td>
-        <td>${formatDate(date)}</td>
-        <td>${escapeHtml(f.comments || "")}</td>
-      </tr>
-    `;
+  controls.forEach(([id, stateKey]) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+
+    const eventName = element.type === "search" ? "input" : "change";
+    element.addEventListener(eventName, event => {
+      feedbackListState[stateKey] = event.target.value || (stateKey === "search" ? "" : "all");
+      feedbackCurrentPage = 1;
+      renderFeedbackTable();
+    });
   });
 }
 
@@ -877,6 +1086,7 @@ setCctvDefaultFields();
 toggleProposalQuotationType();
 applyFinanceScope();
 applyContractOwnerScope();
+bindFeedbackFilters();
 loadFeedback();
 supabase
   .channel("feedback-live")

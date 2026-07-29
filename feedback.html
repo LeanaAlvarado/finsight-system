@@ -316,6 +316,42 @@
   <section class="card">
   <h3><span class="num">03</span> Client Feedback Dashboard</h3>
   <p class="muted">All feedback submitted through QR/public feedback forms will appear here automatically. Feedback is read-only and cannot be edited.</p>
+    <div class="inventory-list-toolbar">
+      <input id="feedbackSearch" class="search" type="search" placeholder="Search client, project, or comments">
+
+      <select id="feedbackRatingFilter">
+        <option value="all">All ratings</option>
+        <option value="5">5 stars</option>
+        <option value="4">4 stars</option>
+        <option value="3">3 stars</option>
+        <option value="2">2 stars</option>
+        <option value="1">1 star</option>
+      </select>
+
+      <select id="feedbackStatusFilter">
+        <option value="all">All status</option>
+        <option value="Active">Active</option>
+        <option value="Reviewed">Reviewed</option>
+        <option value="Archived">Archived</option>
+      </select>
+
+      <select id="feedbackDateFilter">
+        <option value="all">All dates</option>
+        <option value="today">Today</option>
+        <option value="this_month">This month</option>
+        <option value="this_year">This year</option>
+        <option value="no_date">No date</option>
+      </select>
+
+      <select id="feedbackSort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="rating_desc">Highest rating</option>
+        <option value="rating_asc">Lowest rating</option>
+        <option value="client_asc">Client A-Z</option>
+      </select>
+    </div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -331,12 +367,17 @@
         <tbody id="feedbackTable"></tbody>
       </table>
     </div>
+
+    <div id="feedbackPagination" class="pagination-bar" hidden>
+      <span id="feedbackPaginationSummary">Showing 0 of 0 feedback records</span>
+      <div id="feedbackPaginationControls" class="pagination-controls"></div>
+    </div>
   </section>
 
 </main>
 
 <!-- SCRIPT -->
-<script type="module" src="js/app.js?v=20260729-project-pagination-no-personnel-v41"></script>
+<script type="module" src="js/app.js?v=20260729-feedback-pagination-v42"></script>
 
 </body>
 </html>
