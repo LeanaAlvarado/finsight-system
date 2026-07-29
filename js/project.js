@@ -2132,6 +2132,10 @@ function toggleEditQuotationTypeView() {
   if (cctvPanel) cctvPanel.style.display = isCctv ? "" : "none";
   setPanelControlsDisabled(panel, !isManpower);
   setPanelControlsDisabled(cctvPanel, !isCctv);
+  if (isManpower && edit_manpower_down_payment) {
+    edit_manpower_down_payment.disabled = false;
+    edit_manpower_down_payment.readOnly = false;
+  }
 
   EDIT_MANPOWER_HIDDEN_FIELD_IDS.forEach(id => {
     const field = document.getElementById(id);
@@ -3632,6 +3636,7 @@ window.editProject = async function(id) {
   edit_manpower_client_email.value = manpowerDetails.clientEmail || project.client_email || "";
   edit_manpower_location.value = project.location || "";
   edit_manpower_down_payment.value = getProjectDownPayment(project);
+  edit_down_payment.value = edit_manpower_down_payment.value;
   const editManpowerStatus = document.getElementById("edit_manpower_status");
   if (editManpowerStatus) editManpowerStatus.value = project.status || "Pending";
   edit_manpower_prepared_by.value = manpowerDetails.preparedBy || project.ppr_prepared_by || "";
@@ -3665,6 +3670,9 @@ window.editProject = async function(id) {
 
 const editProjectForm = document.getElementById("editProjectForm");
 document.getElementById("edit_quotation_type")?.addEventListener("change", toggleEditQuotationTypeView);
+document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
+  if (edit_down_payment) edit_down_payment.value = event.target.value;
+});
 document.getElementById("edit_cctv_material_select")?.addEventListener("change", event => {
   applyEditCctvSelectedMaterial(event.target.value);
   event.target.value = "";
