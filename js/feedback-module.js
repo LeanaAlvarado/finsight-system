@@ -26,6 +26,7 @@ const manpower_client_name = document.getElementById("manpower_client_name");
 const manpower_client_contact = document.getElementById("manpower_client_contact");
 const manpower_client_email = document.getElementById("manpower_client_email");
 const manpower_location = document.getElementById("manpower_location");
+const manpower_duration_days = document.getElementById("manpower_duration_days");
 const manpower_prepared_by = document.getElementById("manpower_prepared_by");
 const manpower_prepared_position = document.getElementById("manpower_prepared_position");
 const manpower_terms = document.getElementById("manpower_terms");
@@ -612,6 +613,7 @@ function buildProposalRemarks() {
   const manpowerLines = [
     "Quotation Type: Manpower",
     manpower_client_email.value ? `Client Email: ${manpower_client_email.value}` : "",
+    manpower_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(manpower_duration_days.value)))}` : "",
     manpower_prepared_by.value ? `Prepared By: ${manpower_prepared_by.value}` : "",
     manpower_prepared_position.value ? `Position: ${manpower_prepared_position.value}` : "",
     manpower_terms.value ? `Terms of Service: ${manpower_terms.value}` : "",

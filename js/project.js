@@ -643,6 +643,14 @@ function getContractFileName(contract = {}) {
 }
 
 function getProjectDurationText(project = {}) {
+  if (getProjectQuotationType(project) === "manpower") {
+    const manpower = getManpowerQuotationDetails(project);
+    if (Number(manpower.durationDays || 0) > 0) {
+      const days = Number(manpower.durationDays);
+      return `${days} day${days === 1 ? "" : "s"}`;
+    }
+  }
+
   if (project.start_date && project.target_completion) {
     return `${formatDate(project.start_date)} to ${formatDate(project.target_completion)}`;
   }
@@ -1258,6 +1266,7 @@ function getManpowerQuotationDetails(project) {
     additionalComments: "",
     preparedBy: project.ppr_prepared_by || "",
     preparedPosition: "",
+    durationDays: 0,
     items: Array.isArray(project.quotation_items) ? project.quotation_items : getLocalQuotationItems(project.id)
   };
 
@@ -1310,6 +1319,13 @@ function getManpowerQuotationDetails(project) {
     const preparedByMatch = trimmed.match(/^prepared by:\s*(.*)$/i);
     if (preparedByMatch) {
       details.preparedBy = preparedByMatch[1] || details.preparedBy;
+      activeMultilineField = "";
+      return;
+    }
+
+    const durationDaysMatch = trimmed.match(/^project duration days:\s*(.*)$/i);
+    if (durationDaysMatch) {
+      details.durationDays = Math.max(0, Math.trunc(Number(String(durationDaysMatch[1]).replace(/[^0-9.]/g, "")) || 0));
       activeMultilineField = "";
       return;
     }
@@ -1943,6 +1959,7 @@ function buildEditManpowerRemarks() {
     "Quotation Type: Manpower",
     edit_manpower_client_email.value ? `Client Email: ${edit_manpower_client_email.value}` : "",
     edit_manpower_down_payment.value ? `Down Payment Percent: ${edit_manpower_down_payment.value}%` : "",
+    edit_manpower_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(Number(edit_manpower_duration_days.value || 0)))}` : "",
     edit_manpower_prepared_by.value ? `Prepared By: ${edit_manpower_prepared_by.value}` : "",
     edit_manpower_prepared_position.value ? `Position: ${edit_manpower_prepared_position.value}` : "",
     edit_manpower_terms.value ? `Terms of Service: ${edit_manpower_terms.value}` : "",
@@ -3422,6 +3439,7 @@ window.editProject = async function(id) {
   edit_manpower_client_contact.value = project.contact_number || "";
   edit_manpower_client_email.value = manpowerDetails.clientEmail || project.client_email || "";
   edit_manpower_location.value = project.location || "";
+  edit_manpower_duration_days.value = manpowerDetails.durationDays || "";
   edit_manpower_down_payment.value = getPercentFromAmount(getProjectDownPayment(project), project.contract_amount).toFixed(2);
   const editManpowerStatus = document.getElementById("edit_manpower_status");
   if (editManpowerStatus) editManpowerStatus.value = project.status || "Pending";
