@@ -5,6 +5,30 @@ let expenseCategoryChart = null;
 let dashboardLoadPromise = null;
 let dashboardReloadQueued = false;
 let dashboardRefreshTimer = null;
+let latestCostAlerts = [];
+let showingAllCostAlerts = false;
+
+const ALERT_WARNING_THRESHOLD = 80;
+const ALERT_CRITICAL_THRESHOLD = 100;
+const ALERT_PREVIEW_LIMIT = 5;
+const ACTIVE_ALERT_STATUSES = new Set(["Active", "Viewed"]);
+
+function getCurrentRole() {
+  return String(
+    localStorage.getItem("lemyu_user_role_label")
+    || localStorage.getItem("lemyu_user_role")
+    || ""
+  ).toLowerCase();
+}
+
+function canViewCostOverrunAlerts() {
+  const role = getCurrentRole();
+  if (/(finance|accountant|accounting|project\s*manager|operations?\s*staff|operations?)/i.test(role)) {
+    return false;
+  }
+
+  return /(owner|manager|administrator|admin|system administrator)/i.test(role);
+}
 
 function readLocalJson(key, fallback) {
   try {
@@ -53,6 +77,19 @@ function recordBelongsToProject(record = {}, project = {}) {
     || (recordProjectTitle && projectTitle && recordProjectTitle === projectTitle);
 }
 
+function isValidatedProjectExpense(expense = {}) {
+  const status = normalizeMatchValue(
+    expense.validation_status
+    || expense.receipt_status
+    || expense.approval_status
+    || expense.status
+    || ""
+  );
+
+  if (!status) return true;
+  return ["validated", "approved", "paid", "completed", "accepted"].includes(status);
+}
+
 function toTitleCase(value = "") {
   return String(value || "User")
     .split(/\s+/)
@@ -85,6 +122,19 @@ function getRecordDate(record = {}) {
     || record.start_date
     || record.created_at
     || new Date().toISOString();
+}
+
+function getAlertTimestamp(value) {
+  const date = value ? new Date(value) : new Date();
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+
+  return safeDate.toLocaleString("en-PH", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function getMonthKey(date) {
@@ -306,34 +356,335 @@ function renderInventoryProjectList(projects, inventory) {
   `).join("");
 }
 
-function renderCostAlerts(projectAnalytics) {
+function getProjectActualExpenses(project, expenses = []) {
+  const linkedExpenses = expenses
+    .filter(expense => recordBelongsToProject(expense, project))
+    .filter(expense => normalizeMatchValue(expense.category) !== "payroll")
+    .filter(isValidatedProjectExpense);
+
+  const uniqueExpenses = new Map();
+
+  linkedExpenses.forEach((expense, index) => {
+    const key = expense.id
+      || [
+        expense.project_id,
+        expense.project_code,
+        expense.category,
+        expense.amount,
+        expense.date || expense.expense_date,
+        expense.description
+      ].map(value => String(value || "").trim()).join("|")
+      || `expense-${index}`;
+
+    if (!uniqueExpenses.has(key)) {
+      uniqueExpenses.set(key, expense);
+    }
+  });
+
+  return [...uniqueExpenses.values()]
+    .reduce((sum, expense) => sum + Math.max(number(expense.amount), 0), Math.max(number(project.initial_actual_cost), 0));
+}
+
+function getAlertSeverity(utilization) {
+  if (utilization >= ALERT_CRITICAL_THRESHOLD) return "Critical";
+  if (utilization >= ALERT_WARNING_THRESHOLD) return "Warning";
+  return "";
+}
+
+function getCostAlertSortRank(alert) {
+  if (alert.exceededAmount > 0) return 0;
+  if (alert.utilization >= ALERT_CRITICAL_THRESHOLD) return 1;
+  return 2;
+}
+
+function buildCostOverrunAlerts(projects, expenses, savedAlerts = []) {
+  const savedByProjectSeverity = new Map(
+    savedAlerts.map(alert => [`${alert.project_id}|${alert.severity}`, alert])
+  );
+
+  return projects
+    .map(project => {
+      const budget = Math.max(number(project.project_budget), 0);
+      if (budget <= 0) return null;
+
+      const projectIdentifier = String(project.id || project.project_code || getProjectLabel(project)).trim();
+      if (!projectIdentifier) return null;
+
+      const actualExpenses = getProjectActualExpenses(project, expenses);
+      const utilization = (actualExpenses / budget) * 100;
+      const severity = getAlertSeverity(utilization);
+      if (!severity) return null;
+
+      const exceededAmount = Math.max(actualExpenses - budget, 0);
+      const remainingAmount = Math.max(budget - actualExpenses, 0);
+      const savedAlert = savedByProjectSeverity.get(`${project.id}|${severity}`) || {};
+
+      return {
+        id: savedAlert.id || `${projectIdentifier}-${severity.toLowerCase()}`,
+        projectId: projectIdentifier,
+        projectCode: project.project_code || "",
+        projectName: getProjectLabel(project),
+        budget,
+        actualExpenses,
+        utilization,
+        exceededAmount,
+        remainingAmount,
+        severity,
+        status: savedAlert.status || "Active",
+        createdAt: savedAlert.created_at || savedAlert.createdAt || new Date().toISOString(),
+        message: exceededAmount > 0
+          ? `${getProjectLabel(project)} has exceeded its approved budget by ${peso(exceededAmount)}.`
+          : `${getProjectLabel(project)} has used ${utilization.toFixed(0)}% of its approved budget.`
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => getAlertSortRank(a) - getAlertSortRank(b) || b.utilization - a.utilization);
+}
+
+function getAlertSortRank(alert) {
+  return getCostAlertSortRank(alert);
+}
+
+function renderAlertStatusBadge(severity) {
+  return `<span class="cost-alert-badge ${severity.toLowerCase()}">${severity}</span>`;
+}
+
+function renderCostAlerts(alerts) {
   const list = document.getElementById("costAlertList");
   if (!list) return;
 
-  const alerts = projectAnalytics
-    .filter(item => item.revenue > 0 && (item.profit < 0 || item.costRatio >= 70 || item.margin < 15))
-    .sort((a, b) => b.costRatio - a.costRatio)
-    .slice(0, 5);
+  const alertPanel = document.querySelector(".alerts-panel");
+  if (alertPanel) alertPanel.hidden = !canViewCostOverrunAlerts();
+  if (!canViewCostOverrunAlerts()) return;
 
   if (!alerts.length) {
     list.innerHTML = `
       <div class="alert-item good-alert">
         <strong>No cost overrun detected</strong>
-        <span>Current projects are within the monitored profitability range.</span>
+        <span>All monitored projects are below 80% budget utilization.</span>
       </div>
     `;
+    document.getElementById("viewAllCostAlerts")?.setAttribute("hidden", "");
     return;
   }
 
-  list.innerHTML = alerts.map(item => {
-    const status = getProjectStatus(item);
+  const visibleAlerts = showingAllCostAlerts ? alerts : alerts.slice(0, ALERT_PREVIEW_LIMIT);
+  const viewAllButton = document.getElementById("viewAllCostAlerts");
+
+  if (viewAllButton) {
+    viewAllButton.hidden = alerts.length <= ALERT_PREVIEW_LIMIT;
+    viewAllButton.textContent = showingAllCostAlerts ? "Show preview" : `View all alerts (${alerts.length})`;
+  }
+
+  list.innerHTML = visibleAlerts.map(alert => {
+    const amountLabel = alert.exceededAmount > 0
+      ? `Exceeded by ${peso(alert.exceededAmount)}`
+      : `${peso(alert.remainingAmount)} remaining`;
+    const progress = Math.min(alert.utilization, 140);
+
     return `
-      <div class="alert-item ${status === "Critical" ? "danger-alert" : "warning-alert"}">
-        <strong>${escapeHtml(item.label)}</strong>
-        <span>${item.costRatio.toFixed(2)}% of revenue is already covered by budget, taxes, expenses, and payroll.</span>
+      <div class="cost-alert-card ${alert.severity.toLowerCase()}">
+        <div class="cost-alert-top">
+          <strong>${escapeHtml(alert.projectName)}</strong>
+          ${renderAlertStatusBadge(alert.severity)}
+        </div>
+        <div class="cost-alert-progress" aria-label="${escapeHtml(alert.projectName)} budget utilization ${alert.utilization.toFixed(2)} percent">
+          <span style="width:${Math.min(progress, 100).toFixed(2)}%"></span>
+        </div>
+        <div class="cost-alert-grid">
+          <span><small>Approved Budget</small><strong>${peso(alert.budget)}</strong></span>
+          <span><small>Actual Expenses</small><strong>${peso(alert.actualExpenses)}</strong></span>
+          <span><small>${alert.exceededAmount > 0 ? "Exceeded Amount" : "Remaining Budget"}</small><strong>${amountLabel}</strong></span>
+          <span><small>Utilization</small><strong>${alert.utilization.toFixed(2)}%</strong></span>
+        </div>
+        <button type="button" class="small-action-btn" onclick="viewCostAlert('${escapeHtml(alert.id)}', '${escapeHtml(alert.projectId)}')">View Details</button>
       </div>
     `;
   }).join("");
+}
+
+function renderCostAlertNotifications(alerts) {
+  const wrapper = document.getElementById("costAlertNotification");
+  const badge = document.getElementById("costAlertBadge");
+  const dropdownCount = document.getElementById("costAlertDropdownCount");
+  const dropdownList = document.getElementById("costAlertDropdownList");
+
+  if (!wrapper || !badge || !dropdownList) return;
+
+  const allowed = canViewCostOverrunAlerts();
+  wrapper.hidden = !allowed;
+  if (!allowed) return;
+
+  const activeAlerts = alerts.filter(alert => ACTIVE_ALERT_STATUSES.has(alert.status || "Active"));
+  badge.hidden = !activeAlerts.length;
+  badge.textContent = activeAlerts.length;
+  if (dropdownCount) {
+    dropdownCount.textContent = `${activeAlerts.length} active`;
+  }
+
+  if (!activeAlerts.length) {
+    dropdownList.innerHTML = `<div class="notification-empty">No active cost overrun alerts.</div>`;
+    return;
+  }
+
+  dropdownList.innerHTML = activeAlerts.map(alert => {
+    const amountLabel = alert.exceededAmount > 0
+      ? `Exceeded by ${peso(alert.exceededAmount)}`
+      : `${peso(alert.remainingAmount)} remaining`;
+
+    return `
+      <div class="notification-item ${alert.severity.toLowerCase()}">
+        <div class="notification-item-head">
+          <strong>${escapeHtml(alert.projectName)}</strong>
+          ${renderAlertStatusBadge(alert.severity)}
+        </div>
+        <p>${escapeHtml(alert.message)}</p>
+        <div class="notification-meta">
+          <span>Budget: ${peso(alert.budget)}</span>
+          <span>Actual: ${peso(alert.actualExpenses)}</span>
+          <span>${amountLabel}</span>
+          <span>${alert.utilization.toFixed(2)}% used</span>
+          <span>Generated: ${getAlertTimestamp(alert.createdAt)}</span>
+        </div>
+        <button type="button" class="small-action-btn" onclick="viewCostAlert('${escapeHtml(alert.id)}', '${escapeHtml(alert.projectId)}')">View Project</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function writeCostAlertAudit(action, alert, details = "") {
+  try {
+    await supabase.from("cloud_sync_audit").insert([{
+      source_key: `cost_overrun_alert:${action}:${alert.projectId || alert.project_id || ""}:${alert.severity || ""}`,
+      synced_count: 1,
+      error_count: 0
+    }]);
+  } catch (error) {
+    console.warn(`Cost alert audit not saved (${details || action}).`, error);
+  }
+}
+
+function buildAlertRecord(alert, status = alert.status || "Active") {
+  return {
+    project_id: alert.projectId,
+    alert_type: "budget_utilization",
+    severity: alert.severity,
+    budget_amount: alert.budget,
+    actual_expenses: alert.actualExpenses,
+    utilization_percentage: Number(alert.utilization.toFixed(2)),
+    exceeded_amount: alert.exceededAmount,
+    status
+  };
+}
+
+async function syncCostOverrunAlerts(currentAlerts, savedAlerts = []) {
+  if (!canViewCostOverrunAlerts()) return currentAlerts;
+
+  const savedActive = savedAlerts.filter(alert => ACTIVE_ALERT_STATUSES.has(alert.status || "Active"));
+  const currentKeys = new Set(currentAlerts.map(alert => `${alert.projectId}|${alert.severity}`));
+  const syncedAlerts = [];
+
+  for (const alert of currentAlerts) {
+    const existing = savedActive.find(item =>
+      String(item.project_id || "") === String(alert.projectId || "")
+      && String(item.severity || "") === String(alert.severity || "")
+    );
+
+    if (existing?.id) {
+      const record = {
+        ...buildAlertRecord(alert, existing.status || "Active"),
+        resolved_at: null
+      };
+      const { data, error } = await supabase
+        .from("cost_overrun_alerts")
+        .update(record)
+        .eq("id", existing.id)
+        .select("*")
+        .single();
+
+      if (!error && data) {
+        syncedAlerts.push({ ...alert, id: data.id, status: data.status, createdAt: data.created_at });
+      } else {
+        syncedAlerts.push(alert);
+      }
+      continue;
+    }
+
+    const { data, error } = await supabase
+      .from("cost_overrun_alerts")
+      .insert([buildAlertRecord(alert)])
+      .select("*")
+      .single();
+
+    if (!error && data) {
+      await writeCostAlertAudit("generated", alert);
+      syncedAlerts.push({ ...alert, id: data.id, status: data.status, createdAt: data.created_at });
+    } else {
+      console.warn("Cost overrun alert was not saved:", error?.message || error);
+      syncedAlerts.push(alert);
+    }
+  }
+
+  for (const savedAlert of savedActive) {
+    const key = `${savedAlert.project_id}|${savedAlert.severity}`;
+    if (currentKeys.has(key)) continue;
+
+    const { error } = await supabase
+      .from("cost_overrun_alerts")
+      .update({
+        status: "Resolved",
+        resolved_at: new Date().toISOString()
+      })
+      .eq("id", savedAlert.id);
+
+    if (!error) {
+      await writeCostAlertAudit("resolved", {
+        projectId: savedAlert.project_id,
+        severity: savedAlert.severity
+      });
+      await writeCostAlertAudit("budget_or_expense_corrected", {
+        projectId: savedAlert.project_id,
+        severity: savedAlert.severity
+      });
+    }
+  }
+
+  return syncedAlerts.length ? syncedAlerts : currentAlerts;
+}
+
+async function loadSavedCostAlerts() {
+  const { data = [], error } = await supabase
+    .from("cost_overrun_alerts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("Cost overrun alert table is not available yet. Run the SQL migration.", error.message || error);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function markCostAlertViewed(alertId) {
+  if (!alertId || String(alertId).includes("-warning") || String(alertId).includes("-critical")) return;
+
+  const { error } = await supabase
+    .from("cost_overrun_alerts")
+    .update({
+      status: "Viewed",
+      viewed_at: new Date().toISOString()
+    })
+    .eq("id", alertId)
+    .in("status", ["Active", "Viewed"]);
+
+  if (!error) {
+    const alert = latestCostAlerts.find(item => String(item.id) === String(alertId));
+    if (alert) {
+      alert.status = "Viewed";
+      await writeCostAlertAudit("viewed", alert);
+    }
+  }
 }
 
 function renderBusinessInsights(projectAnalytics, categoryTotals, totals) {
@@ -466,7 +817,7 @@ function renderCategoryBreakdownList(categoryTotals) {
   }).join("");
 }
 
-function renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue) {
+function renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue, costAlerts = []) {
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectMaterials = getProjectLinkedMaterials(inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
@@ -497,7 +848,8 @@ function renderBusinessIntelligence(projects, expenses, payroll, inventory, reve
   renderProfitabilityTable(projectAnalytics);
   renderTopProfitabilityList(projectAnalytics);
   renderInventoryProjectList(projects, projectMaterials);
-  renderCostAlerts(projectAnalytics);
+  renderCostAlerts(costAlerts);
+  renderCostAlertNotifications(costAlerts);
   renderBusinessInsights(projectAnalytics, categoryTotals, {
     revenue,
     profit
@@ -544,6 +896,11 @@ async function loadDashboard(){
   if (payrollResult.error || inventoryResult.error) {
     console.warn("Dashboard BI loaded without optional payroll or inventory records.", payrollResult.error || inventoryResult.error);
   }
+
+  const savedCostAlerts = canViewCostOverrunAlerts() ? await loadSavedCostAlerts() : [];
+  latestCostAlerts = canViewCostOverrunAlerts()
+    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(projects, expenses, savedCostAlerts), savedCostAlerts)
+    : [];
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
@@ -636,7 +993,7 @@ async function loadDashboard(){
     }
   });
 
-  renderBusinessIntelligence(projects, expenses, payroll, projectMaterials, revenue);
+  renderBusinessIntelligence(projects, expenses, payroll, projectMaterials, revenue, latestCostAlerts);
 }
 
 function refreshDashboardNow() {
@@ -665,8 +1022,46 @@ function scheduleDashboardRefresh(delay = 120) {
   dashboardRefreshTimer = setTimeout(refreshDashboardNow, delay);
 }
 
+window.viewCostAlert = async function(alertId, projectId) {
+  await markCostAlertViewed(alertId);
+
+  if (projectId) {
+    sessionStorage.setItem("lemyu_focus_project_id", projectId);
+  }
+
+  window.location.href = "projects.html";
+};
+
 showDashboardUser();
 refreshDashboardNow();
+document.getElementById("costAlertBell")?.addEventListener("click", async () => {
+  const dropdown = document.getElementById("costAlertDropdown");
+  const bell = document.getElementById("costAlertBell");
+  if (!dropdown || !bell) return;
+
+  const willOpen = dropdown.hidden;
+  dropdown.hidden = !willOpen;
+  bell.setAttribute("aria-expanded", String(willOpen));
+
+  if (willOpen) {
+    const activeAlerts = latestCostAlerts.filter(alert => ACTIVE_ALERT_STATUSES.has(alert.status || "Active"));
+    await Promise.all(activeAlerts.map(alert => markCostAlertViewed(alert.id)));
+    renderCostAlertNotifications(latestCostAlerts);
+  }
+});
+document.getElementById("viewAllCostAlerts")?.addEventListener("click", () => {
+  showingAllCostAlerts = !showingAllCostAlerts;
+  renderCostAlerts(latestCostAlerts);
+});
+document.addEventListener("click", event => {
+  const wrapper = document.getElementById("costAlertNotification");
+  const dropdown = document.getElementById("costAlertDropdown");
+  const bell = document.getElementById("costAlertBell");
+  if (!wrapper || !dropdown || wrapper.contains(event.target)) return;
+
+  dropdown.hidden = true;
+  bell?.setAttribute("aria-expanded", "false");
+});
 window.addEventListener("lemyu:data-sync-complete", () => scheduleDashboardRefresh(0));
 window.addEventListener("lemyu:local-data-changed", () => scheduleDashboardRefresh(0));
 window.addEventListener("storage", event => {
@@ -677,7 +1072,7 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) scheduleDashboardRefresh(0);
 });
 const dashboardChannel = supabase.channel("dashboard-live");
-["projects", "expenses", "payroll", "inventory"].forEach(table => {
+["projects", "expenses", "payroll", "inventory", "cost_overrun_alerts"].forEach(table => {
   dashboardChannel.on(
     "postgres_changes",
     { event: "*", schema: "public", table },

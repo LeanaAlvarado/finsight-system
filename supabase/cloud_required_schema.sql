@@ -204,6 +204,22 @@ create table if not exists public.cloud_sync_audit (
   created_at timestamptz default now()
 );
 
+create table if not exists public.cost_overrun_alerts (
+  id uuid primary key default gen_random_uuid(),
+  project_id text not null,
+  alert_type text not null default 'budget_utilization',
+  severity text not null check (severity in ('Warning', 'Critical')),
+  budget_amount numeric not null default 0,
+  actual_expenses numeric not null default 0,
+  utilization_percentage numeric not null default 0,
+  exceeded_amount numeric not null default 0,
+  status text not null default 'Active' check (status in ('Active', 'Viewed', 'Resolved')),
+  created_at timestamptz not null default now(),
+  viewed_at timestamptz,
+  resolved_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
 alter table public.projects add column if not exists project_code text;
 alter table public.projects add column if not exists project_title text;
 alter table public.projects add column if not exists client_name text;
@@ -354,12 +370,31 @@ alter table public.cloud_sync_audit add column if not exists synced_count intege
 alter table public.cloud_sync_audit add column if not exists error_count integer default 0;
 alter table public.cloud_sync_audit add column if not exists created_at timestamptz default now();
 
+alter table public.cost_overrun_alerts add column if not exists project_id text;
+alter table public.cost_overrun_alerts add column if not exists alert_type text default 'budget_utilization';
+alter table public.cost_overrun_alerts add column if not exists severity text;
+alter table public.cost_overrun_alerts add column if not exists budget_amount numeric default 0;
+alter table public.cost_overrun_alerts add column if not exists actual_expenses numeric default 0;
+alter table public.cost_overrun_alerts add column if not exists utilization_percentage numeric default 0;
+alter table public.cost_overrun_alerts add column if not exists exceeded_amount numeric default 0;
+alter table public.cost_overrun_alerts add column if not exists status text default 'Active';
+alter table public.cost_overrun_alerts add column if not exists created_at timestamptz default now();
+alter table public.cost_overrun_alerts add column if not exists viewed_at timestamptz;
+alter table public.cost_overrun_alerts add column if not exists resolved_at timestamptz;
+alter table public.cost_overrun_alerts add column if not exists updated_at timestamptz default now();
+
 create index if not exists projects_project_code_idx on public.projects (project_code);
 create index if not exists inventory_project_code_idx on public.inventory (project_code);
 create index if not exists expenses_project_id_idx on public.expenses (project_id);
 create index if not exists payroll_project_id_idx on public.payroll (project_id);
 create index if not exists feedback_project_id_idx on public.feedback (project_id);
 create index if not exists project_files_project_id_idx on public.project_files (project_id);
+create index if not exists cost_overrun_alerts_project_id_idx on public.cost_overrun_alerts (project_id);
+create index if not exists cost_overrun_alerts_status_idx on public.cost_overrun_alerts (status);
+create index if not exists cost_overrun_alerts_severity_idx on public.cost_overrun_alerts (severity);
+create unique index if not exists cost_overrun_alerts_active_project_severity_uidx
+on public.cost_overrun_alerts (project_id, severity)
+where status in ('Active', 'Viewed');
 
 do $$
 declare
@@ -377,7 +412,8 @@ begin
     'feedback',
     'project_files',
     'app_local_storage',
-    'cloud_sync_audit'
+    'cloud_sync_audit',
+    'cost_overrun_alerts'
   ]
   loop
     execute format('alter table public.%I enable row level security', table_name);
@@ -432,6 +468,45 @@ on public.feedback for insert
 to anon
 with check (true);
 
+create or replace function public.lemyu_can_manage_cost_overrun_alerts()
+returns boolean
+language sql
+stable
+as $$
+  select lower(coalesce(
+    auth.jwt() ->> 'app_role',
+    auth.jwt() ->> 'role_name',
+    auth.jwt() ->> 'role',
+    auth.jwt() -> 'user_metadata' ->> 'role',
+    auth.jwt() -> 'app_metadata' ->> 'role',
+    ''
+  )) in ('owner', 'owner/manager', 'manager', 'administrator', 'admin', 'system administrator');
+$$;
+
+drop policy if exists "cost_overrun_alerts_authenticated_select" on public.cost_overrun_alerts;
+drop policy if exists "cost_overrun_alerts_authenticated_insert" on public.cost_overrun_alerts;
+drop policy if exists "cost_overrun_alerts_authenticated_update" on public.cost_overrun_alerts;
+drop policy if exists "cost_overrun_alerts_authenticated_delete" on public.cost_overrun_alerts;
+
+drop policy if exists "cost_overrun_alerts_authorized_select" on public.cost_overrun_alerts;
+create policy "cost_overrun_alerts_authorized_select"
+on public.cost_overrun_alerts for select
+to authenticated
+using (public.lemyu_can_manage_cost_overrun_alerts());
+
+drop policy if exists "cost_overrun_alerts_authorized_insert" on public.cost_overrun_alerts;
+create policy "cost_overrun_alerts_authorized_insert"
+on public.cost_overrun_alerts for insert
+to authenticated
+with check (public.lemyu_can_manage_cost_overrun_alerts());
+
+drop policy if exists "cost_overrun_alerts_authorized_update" on public.cost_overrun_alerts;
+create policy "cost_overrun_alerts_authorized_update"
+on public.cost_overrun_alerts for update
+to authenticated
+using (public.lemyu_can_manage_cost_overrun_alerts())
+with check (public.lemyu_can_manage_cost_overrun_alerts());
+
 do $$
 declare
   table_name text;
@@ -446,7 +521,8 @@ begin
     'expenses',
     'payroll',
     'feedback',
-    'project_files'
+    'project_files',
+    'cost_overrun_alerts'
   ]
   loop
     execute format('drop trigger if exists set_%I_updated_at on public.%I', table_name, table_name);
@@ -462,8 +538,8 @@ with seed_roles (name, role_name, permissions, allowed_modules) as (
   values
     ('Owner', 'Owner', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
     ('Administrator', 'Administrator', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
-    ('Finance', 'Finance', '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb),
-    ('Operations', 'Operations', '["Payroll & Expenses","Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Payroll & Expenses","Project Monitoring","Reports & Audit Logs"]'::jsonb)
+    ('Finance', 'Finance', '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb, '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb),
+    ('Operations', 'Operations', '["Payroll & Expenses","Project Monitoring"]'::jsonb, '["Payroll & Expenses","Project Monitoring"]'::jsonb)
 )
 insert into public.roles (name, role_name, permissions, allowed_modules)
 select seed_roles.name, seed_roles.role_name, seed_roles.permissions, seed_roles.allowed_modules
@@ -478,8 +554,8 @@ with seed_roles (name, role_name, permissions, allowed_modules) as (
   values
     ('Owner', 'Owner', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
     ('Administrator', 'Administrator', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
-    ('Finance', 'Finance', '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb),
-    ('Operations', 'Operations', '["Payroll & Expenses","Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Payroll & Expenses","Project Monitoring","Reports & Audit Logs"]'::jsonb)
+    ('Finance', 'Finance', '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb, '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb),
+    ('Operations', 'Operations', '["Payroll & Expenses","Project Monitoring"]'::jsonb, '["Payroll & Expenses","Project Monitoring"]'::jsonb)
 )
 update public.roles
 set
@@ -542,7 +618,8 @@ begin
     'payroll',
     'feedback',
     'project_files',
-    'app_local_storage'
+    'app_local_storage',
+    'cost_overrun_alerts'
   ]
   loop
     begin

@@ -46,6 +46,19 @@
       <p>Financial management, project performance, and business intelligence overview.</p>
     </div>
     <div class="dashboard-toolbar-actions">
+      <div class="notification-wrap" id="costAlertNotification" hidden>
+        <button type="button" class="notification-bell" id="costAlertBell" aria-label="Cost overrun alerts" aria-expanded="false">
+          <span aria-hidden="true">!</span>
+          <strong id="costAlertBadge" hidden>0</strong>
+        </button>
+        <div class="notification-panel" id="costAlertDropdown" hidden>
+          <div class="notification-panel-head">
+            <strong>Cost Overrun Alerts</strong>
+            <small id="costAlertDropdownCount">0 active</small>
+          </div>
+          <div id="costAlertDropdownList" class="notification-list"></div>
+        </div>
+      </div>
       <button type="button" onclick="window.print()">Print BI Report</button>
       <div class="signed-user compact-user" aria-label="Current user">
         <small>Current Account</small>
@@ -241,8 +254,9 @@
       <div class="card-head">
         <div>
           <h3>Cost Overrun Alerts</h3>
-          <p class="muted">Projects that need owner review before costs reduce profitability.</p>
+          <p class="muted">Projects whose actual expenses are near or above approved budget.</p>
         </div>
+        <button type="button" id="viewAllCostAlerts" class="dashboard-card-link button-link" hidden>View all alerts</button>
       </div>
       <div id="costAlertList" class="alert-list"></div>
     </div>
@@ -276,7 +290,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260729-business-intelligence-title-v35"></script>
+<script type="module" src="js/app.js?v=20260729-cost-overrun-alerts-v36"></script>
 
 
 </body>
