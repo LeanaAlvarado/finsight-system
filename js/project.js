@@ -541,6 +541,14 @@ function cleanSignatoryName(value = "") {
   return cleaned && cleaned !== "-" ? cleaned : "";
 }
 
+function getCurrentAccountName() {
+  return cleanSignatoryName(
+    localStorage.getItem("lemyu_user_name")
+    || localStorage.getItem("lemyu_username")
+    || ""
+  );
+}
+
 function getPrintableViewControlsStyle() {
   return `
         .print-view-actions{
@@ -2396,8 +2404,10 @@ window.generateQuotation = async function(id, options = {}) {
     day: "numeric"
   });
   const workDescription = manpower.workDescription || manpower.scope || project.project_title || "";
-  const preparedByName = cleanSignatoryName(manpower.preparedBy || project.ppr_prepared_by);
-  const preparedPosition = cleanSignatoryName(manpower.preparedPosition);
+  const preparedByName = cleanSignatoryName(manpower.preparedBy || project.ppr_prepared_by)
+    || getCurrentAccountName()
+    || "MARK LYNDON LAWAS";
+  const preparedPosition = cleanSignatoryName(manpower.preparedPosition) || "OPERATION MANAGER";
 
   const quotationWindow = window.open("", "_blank");
 
@@ -2581,38 +2591,46 @@ window.generateQuotation = async function(id, options = {}) {
           font-weight:bold;
           -webkit-print-color-adjust:exact;
           print-color-adjust:exact;
+          break-after:avoid;
+          page-break-after:avoid;
         }
         .prepared{
-          margin-top:18px;
-          width:360px;
+          display:inline-block;
+          margin-top:14px;
+          width:330px;
           min-height:0;
           font-size:15px;
           text-transform:uppercase;
           break-inside:avoid;
           page-break-inside:avoid;
+          page-break-before:avoid;
         }
         .prepared-line{
           border-top:1px solid #111;
           width:330px;
+          height:1px;
           margin:0 0 5px 0;
-          padding-top:5px;
-          margin-bottom:6px;
+          padding:0;
         }
         .prepared-label,
         .prepared-name,
         .prepared-position{
+          display:block;
           font-weight:normal;
+          line-height:1.35;
         }
         .prepared-signature{
-          width:245px;
-          height:50px;
-          margin:0 0 -2px 42px;
+          width:160px;
+          height:42px;
+          margin:0 0 -6px 52px;
           opacity:1;
+          overflow:hidden;
         }
         .prepared-signature .signature-svg{
           width:100%;
           height:100%;
           object-fit:contain;
+          display:block;
           mix-blend-mode:multiply;
         }
         @media print{
@@ -2730,11 +2748,10 @@ window.generateQuotation = async function(id, options = {}) {
 
       <div class="prepared">
         <div class="prepared-signature">${markSignatureSvg()}</div>
-        <div class="prepared-line">
-          <span class="prepared-label">Prepared By: </span>
-          <span class="prepared-name">${escapeProjectHtml(preparedByName) || "&nbsp;"}</span>
-        </div>
-        <div class="prepared-position">${escapeProjectHtml(preparedPosition) || "&nbsp;"}</div>
+        <div class="prepared-line"></div>
+        <span class="prepared-name">${escapeProjectHtml(preparedByName)}</span>
+        <span class="prepared-label">Prepared By</span>
+        <span class="prepared-position">${escapeProjectHtml(preparedPosition)}</span>
       </div>
     </body>
     </html>
