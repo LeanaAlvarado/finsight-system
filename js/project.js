@@ -536,6 +536,49 @@ function getProjectQuotationLabel(project = {}) {
   return getProjectQuotationType(project) === "cctv" ? "CCTV Quotation" : "Manpower Quotation";
 }
 
+function getPrintableViewControlsStyle() {
+  return `
+        .print-view-actions{
+          position:sticky;
+          top:0;
+          z-index:20;
+          display:flex;
+          justify-content:flex-end;
+          gap:8px;
+          width:100%;
+          margin:0 0 14px;
+          padding:10px 0;
+          background:#fff;
+          border-bottom:1px solid #d8e5f2;
+        }
+        .print-view-actions button{
+          border:1px solid #1f4f7a;
+          border-radius:5px;
+          padding:8px 12px;
+          background:#1f4f7a;
+          color:#fff;
+          font:700 12px Arial, Helvetica, sans-serif;
+          cursor:pointer;
+        }
+        .print-view-actions .secondary-print-action{
+          background:#fff;
+          color:#1f4f7a;
+        }
+        @media print{
+          .print-view-actions{
+            display:none !important;
+          }
+        }`;
+}
+
+function getPrintableViewControls() {
+  return `
+      <div class="print-view-actions">
+        <button type="button" class="secondary-print-action" onclick="if (window.opener && !window.opener.closed) { window.opener.focus(); } window.close();">Back to Project List</button>
+        <button type="button" onclick="window.print()">Print</button>
+      </div>`;
+}
+
 window.generateProjectQuotation = function(projectId, options = {}) {
   const project = getProjectById(projectId);
   const type = getProjectQuotationType(project);
@@ -1245,48 +1288,10 @@ window.viewProject = async function(id, options = {}) {
     return;
   }
 
-  viewContent.innerHTML = `
-    <div class="details-grid">
-      <div class="detail-item"><small>Project Code</small><strong>${project.project_code || "-"}</strong></div>
-      <div class="detail-item"><small>Project Title</small><strong>${project.project_title || "-"}</strong></div>
-
-      <div class="detail-item"><small>Company Name</small><strong>${project.client_name || "-"}</strong></div>
-      <div class="detail-item"><small>Client Name</small><strong>${getProjectClientName(project) || "-"}</strong></div>
-      <div class="detail-item"><small>Contact Number</small><strong>${project.contact_number || "-"}</strong></div>
-      <div class="detail-item"><small>Location</small><strong>${project.location || "-"}</strong></div>
-
-
-      <div class="detail-item"><small>Start Date</small><strong>${project.start_date || "-"}</strong></div>
-      <div class="detail-item"><small>Target Completion</small><strong>${project.target_completion || "-"}</strong></div>
-
-      <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
-
-      <div class="detail-item"><small>Project Budget</small><strong>${peso(project.project_budget)}</strong></div>
-      <div class="detail-item"><small>Contract Amount</small><strong>${peso(project.contract_amount)}</strong></div>
-      <div class="detail-item"><small>Down Payment</small><strong>${peso(getProjectDownPayment(project))}</strong></div>
-
-      <div class="detail-item"><small>Tax Percent</small><strong>${optionalPercent(project.tax_amount)}</strong></div>
-      <div class="detail-item"><small>PPR Prepared By</small><strong>${project.ppr_prepared_by || "-"}</strong></div>
-
-      <div class="detail-item"><small>PPR Noted By</small><strong>${project.ppr_noted_by || "-"}</strong></div>
-
-      <div class="detail-item">
-        <small>Uploaded File</small>
-        ${
-          project.contract_file_url
-            ? `<a href="${project.contract_file_url}" target="_blank">Open File</a>`
-            : `<strong>No uploaded file</strong>`
-        }
-      </div>
-
-      <div class="detail-item full-row">
-        <small>Remarks</small>
-        <strong>${project.remarks || "-"}</strong>
-      </div>
-    </div>
-  `;
-
-  openProjectDetailModal(project);
+  return window.generateProjectQuotation(id, {
+    print: false,
+    includeBackButton: true
+  });
 };
 
 window.closeViewModal = function() {
@@ -2346,6 +2351,7 @@ window.removeEditManpowerQuotationItem = function(button) {
 
 window.generateQuotation = async function(id, options = {}) {
   const shouldPrint = options.print !== false;
+  const includeBackButton = options.includeBackButton === true;
   const project = await getProjectForAction(id, "Quotation");
 
   if (!project) {
@@ -2628,9 +2634,11 @@ window.generateQuotation = async function(id, options = {}) {
             break-inside:avoid;
           }
         }
+        ${includeBackButton ? getPrintableViewControlsStyle() : ""}
       </style>
     </head>
     <body>
+      ${includeBackButton ? getPrintableViewControls() : ""}
       <div class="letterhead">
         <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
         <div class="quote-meta">
@@ -2726,6 +2734,7 @@ window.generateQuotation = async function(id, options = {}) {
 
 window.generateSupplyInstallationQuotation = async function(id, options = {}) {
   const shouldPrint = options.print !== false;
+  const includeBackButton = options.includeBackButton === true;
   const project = await getProjectForAction(id, "Supply quotation");
 
   if (!project) {
@@ -3019,9 +3028,11 @@ window.generateSupplyInstallationQuotation = async function(id, options = {}) {
           font-weight:800;
         }
         .signature-svg{width:190px;height:60px;}
+        ${includeBackButton ? getPrintableViewControlsStyle() : ""}
       </style>
     </head>
     <body>
+      ${includeBackButton ? getPrintableViewControls() : ""}
       <div class="top-header">
         <div class="tel-box">Tel<br>No:</div>
         <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
