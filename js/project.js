@@ -1605,6 +1605,11 @@ const CCTV_QUOTATION_DEFAULTS = {
   terms: "TERMS AND CONDITIONS:\n1. Prices are valid within the agreed quotation validity period.\n2. Payment terms are subject to agreement before project implementation.\n3. Schedule of installation is subject to material availability and site readiness.\n4. Warranty applies only to supplied equipment and workmanship under normal use.\n5. Client approval is required before commencement of work."
 };
 
+function getDurationDaysFromValue(value) {
+  const days = Math.trunc(Number(String(value || "").replace(/[^0-9.]/g, "")) || 0);
+  return Math.max(0, days);
+}
+
 function getCctvQuotationDetails(project = {}) {
   const details = { ...CCTV_QUOTATION_DEFAULTS };
   const lines = String(project.remarks || "").split(/\r?\n/);
@@ -1623,6 +1628,13 @@ function getCctvQuotationDetails(project = {}) {
 
     if (!trimmed) return;
     if (/^quotation type:\s*cctv/i.test(trimmed)) return;
+
+    const durationDaysMatch = trimmed.match(/^project duration days:\s*(.*)$/i);
+    if (durationDaysMatch) {
+      details.durationDays = getDurationDaysFromValue(durationDaysMatch[1]);
+      activeField = "";
+      return;
+    }
 
     for (const [field, pattern] of fieldLabels) {
       const match = trimmed.match(pattern);
@@ -1652,6 +1664,7 @@ const EDIT_MANPOWER_HIDDEN_FIELD_IDS = [
   "edit_client_contact_name",
   "edit_contact_number",
   "edit_location",
+  "edit_cctv_duration_days",
   "edit_start_date",
   "edit_target_completion",
   "edit_completed_date",
@@ -2176,6 +2189,34 @@ function buildEditManpowerRemarks() {
   ].filter(Boolean);
 
   return lines.join("\n");
+}
+
+function buildEditCctvRemarks(currentProject = {}) {
+  const details = getCctvQuotationDetails(currentProject);
+  const durationInput = document.getElementById("edit_cctv_duration_days");
+  const durationDays = getDurationDaysFromValue(durationInput?.value);
+  const existingRemarks = String(edit_remarks?.value || currentProject.remarks || "")
+    .split(/\r?\n/)
+    .filter(line => !/^project duration days:/i.test(line.trim()))
+    .join("\n")
+    .trim();
+
+  if (existingRemarks) {
+    return [
+      existingRemarks,
+      durationDays ? `Project Duration Days: ${durationDays}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  return [
+    "Quotation Type: CCTV",
+    `CCTV Intro: ${details.intro}`,
+    durationDays ? `Project Duration Days: ${durationDays}` : "",
+    `Installation Charge: ${details.installationCharge}`,
+    `Summary of Computation: ${details.summaryComputation}`,
+    `Note: ${details.note}`,
+    `Terms and Conditions: ${details.terms}`
+  ].filter(Boolean).join("\n");
 }
 
 window.addEditManpowerQuotationItem = function() {
@@ -3631,6 +3672,7 @@ window.editProject = async function(id) {
   const editQuotationType = document.getElementById("edit_quotation_type");
   if (editQuotationType) editQuotationType.value = getProjectQuotationType(project);
   const manpowerDetails = getManpowerQuotationDetails(project);
+  const cctvDetails = getCctvQuotationDetails(project);
   edit_project_code.value = project.project_code || "";
   edit_project_title.value = project.project_title || "";
   edit_client_name.value = project.client_name || "";
@@ -3640,6 +3682,8 @@ window.editProject = async function(id) {
   edit_start_date.value = project.start_date || "";
   edit_target_completion.value = project.target_completion || "";
   edit_project_duration_days.value = manpowerDetails.durationDays || "";
+  const editCctvDurationDays = document.getElementById("edit_cctv_duration_days");
+  if (editCctvDurationDays) editCctvDurationDays.value = cctvDetails.durationDays || "";
   edit_completed_date.value = project.completed_date || "";
   edit_status.value = project.status || "Pending";
   edit_progress_percentage.value = getExplicitProjectProgress(project) || 0;
@@ -3759,8 +3803,8 @@ if (editProjectForm) {
       contact_number: isManpower ? (edit_manpower_client_contact.value || currentProject.contact_number || "") : edit_contact_number.value,
       client_email: isManpower ? (edit_manpower_client_email.value || currentProject.client_email || "") : "",
       location: isManpower ? (edit_manpower_location.value || edit_location.value || currentProject.location || "") : (edit_location.value || currentProject.location || ""),
-      start_date: edit_start_date.value || currentProject.start_date || null,
-      target_completion: edit_target_completion.value || currentProject.target_completion || null,
+      start_date: isCctv ? null : (edit_start_date.value || currentProject.start_date || null),
+      target_completion: isCctv ? null : (edit_target_completion.value || currentProject.target_completion || null),
       completed_date: edit_completed_date.value || currentProject.completed_date || null,
       status: isManpower
         ? (document.getElementById("edit_manpower_status")?.value || currentProject.status || "Pending")
@@ -3773,8 +3817,8 @@ if (editProjectForm) {
       down_payment: isManpower ? manpowerDownPaymentAmount : Number(edit_down_payment.value || currentProject.down_payment || 0),
       tax_amount: edit_tax_amount.value === "" ? null : Number(edit_tax_amount.value || 0),
       ppr_prepared_by: isManpower ? edit_manpower_prepared_by.value : edit_ppr_prepared_by.value,
-      ppr_noted_by: edit_ppr_noted_by.value || currentProject.ppr_noted_by || "",
-      remarks: isManpower ? buildEditManpowerRemarks() : edit_remarks.value,
+      ppr_noted_by: isCctv ? "" : (edit_ppr_noted_by.value || currentProject.ppr_noted_by || ""),
+      remarks: isManpower ? buildEditManpowerRemarks() : isCctv ? buildEditCctvRemarks(currentProject) : edit_remarks.value,
       quotation_items: quotationItems
     };
 

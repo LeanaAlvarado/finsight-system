@@ -173,13 +173,8 @@
         </div>
 
         <div>
-          <label>Start Date</label>
-          <input id="edit_start_date" type="date">
-        </div>
-
-        <div>
-          <label>Target Completion Date</label>
-          <input id="edit_target_completion" type="date">
+          <label>Project Duration (Days)</label>
+          <input id="edit_cctv_duration_days" type="number" min="1" step="1" placeholder="Number of days">
         </div>
 
         <div>
@@ -231,10 +226,9 @@
           <input id="edit_ppr_prepared_by">
         </div>
 
-        <div>
-          <label>PPR Noted By</label>
-          <input id="edit_ppr_noted_by">
-        </div>
+        <input id="edit_start_date" type="hidden">
+        <input id="edit_target_completion" type="hidden">
+        <input id="edit_ppr_noted_by" type="hidden">
 
       </div>
 
@@ -441,7 +435,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260729-project-progress-v72"></script>
+<script type="module" src="js/app.js?v=20260729-cctv-edit-duration-v73"></script>
 
 </body>
 </html>
