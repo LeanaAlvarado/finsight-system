@@ -36,14 +36,21 @@
   </div>
 </aside>
 
-<main class="main">
+<main class="main reports-page">
   <section class="hero">
     <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
     <h1>Reports and Audit Logs</h1>
     <p>Generate management summaries and review traceable system activity for thesis evaluation and documentation.</p>
   </section>
 
-  <section class="grid">
+  <section class="print-report-header print-only">
+    <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+    <h1>Reports and Audit Logs</h1>
+    <p id="printCoverageText">Report Coverage: This Month</p>
+    <p id="printGeneratedText">Generated: -</p>
+  </section>
+
+  <section class="grid printable-report-section">
     <div class="card kpi">
       <small>Project Records</small>
       <h2 id="projectReportCount">0</h2>
@@ -67,9 +74,9 @@
   </section>
 
   <section class="grid2">
-    <section class="card">
+    <section class="card printable-report-section">
       <h3><span class="num">01</span> Management Report Summary</h3>
-      <p class="muted">A consolidated view of the current operational records.</p>
+      <p class="muted" id="reportCoverageSummary">Showing report records for this month.</p>
 
       <div class="mini-grid">
         <div class="mini-card">
@@ -90,30 +97,69 @@
         </div>
       </div>
 
-      <div class="form-actions">
-        <button type="button" onclick="window.print()">Print Report</button>
+      <div class="form-actions screen-only">
+        <button type="button" id="printReportBtn">Print Report</button>
       </div>
     </section>
 
-    <section class="card">
+    <section class="card screen-only">
       <h3><span class="num">02</span> Report Coverage</h3>
-      <p class="muted">The report covers the main information system modules used by the business.</p>
+      <p class="muted">Select the period covered by the report.</p>
 
-      <div class="permission-grid">
-        <span class="permission-pill">Projects</span>
-        <span class="permission-pill">Inventory</span>
-        <span class="permission-pill">Payroll</span>
-        <span class="permission-pill">Expenses</span>
-        <span class="permission-pill">Taxes & Revenue</span>
-        <span class="permission-pill">Client Feedback</span>
-        <span class="permission-pill">User Access</span>
+      <div class="coverage-controls" id="reportCoverageControls">
+        <button type="button" data-coverage="today">Today</button>
+        <button type="button" data-coverage="week">This Week</button>
+        <button type="button" data-coverage="month" class="active">This Month</button>
+        <button type="button" data-coverage="quarter">This Quarter</button>
+        <button type="button" data-coverage="year">This Year</button>
+        <button type="button" data-coverage="all">All Records</button>
+        <button type="button" data-coverage="custom">Custom Date Range</button>
+      </div>
+
+      <div id="customCoverageControls" class="custom-coverage-controls" hidden>
+        <div>
+          <label>Start Date</label>
+          <input id="coverageStartDate" type="date">
+        </div>
+        <div>
+          <label>End Date</label>
+          <input id="coverageEndDate" type="date">
+        </div>
+        <button type="button" id="applyCoverageBtn">Apply</button>
+        <button type="button" id="clearCoverageBtn">Reset</button>
       </div>
     </section>
   </section>
 
-  <section class="card">
+  <section id="auditLogSection" class="card printable-report-section">
     <h3><span class="num">03</span> Audit Log</h3>
     <p class="muted">Traceable activity generated from the latest saved records.</p>
+
+    <div id="auditFilters" class="inventory-list-toolbar screen-only">
+      <input id="auditSearch" class="search" type="search" placeholder="Search activity or reference">
+
+      <select id="auditModuleFilter">
+        <option value="all">All modules</option>
+        <option value="Project Monitoring">Project Monitoring</option>
+        <option value="Payroll & Expenses">Payroll & Expenses</option>
+        <option value="Inventory">Inventory</option>
+        <option value="Proposal / Quotation & Feedback">Proposal / Quotation & Feedback</option>
+      </select>
+
+      <select id="auditActionFilter">
+        <option value="all">All activity</option>
+        <option value="record">Record activity</option>
+        <option value="transaction">Transactions</option>
+        <option value="feedback">Feedback</option>
+        <option value="monitoring">Monitoring</option>
+      </select>
+
+      <select id="auditSort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="module_asc">Module A-Z</option>
+      </select>
+    </div>
 
     <div class="table-wrap">
       <table>
@@ -128,10 +174,15 @@
         <tbody id="auditTable"></tbody>
       </table>
     </div>
+
+    <div id="auditPagination" class="pagination-bar screen-only" hidden>
+      <span id="auditPaginationSummary">Showing 0 of 0 audit log records</span>
+      <div id="auditPaginationControls" class="pagination-controls"></div>
+    </div>
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260729-feedback-pagination-v42"></script>
+<script type="module" src="js/app.js?v=20260729-reports-print-audit-v43"></script>
 
 </body>
 </html>
