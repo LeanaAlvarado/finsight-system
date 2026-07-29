@@ -536,6 +536,21 @@ function getProjectQuotationLabel(project = {}) {
   return getProjectQuotationType(project) === "cctv" ? "CCTV Quotation" : "Manpower Quotation";
 }
 
+function isApprovedQuotation(project = {}) {
+  return String(project.status || "").trim().toLowerCase() === "approved";
+}
+
+function getContractAction(project = {}) {
+  if (isApprovedQuotation(project)) {
+    return `<a href="#" onclick="viewProjectContract('${project.id}'); return false;">Generate Contract</a>`;
+  }
+
+  return `
+    <span class="disabled-action" title="A contract can only be generated from an approved quotation.">Generate Contract</span>
+    <small class="contract-disabled-message">A contract can only be generated from an approved quotation.</small>
+  `;
+}
+
 function cleanSignatoryName(value = "") {
   const cleaned = String(value || "").trim();
   return cleaned && cleaned !== "-" ? cleaned : "";
@@ -590,6 +605,158 @@ function getPrintableViewControls() {
         <button type="button" class="secondary-print-action" onclick="if (window.opener && !window.opener.closed) { window.opener.focus(); } window.close();">Back to Project List</button>
         <button type="button" onclick="window.print()">Print</button>
       </div>`;
+}
+
+function getContractDateStamp(dateValue = new Date()) {
+  const date = new Date(dateValue);
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return safeDate.toISOString().slice(0, 10).replaceAll("-", "");
+}
+
+function getReadableDate(value = new Date()) {
+  const date = new Date(value);
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return safeDate.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
+
+function getContractNumber(project = {}) {
+  const sourceDate = project.approved_at || project.updated_at || project.created_at || new Date();
+  const code = String(project.project_code || project.id || "PROJECT").replace(/[^\w-]/g, "").slice(0, 14) || "PROJECT";
+  return `CTR-${getContractDateStamp(sourceDate)}-${code}`;
+}
+
+function getQuotationNumber(project = {}) {
+  const sourceDate = project.approved_at || project.updated_at || project.created_at || new Date();
+  const code = String(project.project_code || project.id || "PROJECT").replace(/[^\w-]/g, "").slice(0, 14) || "PROJECT";
+  const prefix = getProjectQuotationType(project) === "cctv" ? "SIQ" : "MP";
+  return `${prefix}-${getContractDateStamp(sourceDate)}-${code}`;
+}
+
+function getContractFileName(contract = {}) {
+  const contractNumber = String(contract.contract_number || contract.id || "CONTRACT").replace(/[^\w-]/g, "_");
+  const clientName = String(contract.client_name || "CLIENT").replace(/[^\w-]+/g, "_").replace(/^_+|_+$/g, "");
+  return `Contract_${contractNumber}_${clientName || "CLIENT"}.pdf`;
+}
+
+function getProjectDurationText(project = {}) {
+  if (project.start_date && project.target_completion) {
+    return `${formatDate(project.start_date)} to ${formatDate(project.target_completion)}`;
+  }
+
+  if (project.target_completion) {
+    return `Until ${formatDate(project.target_completion)}`;
+  }
+
+  return "As stated in the approved quotation and mutually confirmed project schedule.";
+}
+
+function normalizeContractItem(item = {}, fallbackDescription = "Project service") {
+  const qty = getQuotationQty(item.qty);
+  const unitPrice = Number(item.unitPrice ?? item.price ?? item.amount ?? 0);
+  const amount = Number(item.total_amount ?? item.line_total ?? (qty * unitPrice) ?? 0);
+
+  return {
+    description: item.name || item.description || item.details || fallbackDescription,
+    details: item.details || item.description || "",
+    qty,
+    unit: item.unit || "",
+    unitPrice,
+    amount
+  };
+}
+
+async function getContractQuotationItems(project = {}) {
+  if (getProjectQuotationType(project) === "manpower") {
+    const manpower = getManpowerQuotationDetails(project);
+    const fallbackQty = Number(manpower.workers || 1) || 1;
+    const fallbackUnitPrice = Number(project.contract_amount || 0)
+      ? Number(project.contract_amount || 0) / fallbackQty
+      : Number(manpower.days || 0) * Number(manpower.rate || 0);
+    const items = (manpower.items || []).length
+      ? manpower.items
+      : [{
+          description: manpower.workDescription || manpower.position || project.project_title || "Manpower Services",
+          qty: fallbackQty,
+          unitPrice: fallbackUnitPrice
+        }];
+
+    return items.map(item => normalizeContractItem(item, manpower.workDescription || project.project_title || "Manpower Services"));
+  }
+
+  const savedQuotationItems = Array.isArray(project.quotation_items)
+    ? project.quotation_items
+    : getLocalQuotationItems(project.id);
+  let linkedInventoryItems = [];
+
+  if (!savedQuotationItems.length && project.project_code) {
+    const { data = [], error } = await supabase.from("inventory").select("*");
+    if (!error) {
+      linkedInventoryItems = mergeInventoryRecords(data)
+        .filter(item => String(getInventoryProjectCode(item) || "").toLowerCase() === String(project.project_code || "").toLowerCase())
+        .map(item => ({
+          name: item.name || item.material_name || "Material",
+          description: item.description || "",
+          qty: getQuotationQty(item.qty),
+          unit: getInventoryUnit(item),
+          price: Number(item.price || item.unit_price || 0),
+          total_amount: getQuotationQty(item.qty) * Number(item.price || item.unit_price || 0)
+        }));
+    }
+  }
+
+  const rows = (savedQuotationItems.length ? savedQuotationItems : linkedInventoryItems)
+    .map(item => normalizeContractItem(item, project.project_title || "Supply and installation services"))
+    .filter(item => item.description || item.amount);
+
+  return rows.length
+    ? rows
+    : [normalizeContractItem({ description: project.project_title || "Supply and installation services", qty: 1, unitPrice: Number(project.contract_amount || 0) })];
+}
+
+async function buildApprovedQuotationSnapshot(project = {}) {
+  const quotationType = getProjectQuotationType(project);
+  const manpower = quotationType === "manpower" ? getManpowerQuotationDetails(project) : null;
+  const cctv = quotationType === "cctv" ? getCctvQuotationDetails(project) : null;
+  const items = await getContractQuotationItems(project);
+  const lineTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalContractPrice = Number(project.contract_amount || 0) || lineTotal;
+  const downPaymentAmount = getProjectDownPayment(project);
+  const downPaymentPercent = getPercentFromAmount(downPaymentAmount, totalContractPrice);
+  const balanceDue = Math.max(totalContractPrice - downPaymentAmount, 0);
+  const scope = manpower?.workDescription || manpower?.scope || cctv?.intro || project.remarks || project.project_title || "Project services as stated in the approved quotation.";
+  const terms = manpower?.terms || cctv?.terms || "Payment and implementation terms shall follow the approved quotation and mutually confirmed billing schedule.";
+
+  return {
+    quotation_type: quotationType,
+    quotation_label: getProjectQuotationLabel(project),
+    contract_number: getContractNumber(project),
+    quotation_number: getQuotationNumber(project),
+    effective_date: getReadableDate(new Date()),
+    client_name: project.client_name || getProjectClientName(project) || "-",
+    client_authorized_representative: getProjectClientName(project) || "",
+    project_title: project.project_title || "-",
+    project_description: manpower?.workDescription || cctv?.intro || project.project_title || "-",
+    location: project.location || "-",
+    scope_of_services: scope,
+    project_duration: getProjectDurationText(project),
+    start_date: project.start_date || "",
+    target_completion: project.target_completion || "",
+    items,
+    total_contract_price: totalContractPrice,
+    down_payment_percent: downPaymentPercent,
+    down_payment_amount: downPaymentAmount,
+    remaining_balance: balanceDue,
+    payment_terms: terms,
+    other_terms: manpower?.additionalComments || cctv?.note || project.remarks || "",
+    source_project_id: project.id,
+    source_project_code: project.project_code || "",
+    source_status: project.status || "Pending",
+    source_updated_at: project.updated_at || project.created_at || new Date().toISOString()
+  };
 }
 
 window.generateProjectQuotation = function(projectId, options = {}) {
@@ -667,146 +834,55 @@ function getProjectTaxAmount(project) {
   return Number(project?.contract_amount || 0) * (getProjectTaxPercent(project) / 100);
 }
 
-function evaluateSmartContract(project, financials = getProjectFinancials(project)) {
-  const balanceDue = Math.max(financials.contract - financials.downPayment, 0);
-  const totalCost = financials.budget + financials.tax + financials.expenses;
-  const projectedProfit = financials.contract - totalCost;
-  const status = String(project.status || "Pending");
-  const targetDate = project.target_completion ? new Date(project.target_completion) : null;
-  const isDelayed = targetDate && status !== "Completed" && targetDate < new Date();
-  const missingFields = [];
-
-  if (!project.project_title) missingFields.push("Project Title");
-  if (!project.client_name) missingFields.push("Company Name");
-  if (!project.contact_number) missingFields.push("Contact Number");
-  if (!project.contract_amount) missingFields.push("Contract Amount");
-  if (!project.target_completion) missingFields.push("Target Completion");
-
-  const paymentState = financials.downPayment <= 0
-    ? "No down payment recorded"
-    : balanceDue > 0
-      ? "Partial payment"
-      : "Fully paid";
-
-  const rules = [
-    {
-      name: "Required Details",
-      result: missingFields.length ? `Missing: ${missingFields.join(", ")}` : "Complete",
-      passed: !missingFields.length
-    },
-    {
-      name: "Payment Rule",
-      result: `${paymentState}; balance due is ${peso(balanceDue)}`,
-      passed: financials.downPayment > 0
-    },
-    {
-      name: "Project Status Rule",
-      result: status === "Completed" ? "Ready for final acceptance review" : `Current status: ${status}`,
-      passed: status === "Completed"
-    },
-    {
-      name: "Schedule Rule",
-      result: isDelayed ? "Target completion has passed" : "No schedule delay detected",
-      passed: !isDelayed
-    },
-    {
-      name: "Profit Rule",
-      result: projectedProfit >= 0 ? `Projected profit: ${peso(projectedProfit)}` : `Projected loss: ${peso(projectedProfit)}`,
-      passed: projectedProfit >= 0
-    }
-  ];
-
-  const failedRules = rules.filter(rule => !rule.passed).length;
-
-  return {
-    balanceDue,
-    totalCost,
-    projectedProfit,
-    paymentState,
-    missingFields,
-    rules,
-    smartStatus: failedRules === 0
-      ? "Approved for Completion Review"
-      : failedRules <= 2
-        ? "For Monitoring"
-        : "Action Required"
-  };
+function isLockedContract(record = {}) {
+  return ["finalized", "signed"].includes(String(record.status || "").toLowerCase());
 }
 
-function buildSmartContractText(contract) {
-  return `
-PROJECT SERVICE AGREEMENT
+async function buildProjectContractRecord(project, existingRecord = null) {
+  if (isLockedContract(existingRecord)) return existingRecord;
 
-Contract ID: ${contract.id}
-Status: ${contract.status}
-Created: ${contract.created_at}
-
-Project Code: ${contract.project_code}
-Project Title: ${contract.project_title}
-Company Name: ${contract.client_name}
-Client Name: ${contract.client_contact_name || "-"}
-Contact Number: ${contract.contact_number}
-Location: ${contract.location}
-Start Date: ${contract.start_date || "Not specified"}
-Target Completion: ${contract.target_completion || "Not specified"}
-Contract Amount: ${contract.contract_amount}
-Down Payment: ${contract.down_payment}
-Balance Due: ${contract.balance_due}
-Projected Profit: ${contract.projected_profit}
-Status: ${contract.project_status}
-Smart Contract Status: ${contract.smart_status}
-Remarks: ${contract.remarks || "No remarks."}
-
-Agreement Terms:
-1. The client and LEMYU Fiber Optic Installation and Services agree to the project scope, location, schedule, and financial terms stated in this agreement.
-2. Project completion, payment review, and acceptance will be based on the saved project status and supporting documents in the Project Monitoring module.
-3. Any change in project scope, contract amount, target completion date, or special remarks must be documented and approved by both parties.
-4. This contract draft is generated from the official project record and is intended for internal review, printing, and client confirmation.
-
-Monolithic Smart Contract Rules:
-${contract.rules.map((rule, index) => `${index + 1}. ${rule.name}: ${rule.result}`).join("\n")}
-  `.trim();
-}
-
-function buildProjectContractRecord(project, existingRecord = null, financials = getProjectFinancials(project)) {
-  const smartEvaluation = evaluateSmartContract(project, financials);
+  const snapshot = await buildApprovedQuotationSnapshot(project);
+  const contractId = existingRecord?.id || snapshot.contract_number || createContractId();
   const record = {
-    id: existingRecord?.id || createContractId(),
+    id: contractId,
     project_id: project.id,
     project_code: project.project_code || "-",
-    project_title: project.project_title || "-",
-    client_name: project.client_name || "-",
-    client_contact_name: getProjectClientName(project) || "-",
+    project_title: snapshot.project_title,
+    client_name: snapshot.client_name,
+    client_contact_name: snapshot.client_authorized_representative,
     contact_number: project.contact_number || "-",
-    location: project.location || "-",
+    location: snapshot.location,
     start_date: project.start_date || "",
     target_completion: project.target_completion || "",
-    contract_amount: peso(project.contract_amount || 0),
-    down_payment: peso(getProjectDownPayment(project)),
-    balance_due: peso(smartEvaluation.balanceDue),
-    total_cost: peso(smartEvaluation.totalCost),
-    projected_profit: peso(smartEvaluation.projectedProfit),
+    contract_number: snapshot.contract_number,
+    quotation_number: snapshot.quotation_number,
+    quotation_type: snapshot.quotation_type,
+    quotation_snapshot: snapshot,
+    contract_amount: snapshot.total_contract_price,
+    down_payment: snapshot.down_payment_amount,
+    balance_due: snapshot.remaining_balance,
+    contract_price_display: peso(snapshot.total_contract_price),
+    down_payment_display: peso(snapshot.down_payment_amount),
+    balance_due_display: peso(snapshot.remaining_balance),
+    status: existingRecord?.status || "Draft",
     project_status: project.status || "Pending",
-    smart_status: smartEvaluation.smartStatus,
-    payment_state: smartEvaluation.paymentState,
-    rules: smartEvaluation.rules,
-    remarks: project.remarks || "",
-    company_logo_url: getContractLogo(project),
-    status: "Draft",
-    created_at: existingRecord?.created_at || new Date().toLocaleString()
+    smart_status: existingRecord?.smart_status || "Ready for Review",
+    created_at: existingRecord?.created_at || new Date().toLocaleString("en-PH"),
+    updated_at: new Date().toISOString(),
+    finalized_at: existingRecord?.finalized_at || ""
   };
 
-  record.contract_text = buildSmartContractText(record);
+  record.contract_text = `Formal Service Agreement generated from approved quotation ${snapshot.quotation_number}.`;
   return record;
 }
 
-function saveProjectContract(project, financials) {
-  if (!project?.id) return null;
+async function saveProjectContract(project) {
+  if (!project?.id || !isApprovedQuotation(project)) return null;
 
   const records = getSmartContracts();
-  const existingIndex = records.findIndex(item => item.project_id == project.id);
+  const existingIndex = records.findIndex(item => String(item.project_id || "") === String(project.id || ""));
   const existingRecord = existingIndex >= 0 ? records[existingIndex] : null;
-  const contractRecord = buildProjectContractRecord(project, existingRecord, financials);
+  const contractRecord = await buildProjectContractRecord(project, existingRecord);
 
   if (existingIndex >= 0) {
     records[existingIndex] = contractRecord;
@@ -819,816 +895,351 @@ function saveProjectContract(project, financials) {
   return contractRecord;
 }
 
-function syncProjectContracts(projects, expenses = []) {
+async function syncProjectContracts(projects) {
   const records = getSmartContracts();
   const syncedRecords = [...records];
 
-  projects.forEach(project => {
-    if (!project?.id) return;
+  for (const project of projects) {
+    if (!project?.id || !isApprovedQuotation(project)) continue;
 
-    const existingIndex = syncedRecords.findIndex(item => item.project_id == project.id);
+    const existingIndex = syncedRecords.findIndex(item => String(item.project_id || "") === String(project.id || ""));
     const existingRecord = existingIndex >= 0 ? syncedRecords[existingIndex] : null;
-    const contractRecord = buildProjectContractRecord(project, existingRecord, getProjectFinancials(project, expenses));
+    if (isLockedContract(existingRecord)) continue;
 
+    const contractRecord = await buildProjectContractRecord(project, existingRecord);
     if (existingIndex >= 0) {
       syncedRecords[existingIndex] = contractRecord;
     } else {
       syncedRecords.unshift(contractRecord);
     }
-  });
+  }
 
   saveSmartContracts(syncedRecords);
 }
 
 function renderSmartContracts() {
   const table = document.getElementById("smartContractTable");
-
   if (!table) return;
 
   const records = getSmartContracts();
-
   if (!records.length) {
-    table.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align:center;">No project contract records yet.</td>
-      </tr>
-    `;
+    table.innerHTML = `<tr><td colspan="8" style="text-align:center;">No formal contract records yet.</td></tr>`;
     return;
   }
 
   table.innerHTML = records.map(record => `
     <tr>
-      <td>${record.id}</td>
-      <td>${record.project_title || "-"}</td>
-      <td>${record.client_name || "-"}</td>
-      <td>${record.contract_amount || "PHP 0.00"}</td>
-      <td>${record.project_code || "-"}</td>
-      <td><span class="badge Pending">${record.status}</span></td>
-      <td>${record.created_at}</td>
+      <td>${escapeProjectHtml(record.contract_number || record.id)}</td>
+      <td>${escapeProjectHtml(record.project_title || "-")}</td>
+      <td>${escapeProjectHtml(record.client_name || "-")}</td>
+      <td>${peso(record.contract_amount || 0)}</td>
+      <td>${escapeProjectHtml(record.quotation_number || "-")}</td>
+      <td><span class="badge Pending">${escapeProjectHtml(record.status || "Draft")}</span></td>
+      <td>${escapeProjectHtml(record.created_at || "-")}</td>
       <td class="action-links">
-        <a href="#" onclick="viewSmartContract('${record.id}')">View</a>
-        <a href="#" onclick="deleteSmartContract('${record.id}')">Delete</a>
+        <a href="#" onclick="viewSmartContract('${record.id}'); return false;">Preview</a>
+        <a href="#" onclick="deleteSmartContract('${record.id}'); return false;">Delete</a>
       </td>
     </tr>
   `).join("");
 }
 
-function getProjectDateForList(project = {}) {
-  return project.start_date || project.created_at || project.updated_at || "";
-}
-
-function getProjectSearchText(project = {}) {
-  return [
-    project.project_code,
-    project.project_title,
-    project.client_name,
-    project.client_contact_name,
-    project.contact_number,
-    project.location,
-    project.company_name,
-    project.status,
-    project.prepared_by,
-    project.ppr_prepared_by,
-    project.ppr_noted_by,
-    getProjectQuotationLabel(project)
-  ].join(" ").toLowerCase();
-}
-
-function isWithinProjectDateFilter(project = {}) {
-  const dateFilter = projectListState.date;
-  if (dateFilter === "all") return true;
-
-  const rawDate = getProjectDateForList(project);
-  if (!rawDate) return dateFilter === "no_date";
-
-  const projectDate = new Date(rawDate);
-  if (Number.isNaN(projectDate.getTime())) return dateFilter === "no_date";
-
-  const today = new Date();
-  if (dateFilter === "this_month") {
-    return projectDate.getFullYear() === today.getFullYear()
-      && projectDate.getMonth() === today.getMonth();
-  }
-
-  if (dateFilter === "this_year") {
-    return projectDate.getFullYear() === today.getFullYear();
-  }
-
-  return true;
-}
-
-function getFilteredProjects() {
-  const search = projectListState.search.trim().toLowerCase();
-
-  return allProjects
-    .filter(project => {
-      if (!search) return true;
-      return getProjectSearchText(project).includes(search);
-    })
-    .filter(project => {
-      if (projectListState.status === "all") return true;
-      return String(project.status || "").toLowerCase() === projectListState.status.toLowerCase();
-    })
-    .filter(project => isWithinProjectDateFilter(project))
-    .filter(project => {
-      if (projectListState.type === "all") return true;
-      return getProjectQuotationLabel(project).toLowerCase().includes(projectListState.type);
-    })
-    .sort((a, b) => {
-      const dateA = new Date(getProjectDateForList(a) || 0).getTime() || 0;
-      const dateB = new Date(getProjectDateForList(b) || 0).getTime() || 0;
-      const titleA = String(a.project_title || "").toLowerCase();
-      const titleB = String(b.project_title || "").toLowerCase();
-      const statusA = String(a.status || "").toLowerCase();
-      const statusB = String(b.status || "").toLowerCase();
-      const contractA = Number(a.contract_amount || 0);
-      const contractB = Number(b.contract_amount || 0);
-
-      if (projectListState.sort === "oldest") return dateA - dateB || titleA.localeCompare(titleB);
-      if (projectListState.sort === "title_asc") return titleA.localeCompare(titleB) || dateB - dateA;
-      if (projectListState.sort === "status_asc") return statusA.localeCompare(statusB) || dateB - dateA;
-      if (projectListState.sort === "contract_desc") return contractB - contractA || titleA.localeCompare(titleB);
-      if (projectListState.sort === "contract_asc") return contractA - contractB || titleA.localeCompare(titleB);
-      return dateB - dateA || titleA.localeCompare(titleB);
-    });
-}
-
-function hasActiveProjectFilters() {
-  return Boolean(projectListState.search.trim())
-    || projectListState.status !== "all"
-    || projectListState.date !== "all"
-    || projectListState.type !== "all";
-}
-
-function renderProjectPagination(totalItems) {
-  const pagination = document.getElementById("projectPagination");
-  const summary = document.getElementById("projectPaginationSummary");
-  const controls = document.getElementById("projectPaginationControls");
-  if (!pagination || !summary || !controls) return;
-
-  const totalPages = Math.max(1, Math.ceil(totalItems / PROJECT_PAGE_SIZE));
-  projectCurrentPage = Math.min(Math.max(projectCurrentPage, 1), totalPages);
-  const startIndex = totalItems ? ((projectCurrentPage - 1) * PROJECT_PAGE_SIZE) + 1 : 0;
-  const endIndex = Math.min(projectCurrentPage * PROJECT_PAGE_SIZE, totalItems);
-
-  pagination.hidden = false;
-  summary.textContent = totalItems
-    ? `Showing ${startIndex}-${endIndex} of ${totalItems} projects`
-    : "Showing 0 of 0 projects";
-
-  const pageWindow = 5;
-  const firstPage = Math.max(1, Math.min(projectCurrentPage - 2, totalPages - pageWindow + 1));
-  const lastPage = Math.min(totalPages, firstPage + pageWindow - 1);
-  const pageButtons = [];
-
-  for (let page = firstPage; page <= lastPage; page += 1) {
-    pageButtons.push(`
-      <button type="button" class="${page === projectCurrentPage ? "active" : ""}" ${page === projectCurrentPage ? "aria-current=\"page\"" : ""} onclick="goToProjectPage(${page})">${page}</button>
-    `);
-  }
-
-  controls.innerHTML = `
-    <button type="button" onclick="goToProjectPage(${projectCurrentPage - 1})" ${projectCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
-    ${pageButtons.join("")}
-    <button type="button" onclick="goToProjectPage(${projectCurrentPage + 1})" ${projectCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+function contractClause(title, body) {
+  return `
+    <section class="agreement-section">
+      <h2>${escapeProjectHtml(title)}</h2>
+      ${body}
+    </section>
   `;
 }
 
-function renderProjectList() {
-  const projectTableBody = document.getElementById("projectTable");
-  if (!projectTableBody) return;
+function getContractItemsRows(snapshot = {}) {
+  return (snapshot.items || []).map(item => `
+    <tr>
+      <td>${escapeProjectHtml(item.description || "-")}</td>
+      <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
+      <td>${escapeProjectHtml(item.unit || "")}</td>
+      <td class="amount-cell">${peso(item.unitPrice || 0)}</td>
+      <td class="amount-cell">${peso(item.amount || 0)}</td>
+    </tr>
+  `).join("");
+}
 
-  const headerRow = document.querySelector(".monitoring-table thead tr");
-  if (headerRow) {
-    headerRow.innerHTML = `
-    <th>Code</th>
-    <th>Title</th>
-    <th>Client</th>
-    <th>Contact</th>
-    <th>Quotation Type</th>
-    <th>Status</th>
-    <th>Actions</th>
+function buildFormalContractHtml(contract = {}, options = {}) {
+  const snapshot = contract.quotation_snapshot || {};
+  const showScreenActions = options.showScreenActions === true;
+  const fileName = getContractFileName(contract);
+  const clientName = snapshot.client_name || contract.client_name || "CLIENT";
+  const contractNumber = snapshot.contract_number || contract.contract_number || contract.id || "-";
+  const quotationNumber = snapshot.quotation_number || contract.quotation_number || "-";
+  const finalizedNote = isLockedContract(contract)
+    ? `<p class="contract-lock-note">Finalized contract. Quotation data is locked as of ${escapeProjectHtml(contract.finalized_at || contract.updated_at || contract.created_at || "finalization")}.</p>`
+    : `<p class="contract-lock-note draft">Draft preview. Refresh this contract if the approved quotation is revised before finalization.</p>`;
+
+  return `
+    <div class="formal-contract-document">
+      ${showScreenActions ? getPrintableViewControls() : ""}
+      <header class="agreement-header">
+        <div class="agreement-brand">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
+        <div class="agreement-meta">Formal Service Agreement | ${escapeProjectHtml(fileName)}</div>
+      </header>
+
+      <h1>SERVICE AGREEMENT</h1>
+      <p class="agreement-subtitle">${escapeProjectHtml(snapshot.project_title || contract.project_title || "Project Service Agreement")}</p>
+      ${finalizedNote}
+
+      <table class="contract-info-table">
+        <tr><td>Contract Number</td><td>${escapeProjectHtml(contractNumber)}</td></tr>
+        <tr><td>Quotation Reference</td><td>${escapeProjectHtml(quotationNumber)}</td></tr>
+        <tr><td>Effective Date</td><td>${escapeProjectHtml(snapshot.effective_date || getReadableDate(new Date()))}</td></tr>
+        <tr><td>Service Provider</td><td>LEMYU Fiber Optic Installation and Services</td></tr>
+        <tr><td>Client</td><td>${escapeProjectHtml(clientName)}</td></tr>
+        <tr><td>Authorized Representative</td><td>${escapeProjectHtml(snapshot.client_authorized_representative || "AUTHORIZED REPRESENTATIVE")}</td></tr>
+        <tr><td>Project Location</td><td>${escapeProjectHtml(snapshot.location || "-")}</td></tr>
+        <tr><td>Project Duration</td><td>${escapeProjectHtml(snapshot.project_duration || "-")}</td></tr>
+      </table>
+
+      ${contractClause("PARTIES", `<p>This Service Agreement (the "Agreement") is entered into by and between LEMYU Fiber Optic Installation and Services, represented by Mark Lyndon Lawas, Operations Manager, hereinafter referred to as the "Service Provider," and ${escapeProjectHtml(clientName)}, hereinafter referred to as the "Client." The Service Provider and the Client are collectively referred to as the "Parties."</p>`)}
+
+      ${contractClause("PURPOSE", `<p>The Client engages the Service Provider to perform ${escapeProjectHtml(snapshot.project_description || snapshot.project_title || "the approved project services")}, subject to the terms, conditions, scope, cost, and schedule stated in this Agreement and the approved quotation.</p>`)}
+
+      ${contractClause("1. SCOPE OF SERVICES", `<p>${quotationText(snapshot.scope_of_services || "The Service Provider shall perform the scope of services stated in the approved quotation.")}</p><p>Any service, material, equipment, or activity not expressly stated in this Agreement or the approved quotation shall be treated as additional work and shall require a written variation or change order.</p>`)}
+
+      ${contractClause("2. CONTRACT DURATION", `<p>The project duration shall be ${escapeProjectHtml(snapshot.project_duration || "as stated in the approved quotation")}. Any extension shall be documented in writing and approved by both Parties. Delays caused by site restrictions, late access, change orders, force majeure, or circumstances beyond the Service Provider's reasonable control shall result in a corresponding adjustment of the project schedule.</p>`)}
+
+      <section class="agreement-section">
+        <h2>3. CONTRACT PRICE</h2>
+        <table class="contract-price-table">
+          <thead><tr><th>Description</th><th>Quantity</th><th>Unit</th><th>Unit Price</th><th>Amount</th></tr></thead>
+          <tbody>${getContractItemsRows(snapshot)}</tbody>
+          <tfoot>
+            <tr><td colspan="4">TOTAL CONTRACT PRICE</td><td>${peso(snapshot.total_contract_price || contract.contract_amount || 0)}</td></tr>
+          </tfoot>
+        </table>
+        <p>The total contract price is ${peso(snapshot.total_contract_price || contract.contract_amount || 0)}, exclusive of additional work not covered by the approved scope, unless otherwise expressly stated in writing.</p>
+      </section>
+
+      ${contractClause("4. PAYMENT TERMS", `<p>4.1 The Client shall pay a down payment of ${Number(snapshot.down_payment_percent || 0).toFixed(2)}% amounting to ${peso(snapshot.down_payment_amount || 0)} upon signing of this Agreement and before mobilization.</p><p>4.2 The remaining balance of ${peso(snapshot.remaining_balance || 0)} shall be paid according to the billing schedule mutually confirmed by the Parties or upon completion of the agreed services.</p><p>4.3 ${quotationText(snapshot.payment_terms || "Payments shall follow the approved quotation terms.")}</p><p>4.4 Delayed payments may result in suspension of services after written notice, without prejudice to the Service Provider's right to collect amounts already due.</p>`)}
+
+      ${contractClause("5. RESPONSIBILITIES OF THE SERVICE PROVIDER", `<p>5.1 Deploy qualified and properly instructed personnel, materials, tools, or technical resources required by the approved quotation.</p><p>5.2 Perform the services with reasonable skill, care, diligence, and professionalism.</p><p>5.3 Comply with applicable occupational health and safety requirements.</p><p>5.4 Maintain project records and promptly report material issues affecting the work.</p><p>5.5 Protect confidential information obtained during the engagement.</p>`)}
+
+      ${contractClause("6. RESPONSIBILITIES OF THE CLIENT", `<p>6.1 Provide timely access to the project site, authorized work areas, and necessary coordination contacts.</p><p>6.2 Communicate site rules, safety requirements, and project-specific instructions before deployment.</p><p>6.3 Review and approve submitted records, accomplishments, and requests within a reasonable period.</p><p>6.4 Pay all amounts due according to the agreed payment terms.</p><p>6.5 Promptly inform the Service Provider of changes that may affect the scope, cost, or schedule.</p>`)}
+
+      ${contractClause("7. CHANGE ORDERS", `<p>No alteration to the scope, personnel requirement, duration, price, or deliverables shall be binding unless documented in a written Change Order approved by authorized representatives of both Parties. Approved changes may result in adjustments to the contract price and completion schedule.</p>`)}
+      ${contractClause("8. ACCEPTANCE AND COMPLETION", `<p>The services shall be considered completed upon fulfillment of the agreed scope and submission of the required completion documents. The Client shall notify the Service Provider in writing of any material deficiency within a reasonable review period.</p>`)}
+      ${contractClause("9. SUSPENSION AND TERMINATION", `<p>Either Party may terminate this Agreement for material breach if the breaching Party fails to remedy the breach within a reasonable period after written notice. The Service Provider may suspend deployment or performance for non-payment, unsafe working conditions, denial of access, or unlawful instructions.</p>`)}
+      ${contractClause("10. FORCE MAJEURE", `<p>Neither Party shall be liable for delay or failure caused by events beyond its reasonable control, including natural disasters, severe weather, government restrictions, labor disruptions, epidemics, war, civil disturbance, utility interruption, or similar events.</p>`)}
+      ${contractClause("11. CONFIDENTIALITY", `<p>Each Party shall protect confidential, technical, commercial, financial, and operational information received from the other Party and shall use such information only for purposes of this Agreement, except where disclosure is required by law or authorized in writing.</p>`)}
+      ${contractClause("12. LIABILITY AND INDEMNITY", `<p>Each Party shall be responsible for loss or damage directly resulting from its own negligence, willful misconduct, or breach of this Agreement. Neither Party shall be liable for indirect, incidental, or consequential loss except where such limitation is prohibited by law.</p>`)}
+      ${contractClause("13. GOVERNING LAW AND DISPUTE RESOLUTION", `<p>This Agreement shall be governed by the laws of the Republic of the Philippines. The Parties shall first attempt to resolve any dispute through good-faith negotiation. If no settlement is reached, the dispute may be submitted to the courts of competent jurisdiction.</p>`)}
+      ${contractClause("14. GENERAL PROVISIONS", `<p>14.1 Entire Agreement. This Agreement, together with the approved quotation and duly signed change orders, constitutes the complete understanding of the Parties regarding the project.</p><p>14.2 Amendments. Any amendment must be in writing and signed by authorized representatives of both Parties.</p><p>14.3 Severability. If any provision is found invalid or unenforceable, the remaining provisions shall continue in effect.</p><p>14.4 No Waiver. Failure to enforce any provision shall not constitute a waiver of the right to enforce it later.</p><p>14.5 Electronic Records. System-generated copies, electronic approvals, and digitally stored records may be used as supporting business records, subject to applicable law.</p>`)}
+      ${contractClause("15. CONTRACT DOCUMENTS", `<p>The following documents form part of this Agreement:</p><ul><li>Approved ${escapeProjectHtml(snapshot.quotation_label || "Quotation")} No. ${escapeProjectHtml(quotationNumber)}</li><li>Approved scope of work and project instructions</li><li>Approved change orders, if any</li><li>Completion, billing, and acceptance documents</li></ul>${snapshot.other_terms ? `<p><b>Other Approved Quotation Terms:</b><br>${quotationText(snapshot.other_terms)}</p>` : ""}`)}
+
+      <section class="agreement-section signatures-section">
+        <h2>16. SIGNATURES</h2>
+        <p>The undersigned confirm that they are authorized to sign this Agreement and that they have read, understood, and accepted its terms.</p>
+        <div class="formal-signatures">
+          <div class="formal-sig-block">
+            <h3>FOR THE SERVICE PROVIDER</h3>
+            <div class="formal-sign-line"></div>
+            <strong>MARK LYNDON LAWAS</strong>
+            <span>Operations Manager</span>
+            <span>LEMYU Fiber Optic Installation and Services</span>
+            <p>Date: __________________________</p>
+          </div>
+          <div class="formal-sig-block">
+            <h3>FOR THE CLIENT</h3>
+            <div class="formal-sign-line"></div>
+            <strong>AUTHORIZED REPRESENTATIVE</strong>
+            <span>Position: ______________________</span>
+            <span>${escapeProjectHtml(clientName)}</span>
+            <p>Date: __________________________</p>
+          </div>
+        </div>
+      </section>
+    </div>
   `;
-  }
-
-  const projects = getFilteredProjects();
-  const totalItems = projects.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PROJECT_PAGE_SIZE));
-  projectCurrentPage = Math.min(Math.max(projectCurrentPage, 1), totalPages);
-  const startIndex = (projectCurrentPage - 1) * PROJECT_PAGE_SIZE;
-  const pageProjects = projects.slice(startIndex, startIndex + PROJECT_PAGE_SIZE);
-  const isOperations = isOperationsScope();
-
-  if (!pageProjects.length) {
-    const message = allProjects.length && hasActiveProjectFilters()
-      ? "No projects match the selected filters."
-      : "No project records found.";
-    projectTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">${message}</td></tr>`;
-    renderProjectPagination(totalItems);
-    return;
-  }
-
-  projectTableBody.innerHTML = pageProjects.map(project => {
-    const statusValue = project.status || "Pending";
-    const quotationLabel = getProjectQuotationLabel(project);
-    const actionLinks = isOperations
-      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>`
-      : isFinanceScope()
-      ? `<a href="#" onclick="viewProject('${project.id}'); return false;">View Costing</a>`
-      : `
-          <a href="#" onclick="viewProject('${project.id}'); return false;">View</a>
-          <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
-          <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
-          <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
-          <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
-        `;
-
-    return `
-      <tr>
-        <td>${escapeHtml(project.project_code || "-")}</td>
-        <td>${escapeHtml(project.project_title || "-")}</td>
-        <td>${escapeHtml(project.client_name || "-")}</td>
-        <td>${escapeHtml(project.contact_number || "-")}</td>
-        <td>${escapeHtml(quotationLabel)}</td>
-        <td><span class="status ${escapeHtml(statusValue)}">${escapeHtml(statusValue)}</span></td>
-        <td class="action-links">
-          ${actionLinks}
-        </td>
-      </tr>
-    `;
-  }).join("");
-
-  renderProjectPagination(totalItems);
 }
 
-// LOAD PROJECTS
-async function loadProjects() {
-  if (tbody) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading project records...</td></tr>`;
-  }
-
-  const { data: supabaseProjects, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.log(error);
-    if (!getLocalSavedProjects().length) {
-      allProjects = [];
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
-      }
-      renderProjectPagination(0);
-      return;
-    }
-  }
-
-  const projects = mergeProjects(error ? [] : (supabaseProjects || []));
-  allProjects = projects;
-  setNextProjectCode(allProjects);
-
-  const { data: expenseData = [], error: expenseError } = await supabase
-    .from("expenses")
-    .select("*");
-
-  if (expenseError) {
-    console.warn("Project list loaded without expense records.", expenseError);
-  }
-
-  const expenses = Array.isArray(expenseData) ? expenseData : [];
-
-  syncProjectContracts(allProjects, expenses);
-  renderSmartContracts();
-  renderProjectList();
-
-  if (pendingDetailProjectId) {
-    const projectId = pendingDetailProjectId;
-    pendingDetailProjectId = "";
-    window.viewProject(projectId, { skipStateSave: true });
-  }
+function getFormalContractStyles() {
+  return `
+    @page{size:A4;margin:18mm 16mm;}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{margin:0;background:#eef2f6;color:#111827;font-family:"Times New Roman", Times, serif;font-size:11.5pt;line-height:1.35;}
+    .formal-contract-document{width:180mm;min-height:267mm;margin:0 auto;background:#fff;padding:0;color:#111827;counter-reset:page;}
+    .agreement-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111827;padding-bottom:8px;margin-bottom:18px;font-family:Arial, Helvetica, sans-serif;font-size:9pt;}
+    .agreement-brand{font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#0b315f;}
+    .agreement-meta{color:#4b5563;text-align:right;}
+    h1{text-align:center;font-size:20pt;letter-spacing:.08em;margin:18px 0 4px;text-transform:uppercase;}
+    .agreement-subtitle{text-align:center;font-size:12pt;margin:0 0 16px;font-weight:700;}
+    .contract-lock-note{border:1px solid #cbd5e1;background:#f8fafc;padding:8px 10px;margin:0 0 14px;font-family:Arial, Helvetica, sans-serif;font-size:9pt;}
+    .contract-lock-note.draft{background:#fff7ed;border-color:#fed7aa;}
+    table{width:100%;border-collapse:collapse;margin:10px 0 14px;page-break-inside:avoid;}
+    .contract-info-table td{border:1px solid #1f2937;padding:6px 8px;vertical-align:top;}
+    .contract-info-table td:first-child{width:32%;font-weight:700;background:#eef2f7;}
+    .agreement-section{margin:0 0 11px;page-break-inside:auto;}
+    .agreement-section h2{font-family:Arial, Helvetica, sans-serif;font-size:10.5pt;margin:12px 0 5px;text-transform:uppercase;color:#111827;page-break-after:avoid;}
+    .agreement-section p{margin:4px 0;text-align:justify;}
+    .agreement-section ul{margin:4px 0 4px 18px;padding:0;}
+    .contract-price-table th,.contract-price-table td{border:1px solid #111827;padding:6px 7px;vertical-align:top;}
+    .contract-price-table th{background:#e5edf7;font-family:Arial, Helvetica, sans-serif;font-size:9pt;text-align:center;text-transform:uppercase;}
+    .qty-cell{text-align:center;width:12%;}.amount-cell{text-align:right;white-space:nowrap;}
+    .contract-price-table tfoot td{font-weight:800;background:#f3f4f6;}.contract-price-table tfoot td:first-child{text-align:right;}
+    .signatures-section{page-break-inside:avoid;margin-top:18px;}
+    .formal-signatures{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:28px;}
+    .formal-sig-block{min-height:150px;page-break-inside:avoid;}
+    .formal-sig-block h3{font-family:Arial, Helvetica, sans-serif;font-size:10pt;margin:0 0 42px;text-transform:uppercase;}
+    .formal-sign-line{border-top:1px solid #111827;margin:0 0 5px;height:1px;}
+    .formal-sig-block strong,.formal-sig-block span{display:block;margin:2px 0;}.formal-sig-block p{margin-top:18px;text-align:left;}
+    .print-view-actions{font-family:Arial, Helvetica, sans-serif;position:sticky;top:0;background:#fff;border-bottom:1px solid #d8e5f2;margin-bottom:14px;padding:10px 0;display:flex;justify-content:flex-end;gap:8px;z-index:5;}
+    .print-view-actions button{border:1px solid #1f4f7a;border-radius:5px;padding:8px 12px;background:#1f4f7a;color:#fff;font-weight:700;cursor:pointer;}
+    .print-view-actions .secondary-print-action{background:#fff;color:#1f4f7a;}
+    @media print{body{background:#fff;}.formal-contract-document{width:auto;min-height:auto;margin:0;padding:0;}.print-view-actions{display:none!important;}}
+  `;
 }
-
-window.addEventListener("storage", event => {
-  if (event.key === LOCAL_PROJECTS_KEY) {
-    loadProjects();
-  }
-});
-window.addEventListener("lemyu:data-sync-complete", loadProjects);
-window.addEventListener("popstate", () => {
-  const projectId = new URLSearchParams(window.location.search).get("view");
-  if (projectId) {
-    window.viewProject(projectId, { skipStateSave: true });
-  } else {
-    window.backToProjectList();
-  }
-});
-
-// SAVE OR UPDATE PROJECT
-if (form) {
-form.addEventListener("submit", async function(e) {
-  e.preventDefault();
-
-  let fileUrl = "";
-  let fileName = "";
-
-  const fileInput = document.getElementById("contract_file");
-
-  if (fileInput && fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    try {
-      const uploadedFile = await uploadProjectFile(file, "project-uploads");
-      fileName = uploadedFile.filePath;
-      fileUrl = uploadedFile.publicUrl;
-    } catch (uploadError) {
-      alert("File upload error: " + uploadError.message);
-      return;
-    }
-  }
-
-  const quotationItems = getQuotationItemsFromForm();
-
-  const record = {
-    project_code: project_code.value,
-    project_title: project_title.value,
-    client_name: client_name.value,
-    client_contact_name: client_contact_name.value,
-    contact_number: contact_number.value,
-    location: location.value,
-    start_date: start_date.value || null,
-    target_completion: target_completion.value || null,
-    status: status.value,
-    project_budget: Number(project_budget.value || 0),
-    contract_amount: Number(contract_amount.value || 0),
-    down_payment: Number(down_payment.value || 0),
-    tax_amount: tax_amount.value === "" ? null : Number(tax_amount.value || 0),
-    ppr_prepared_by: ppr_prepared_by.value,
-    ppr_noted_by: ppr_noted_by.value,
-    remarks: remarks.value,
-    quotation_items: quotationItems
-  };
-
-  if (fileUrl) {
-    record.contract_file_url = fileUrl;
-    record.contract_file_name = fileName;
-  }
-
-  let result;
-
-  if (editingId) {
-    result = await updateWithOptionalColumns(
-      "projects",
-      record,
-      "id",
-      editingId,
-      ["quotation_items", "contract_file_url", "contract_file_name"],
-      { returnRecord: true }
-    );
-  } else {
-    result = await supabase
-      .from("projects")
-      .insert([record])
-      .select("*")
-      .single();
-  }
-
-  if (result.error) {
-    alert("Supabase save failed: " + result.error.message + "\n\nPlease run supabase/cloud_required_schema.sql in Supabase SQL Editor, then try again.");
-    return;
-  }
-
-  saveLocalQuotationItems(result.data.id, quotationItems);
-  saveLocalClientName(result.data.id, client_contact_name.value);
-  saveLocalDownPayment(result.data.id, down_payment.value);
-  saveLocalProjectMirror(result.data);
-  saveProjectContract(result.data);
-
-  alert(editingId ? "Project updated successfully!" : "Project saved successfully!");
-  document.getElementById("editProjectSection").style.display = "none";
-  document.getElementById("addProjectSection").style.display = "block";
-  document.getElementById("projectListSection").style.display = "block";
-  editingId = null;
-  form.reset();
-  resetQuotationItems();
-  setNextProjectCode(allProjects);
-
-  const saveBtn = form.querySelector("button[type='submit']");
-  saveBtn.textContent = "Save Project";
-
-  loadProjects();
-});
-}
-
-function updateProjectDetailHeader(project = {}) {
-  const title = document.getElementById("viewProjectTitle");
-  const status = document.getElementById("viewProjectStatus");
-  if (title) title.textContent = project.project_title || project.project_code || "Project Details";
-  if (status) {
-    const statusValue = project.status || "Pending";
-    status.className = `status ${statusValue}`;
-    status.textContent = statusValue;
-  }
-}
-
-function openProjectDetailModal(project) {
-  updateProjectDetailHeader(project);
-  viewModal.style.display = "flex";
-}
-
-// VIEW FULL PROJECT DETAILS
-window.viewProject = async function(id, options = {}) {
-  if (!options.skipStateSave) {
-    saveProjectListState();
-    const url = new URL(window.location.href);
-    url.searchParams.set("view", id);
-    window.history.pushState({ projectView: id }, "", url);
-  }
-
-  if (viewContent) {
-    viewContent.innerHTML = `<p class="muted">Loading project details...</p>`;
-  }
-
-  const project = await getProjectForAction(id, "Project");
-
-  if (!project) {
-    if (viewContent) viewContent.innerHTML = `<p class="muted">Unable to load project details.</p>`;
-    if (viewModal) viewModal.style.display = "flex";
-    return;
-  }
-
-  if (isFinanceScope()) {
-    const { data: expenses = [] } = await supabase
-      .from("expenses")
-      .select("*")
-      .eq("project_id", id);
-    const financials = getProjectFinancials(project, expenses);
-    const profit = financials.contract - financials.budget - financials.tax - financials.expenses;
-
-    viewContent.innerHTML = `
-      <div class="details-grid">
-        <div class="detail-item"><small>Project Code</small><strong>${project.project_code || "-"}</strong></div>
-        <div class="detail-item"><small>Project Title</small><strong>${project.project_title || "-"}</strong></div>
-        <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
-        <div class="detail-item"><small>Project Budget</small><strong>${peso(financials.budget)}</strong></div>
-        <div class="detail-item"><small>Contract Amount</small><strong>${peso(financials.contract)}</strong></div>
-        <div class="detail-item"><small>Down Payment</small><strong>${peso(financials.downPayment)}</strong></div>
-        <div class="detail-item"><small>Tax Amount</small><strong>${peso(financials.tax)}</strong></div>
-        <div class="detail-item"><small>Total Expenses</small><strong>${peso(financials.expenses)}</strong></div>
-        <div class="detail-item"><small>Balance Due</small><strong>${peso(Math.max(financials.contract - financials.downPayment, 0))}</strong></div>
-        <div class="detail-item"><small>Projected Profit</small><strong>${peso(profit)}</strong></div>
-      </div>
-    `;
-    openProjectDetailModal(project);
-    return;
-  }
-
-  if (isOperationsScope()) {
-    viewContent.innerHTML = `
-      <div class="details-grid">
-        <div class="detail-item"><small>Project Code</small><strong>${project.project_code || "-"}</strong></div>
-        <div class="detail-item"><small>Project Title</small><strong>${project.project_title || "-"}</strong></div>
-        <div class="detail-item"><small>Company Name</small><strong>${project.client_name || "-"}</strong></div>
-        <div class="detail-item"><small>Client Name</small><strong>${getProjectClientName(project) || "-"}</strong></div>
-        <div class="detail-item"><small>Contact Number</small><strong>${project.contact_number || "-"}</strong></div>
-        <div class="detail-item"><small>Location</small><strong>${project.location || "-"}</strong></div>
-        <div class="detail-item"><small>Start Date</small><strong>${project.start_date || "-"}</strong></div>
-        <div class="detail-item"><small>Target Completion</small><strong>${project.target_completion || "-"}</strong></div>
-        <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
-        <div class="detail-item full-row"><small>Remarks</small><strong>${project.remarks || "-"}</strong></div>
-      </div>
-    `;
-    openProjectDetailModal(project);
-    return;
-  }
-
-  return window.generateProjectQuotation(id, {
-    print: false,
-    includeBackButton: true
-  });
-};
-
-window.closeViewModal = function() {
-  window.backToProjectList();
-};
-
-window.backToProjectList = function() {
-  if (viewModal) {
-    viewModal.style.display = "none";
-  }
-
-  const scrollY = restoreProjectListState();
-  renderProjectList();
-
-  const url = new URL(window.location.href);
-  url.searchParams.delete("view");
-  window.history.replaceState({}, "", url);
-
-  const listSection = document.getElementById("projectListSection");
-  if (listSection) {
-    listSection.style.display = "block";
-  }
-
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: scrollY, behavior: "smooth" });
-  });
-};
 
 async function getOrCreateProjectContract(projectId) {
   const project = await getProjectForAction(projectId, "Contract");
-
   if (!project) return null;
 
-  const { data: expenses = [] } = await supabase
-    .from("expenses")
-    .select("*")
-    .eq("project_id", projectId);
+  if (!isApprovedQuotation(project)) {
+    alert("A contract can only be generated from an approved quotation.");
+    return null;
+  }
 
-  return saveProjectContract(project, getProjectFinancials(project, expenses));
+  return saveProjectContract(project);
 }
 
 window.viewProjectContract = async function(projectId) {
   const record = await getOrCreateProjectContract(projectId);
-
   if (!record) return;
-
-  viewSmartContract(record.id);
+  window.viewSmartContract(record.id);
 };
 
 window.printProjectContract = async function(projectId) {
   const record = await getOrCreateProjectContract(projectId);
-
   if (!record) return;
-
   activeSmartContract = record;
-  printSmartContract();
+  window.printSmartContract();
 };
 
 window.viewSmartContract = function(contractId) {
-  const record = getSmartContracts().find(item => item.id === contractId);
+  const record = getSmartContracts().find(item => String(item.id || "") === String(contractId || ""));
 
   if (!record) {
-    alert("Smart contract record not found.");
+    alert("Contract record not found.");
     return;
   }
 
   activeSmartContract = record;
-  const internalReviewHtml = canViewInternalContractReview()
-    ? `
-      <div class="details-grid">
-        <div class="detail-item"><small>Projected Profit</small><strong>${record.projected_profit || "PHP 0.00"}</strong></div>
-        <div class="detail-item"><small>Smart Contract Status</small><strong>${record.smart_status || "For Monitoring"}</strong></div>
-      </div>
+  if (smartContractContent) {
+    smartContractContent.innerHTML = `
+      <style>${getFormalContractStyles()}</style>
+      ${buildFormalContractHtml(record, { showScreenActions: false })}
+    `;
+  }
 
-      <div class="contract-clause internal-only">
-        <h3>Internal Smart Contract Review</h3>
-        <p class="muted">Visible for admin, owner, and HR review only. This section is not included in the printed client contract.</p>
-        <table class="smart-rules-table">
-          <thead>
-            <tr>
-              <th>Rule</th>
-              <th>Result</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(record.rules || []).map(rule => `
-              <tr>
-                <td>${rule.name}</td>
-                <td>${rule.result}</td>
-                <td><span class="${rule.passed ? "good" : "bad"}">${rule.passed ? "Passed" : "Needs Action"}</span></td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    `
-    : "";
-
-  smartContractContent.innerHTML = `
-    <div class="contract-preview">
-      <div class="contract-brand-row">
-        <img src="assets/logo.jpg" alt="LEMYU Logo">
-        <img src="${record.company_logo_url || assetUrl("assets/logo.jpg")}" alt="Client Logo">
-      </div>
-
-      <div class="contract-title-block">
-        <h2>Project Service Agreement</h2>
-        <p>Contract ID: ${record.id} | Status: ${record.status} | Created: ${record.created_at}</p>
-      </div>
-
-      <div class="details-grid">
-        <div class="detail-item"><small>Project Code</small><strong>${record.project_code || "-"}</strong></div>
-        <div class="detail-item"><small>Project Title</small><strong>${record.project_title || "-"}</strong></div>
-        <div class="detail-item"><small>Company Name</small><strong>${record.client_name || "-"}</strong></div>
-        <div class="detail-item"><small>Client Name</small><strong>${record.client_contact_name || "-"}</strong></div>
-        <div class="detail-item"><small>Location</small><strong>${record.location || "-"}</strong></div>
-        <div class="detail-item"><small>Contact Number</small><strong>${record.contact_number || "-"}</strong></div>
-        <div class="detail-item"><small>Start Date</small><strong>${record.start_date || "Not specified"}</strong></div>
-        <div class="detail-item"><small>Target Completion</small><strong>${record.target_completion || "Not specified"}</strong></div>
-        <div class="detail-item"><small>Contract Amount</small><strong>${record.contract_amount}</strong></div>
-        <div class="detail-item"><small>Down Payment</small><strong>${record.down_payment || "PHP 0.00"}</strong></div>
-        <div class="detail-item"><small>Balance Due</small><strong>${record.balance_due || "PHP 0.00"}</strong></div>
-      </div>
-
-      ${internalReviewHtml}
-
-      <div class="contract-clause">
-        <h3>Agreement Terms</h3>
-        <p>The client and LEMYU Fiber Optic Installation and Services agree to the project scope, location, schedule, and financial terms stated in this agreement.</p>
-        <p>Project completion, payment review, and acceptance will be based on the saved project status and supporting documents in the Project Monitoring module.</p>
-        <p>Any change in project scope, contract amount, target completion date, or special remarks must be documented and approved by both parties.</p>
-      </div>
-
-      <div class="contract-clause">
-        <h3>Remarks / Scope Notes</h3>
-        <p>${record.remarks || "No additional remarks."}</p>
-      </div>
-
-      <div class="contract-signatures">
-        <div class="contract-signature">
-          ${markSignatureSvg()}
-          <div class="signature-line"></div>
-          <strong>Mark Lyndon Lawas</strong>
-          <span>Operation Manager</span>
-        </div>
-        <div class="contract-signature">
-          <div class="signature-placeholder"></div>
-          <div class="signature-line"></div>
-          <strong>${record.client_contact_name || "Client Representative"}</strong>
-          <span>Client / Conforme</span>
-        </div>
-      </div>
-    </div>
-  `;
-  smartContractModal.style.display = "flex";
+  const refreshBtn = document.getElementById("refreshContractBtn");
+  const finalizeBtn = document.getElementById("finalizeContractBtn");
+  const locked = isLockedContract(record);
+  if (refreshBtn) refreshBtn.disabled = locked;
+  if (finalizeBtn) finalizeBtn.disabled = locked;
+  if (smartContractModal) smartContractModal.style.display = "flex";
 };
 
 window.closeSmartContractModal = function() {
-  smartContractModal.style.display = "none";
+  if (smartContractModal) smartContractModal.style.display = "none";
+};
+
+window.refreshSmartContractFromQuotation = async function() {
+  if (!activeSmartContract) return;
+
+  if (isLockedContract(activeSmartContract)) {
+    alert("This contract is finalized and cannot be refreshed from the quotation.");
+    return;
+  }
+
+  const project = await getProjectForAction(activeSmartContract.project_id, "Approved quotation");
+  if (!project) return;
+
+  if (!isApprovedQuotation(project)) {
+    alert("A contract can only be generated from an approved quotation.");
+    return;
+  }
+
+  const records = getSmartContracts();
+  const index = records.findIndex(item => String(item.id || "") === String(activeSmartContract.id || ""));
+  const refreshed = await buildProjectContractRecord(project, activeSmartContract);
+
+  if (index >= 0) {
+    records[index] = refreshed;
+  } else {
+    records.unshift(refreshed);
+  }
+
+  saveSmartContracts(records);
+  renderSmartContracts();
+  window.viewSmartContract(refreshed.id);
+};
+
+window.finalizeSmartContract = function() {
+  if (!activeSmartContract) return;
+
+  if (isLockedContract(activeSmartContract)) {
+    alert("This contract is already finalized.");
+    return;
+  }
+
+  const confirmed = confirm("Finalize this contract and lock the current approved quotation data?");
+  if (!confirmed) return;
+
+  const records = getSmartContracts();
+  const index = records.findIndex(item => String(item.id || "") === String(activeSmartContract.id || ""));
+  const finalized = {
+    ...activeSmartContract,
+    status: "Finalized",
+    finalized_at: new Date().toLocaleString("en-PH"),
+    updated_at: new Date().toISOString()
+  };
+
+  if (index >= 0) {
+    records[index] = finalized;
+  } else {
+    records.unshift(finalized);
+  }
+
+  saveSmartContracts(records);
+  renderSmartContracts();
+  window.viewSmartContract(finalized.id);
 };
 
 window.printSmartContract = function() {
   if (!activeSmartContract) return;
 
   const printWindow = window.open("", "_blank");
-
   if (!printWindow) {
-    alert("Please allow pop-ups to print smart contract.");
+    alert("Please allow pop-ups to print or save the contract PDF.");
     return;
   }
 
+  const fileName = getContractFileName(activeSmartContract);
   printWindow.document.write(`
     <html>
     <head>
-      <title>${activeSmartContract.id}</title>
-      <style>
-        @page{size:A4;margin:14mm;}
-        *{box-sizing:border-box;}
-        body{
-          font-family:Arial,sans-serif;
-          color:#17212b;
-          line-height:1.38;
-          font-size:12px;
-          margin:0;
-        }
-        .brand-row{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          border-bottom:3px solid #0b5d66;
-          padding-bottom:10px;
-          margin-bottom:14px;
-        }
-        .brand-row img{
-          max-width:230px;
-          max-height:74px;
-          object-fit:contain;
-        }
-        h1{
-          text-align:center;
-          color:#0b5d66;
-          text-transform:uppercase;
-          letter-spacing:.08em;
-          margin:10px 0 4px;
-          font-size:22px;
-        }
-        .meta{
-          text-align:center;
-          color:#52616f;
-          margin-bottom:14px;
-        }
-        table{
-          width:100%;
-          border-collapse:collapse;
-          margin:10px 0 14px;
-        }
-        td{
-          border:1px solid #b9c6d2;
-          padding:7px 8px;
-          vertical-align:top;
-        }
-        td:first-child{
-          width:28%;
-          font-weight:bold;
-          background:#f6fafb;
-        }
-        h2{
-          color:#0b5d66;
-          font-size:14px;
-          margin:14px 0 6px;
-          text-transform:uppercase;
-        }
-        .clause{
-          border:1px solid #b9c6d2;
-          padding:10px 12px;
-          margin-bottom:10px;
-        }
-        .clause p{
-          margin:5px 0;
-        }
-        .signatures{
-          display:flex;
-          justify-content:space-between;
-          gap:60px;
-          margin-top:56px;
-        }
-        .sig{
-          flex:1;
-          text-align:center;
-        }
-        .signature-line{
-          border-top:1px solid #111;
-          margin:0 0 7px;
-        }
-        .signature-placeholder{
-          height:42px;
-        }
-        .signature-svg{
-          display:block;
-          width:115px;
-          height:42px;
-          margin:0 auto 3px;
-        }
-      </style>
+      <title>${escapeProjectHtml(fileName)}</title>
+      <style>${getFormalContractStyles()}</style>
     </head>
     <body>
-      <div class="brand-row">
-        <img src="${assetUrl("assets/logo.jpg")}">
-        <img src="${activeSmartContract.company_logo_url || assetUrl("assets/logo.jpg")}">
-      </div>
-
-      <h1>Project Service Agreement</h1>
-      <div class="meta">
-        Contract ID: ${activeSmartContract.id} | Status: ${activeSmartContract.status} | Created: ${activeSmartContract.created_at}
-      </div>
-
-      <table>
-        <tr><td>Project Code</td><td>${activeSmartContract.project_code || "-"}</td></tr>
-        <tr><td>Project Title</td><td>${activeSmartContract.project_title || "-"}</td></tr>
-        <tr><td>Company Name</td><td>${activeSmartContract.client_name || "-"}</td></tr>
-        <tr><td>Client Name</td><td>${activeSmartContract.client_contact_name || "-"}</td></tr>
-        <tr><td>Contact Number</td><td>${activeSmartContract.contact_number || "-"}</td></tr>
-        <tr><td>Location</td><td>${activeSmartContract.location || "-"}</td></tr>
-        <tr><td>Start Date</td><td>${activeSmartContract.start_date || "Not specified"}</td></tr>
-        <tr><td>Target Completion</td><td>${activeSmartContract.target_completion || "Not specified"}</td></tr>
-        <tr><td>Contract Amount</td><td>${activeSmartContract.contract_amount}</td></tr>
-        <tr><td>Down Payment</td><td>${activeSmartContract.down_payment || "PHP 0.00"}</td></tr>
-        <tr><td>Balance Due</td><td>${activeSmartContract.balance_due || "PHP 0.00"}</td></tr>
-      </table>
-
-      <h2>Agreement Terms</h2>
-      <div class="clause">
-        <p>1. The client and LEMYU Fiber Optic Installation and Services agree to the project scope, location, schedule, and financial terms stated in this agreement.</p>
-        <p>2. Project completion, payment review, and acceptance will be based on the saved project status and supporting documents in the Project Monitoring module.</p>
-        <p>3. Any change in project scope, contract amount, target completion date, or special remarks must be documented and approved by both parties.</p>
-        <p>4. This agreement is generated from the official project record and is intended for review, printing, and client confirmation.</p>
-      </div>
-
-      <h2>Remarks / Scope Notes</h2>
-      <div class="clause">
-        <p>${activeSmartContract.remarks || "No additional remarks."}</p>
-      </div>
-
-      <div class="signatures">
-        <div class="sig">
-          ${markSignatureSvg()}
-          <div class="signature-line"></div>
-          Mark Lyndon Lawas<br>
-          Operation Manager
-        </div>
-        <div class="sig">
-          <div class="signature-placeholder"></div>
-          <div class="signature-line"></div>
-          ${activeSmartContract.client_contact_name || activeSmartContract.client_name || "Client Representative"}<br>
-          Client / Conforme
-        </div>
-      </div>
+      ${buildFormalContractHtml(activeSmartContract, { showScreenActions: true })}
+      <script>
+        window.addEventListener("load", function() {
+          setTimeout(function() { window.print(); }, 700);
+        });
+      <\/script>
     </body>
     </html>
   `);
-
   printWindow.document.close();
-  setTimeout(() => printWindow.print(), 500);
 };
 
 function getManpowerQuotationDetails(project) {
@@ -3222,6 +2833,468 @@ window.generateSupplyInstallationQuotation = async function(id, options = {}) {
   }
 };
 
+function getProjectDateForList(project = {}) {
+  return project.start_date || project.created_at || project.updated_at || "";
+}
+
+function getProjectSearchText(project = {}) {
+  return [
+    project.project_code,
+    project.project_title,
+    project.client_name,
+    project.client_contact_name,
+    project.contact_number,
+    project.location,
+    project.company_name,
+    project.status,
+    project.prepared_by,
+    project.ppr_prepared_by,
+    project.ppr_noted_by,
+    getProjectQuotationLabel(project)
+  ].join(" ").toLowerCase();
+}
+
+function isWithinProjectDateFilter(project = {}) {
+  const dateFilter = projectListState.date;
+  if (dateFilter === "all") return true;
+
+  const rawDate = getProjectDateForList(project);
+  if (!rawDate) return dateFilter === "no_date";
+
+  const projectDate = new Date(rawDate);
+  if (Number.isNaN(projectDate.getTime())) return dateFilter === "no_date";
+
+  const today = new Date();
+  if (dateFilter === "this_month") {
+    return projectDate.getFullYear() === today.getFullYear()
+      && projectDate.getMonth() === today.getMonth();
+  }
+
+  if (dateFilter === "this_year") {
+    return projectDate.getFullYear() === today.getFullYear();
+  }
+
+  return true;
+}
+
+function getFilteredProjects() {
+  const search = projectListState.search.trim().toLowerCase();
+
+  return allProjects
+    .filter(project => {
+      if (!search) return true;
+      return getProjectSearchText(project).includes(search);
+    })
+    .filter(project => {
+      if (projectListState.status === "all") return true;
+      return String(project.status || "").toLowerCase() === projectListState.status.toLowerCase();
+    })
+    .filter(project => isWithinProjectDateFilter(project))
+    .filter(project => {
+      if (projectListState.type === "all") return true;
+      return getProjectQuotationLabel(project).toLowerCase().includes(projectListState.type);
+    })
+    .sort((a, b) => {
+      const dateA = new Date(getProjectDateForList(a) || 0).getTime() || 0;
+      const dateB = new Date(getProjectDateForList(b) || 0).getTime() || 0;
+      const titleA = String(a.project_title || "").toLowerCase();
+      const titleB = String(b.project_title || "").toLowerCase();
+      const statusA = String(a.status || "").toLowerCase();
+      const statusB = String(b.status || "").toLowerCase();
+      const contractA = Number(a.contract_amount || 0);
+      const contractB = Number(b.contract_amount || 0);
+
+      if (projectListState.sort === "oldest") return dateA - dateB || titleA.localeCompare(titleB);
+      if (projectListState.sort === "title_asc") return titleA.localeCompare(titleB) || dateB - dateA;
+      if (projectListState.sort === "status_asc") return statusA.localeCompare(statusB) || dateB - dateA;
+      if (projectListState.sort === "contract_desc") return contractB - contractA || titleA.localeCompare(titleB);
+      if (projectListState.sort === "contract_asc") return contractA - contractB || titleA.localeCompare(titleB);
+      return dateB - dateA || titleA.localeCompare(titleB);
+    });
+}
+
+function hasActiveProjectFilters() {
+  return Boolean(projectListState.search.trim())
+    || projectListState.status !== "all"
+    || projectListState.date !== "all"
+    || projectListState.type !== "all";
+}
+
+function renderProjectPagination(totalItems) {
+  const pagination = document.getElementById("projectPagination");
+  const summary = document.getElementById("projectPaginationSummary");
+  const controls = document.getElementById("projectPaginationControls");
+  if (!pagination || !summary || !controls) return;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROJECT_PAGE_SIZE));
+  projectCurrentPage = Math.min(Math.max(projectCurrentPage, 1), totalPages);
+  const startIndex = totalItems ? ((projectCurrentPage - 1) * PROJECT_PAGE_SIZE) + 1 : 0;
+  const endIndex = Math.min(projectCurrentPage * PROJECT_PAGE_SIZE, totalItems);
+
+  pagination.hidden = false;
+  summary.textContent = totalItems
+    ? `Showing ${startIndex}-${endIndex} of ${totalItems} projects`
+    : "Showing 0 of 0 projects";
+
+  const pageWindow = 5;
+  const firstPage = Math.max(1, Math.min(projectCurrentPage - 2, totalPages - pageWindow + 1));
+  const lastPage = Math.min(totalPages, firstPage + pageWindow - 1);
+  const pageButtons = [];
+
+  for (let page = firstPage; page <= lastPage; page += 1) {
+    pageButtons.push(`
+      <button type="button" class="${page === projectCurrentPage ? "active" : ""}" ${page === projectCurrentPage ? "aria-current=\"page\"" : ""} onclick="goToProjectPage(${page})">${page}</button>
+    `);
+  }
+
+  controls.innerHTML = `
+    <button type="button" onclick="goToProjectPage(${projectCurrentPage - 1})" ${projectCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
+    ${pageButtons.join("")}
+    <button type="button" onclick="goToProjectPage(${projectCurrentPage + 1})" ${projectCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+}
+
+function renderProjectList() {
+  const projectTableBody = document.getElementById("projectTable");
+  if (!projectTableBody) return;
+
+  const headerRow = document.querySelector(".monitoring-table thead tr");
+  if (headerRow) {
+    headerRow.innerHTML = `
+    <th>Code</th>
+    <th>Title</th>
+    <th>Client</th>
+    <th>Contact</th>
+    <th>Quotation Type</th>
+    <th>Status</th>
+    <th>Actions</th>
+  `;
+  }
+
+  const projects = getFilteredProjects();
+  const totalItems = projects.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROJECT_PAGE_SIZE));
+  projectCurrentPage = Math.min(Math.max(projectCurrentPage, 1), totalPages);
+  const startIndex = (projectCurrentPage - 1) * PROJECT_PAGE_SIZE;
+  const pageProjects = projects.slice(startIndex, startIndex + PROJECT_PAGE_SIZE);
+  const isOperations = isOperationsScope();
+
+  if (!pageProjects.length) {
+    const message = allProjects.length && hasActiveProjectFilters()
+      ? "No projects match the selected filters."
+      : "No project records found.";
+    projectTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">${message}</td></tr>`;
+    renderProjectPagination(totalItems);
+    return;
+  }
+
+  projectTableBody.innerHTML = pageProjects.map(project => {
+    const statusValue = project.status || "Pending";
+    const quotationLabel = getProjectQuotationLabel(project);
+    const actionLinks = isOperations
+      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>`
+      : isFinanceScope()
+      ? `<a href="#" onclick="viewProject('${project.id}'); return false;">View Costing</a>`
+      : `
+          <a href="#" onclick="viewProject('${project.id}'); return false;">View</a>
+          <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
+          <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
+          ${getContractAction(project)}
+          <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
+          <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
+        `;
+
+    return `
+      <tr>
+        <td>${escapeHtml(project.project_code || "-")}</td>
+        <td>${escapeHtml(project.project_title || "-")}</td>
+        <td>${escapeHtml(project.client_name || "-")}</td>
+        <td>${escapeHtml(project.contact_number || "-")}</td>
+        <td>${escapeHtml(quotationLabel)}</td>
+        <td><span class="status ${escapeHtml(statusValue)}">${escapeHtml(statusValue)}</span></td>
+        <td class="action-links">
+          ${actionLinks}
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  renderProjectPagination(totalItems);
+}
+
+// LOAD PROJECTS
+async function loadProjects() {
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading project records...</td></tr>`;
+  }
+
+  const { data: supabaseProjects, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    if (!getLocalSavedProjects().length) {
+      allProjects = [];
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+      }
+      renderProjectPagination(0);
+      return;
+    }
+  }
+
+  const projects = mergeProjects(error ? [] : (supabaseProjects || []));
+  allProjects = projects;
+  setNextProjectCode(allProjects);
+
+  const { data: expenseData = [], error: expenseError } = await supabase
+    .from("expenses")
+    .select("*");
+
+  if (expenseError) {
+    console.warn("Project list loaded without expense records.", expenseError);
+  }
+
+  const expenses = Array.isArray(expenseData) ? expenseData : [];
+
+  await syncProjectContracts(allProjects, expenses);
+  renderSmartContracts();
+  renderProjectList();
+
+  if (pendingDetailProjectId) {
+    const projectId = pendingDetailProjectId;
+    pendingDetailProjectId = "";
+    window.viewProject(projectId, { skipStateSave: true });
+  }
+}
+
+window.addEventListener("storage", event => {
+  if (event.key === LOCAL_PROJECTS_KEY) {
+    loadProjects();
+  }
+});
+window.addEventListener("lemyu:data-sync-complete", loadProjects);
+window.addEventListener("popstate", () => {
+  const projectId = new URLSearchParams(window.location.search).get("view");
+  if (projectId) {
+    window.viewProject(projectId, { skipStateSave: true });
+  } else {
+    window.backToProjectList();
+  }
+});
+
+// SAVE OR UPDATE PROJECT
+if (form) {
+form.addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  let fileUrl = "";
+  let fileName = "";
+
+  const fileInput = document.getElementById("contract_file");
+
+  if (fileInput && fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    try {
+      const uploadedFile = await uploadProjectFile(file, "project-uploads");
+      fileName = uploadedFile.filePath;
+      fileUrl = uploadedFile.publicUrl;
+    } catch (uploadError) {
+      alert("File upload error: " + uploadError.message);
+      return;
+    }
+  }
+
+  const quotationItems = getQuotationItemsFromForm();
+
+  const record = {
+    project_code: project_code.value,
+    project_title: project_title.value,
+    client_name: client_name.value,
+    client_contact_name: client_contact_name.value,
+    contact_number: contact_number.value,
+    location: location.value,
+    start_date: start_date.value || null,
+    target_completion: target_completion.value || null,
+    status: status.value,
+    project_budget: Number(project_budget.value || 0),
+    contract_amount: Number(contract_amount.value || 0),
+    down_payment: Number(down_payment.value || 0),
+    tax_amount: tax_amount.value === "" ? null : Number(tax_amount.value || 0),
+    ppr_prepared_by: ppr_prepared_by.value,
+    ppr_noted_by: ppr_noted_by.value,
+    remarks: remarks.value,
+    quotation_items: quotationItems
+  };
+
+  if (fileUrl) {
+    record.contract_file_url = fileUrl;
+    record.contract_file_name = fileName;
+  }
+
+  let result;
+
+  if (editingId) {
+    result = await updateWithOptionalColumns(
+      "projects",
+      record,
+      "id",
+      editingId,
+      ["quotation_items", "contract_file_url", "contract_file_name"],
+      { returnRecord: true }
+    );
+  } else {
+    result = await supabase
+      .from("projects")
+      .insert([record])
+      .select("*")
+      .single();
+  }
+
+  if (result.error) {
+    alert("Supabase save failed: " + result.error.message + "\n\nPlease run supabase/cloud_required_schema.sql in Supabase SQL Editor, then try again.");
+    return;
+  }
+
+  saveLocalQuotationItems(result.data.id, quotationItems);
+  saveLocalClientName(result.data.id, client_contact_name.value);
+  saveLocalDownPayment(result.data.id, down_payment.value);
+  saveLocalProjectMirror(result.data);
+  await saveProjectContract(result.data);
+
+  alert(editingId ? "Project updated successfully!" : "Project saved successfully!");
+  document.getElementById("editProjectSection").style.display = "none";
+  document.getElementById("addProjectSection").style.display = "block";
+  document.getElementById("projectListSection").style.display = "block";
+  editingId = null;
+  form.reset();
+  resetQuotationItems();
+  setNextProjectCode(allProjects);
+
+  const saveBtn = form.querySelector("button[type='submit']");
+  saveBtn.textContent = "Save Project";
+
+  loadProjects();
+});
+}
+
+function updateProjectDetailHeader(project = {}) {
+  const title = document.getElementById("viewProjectTitle");
+  const status = document.getElementById("viewProjectStatus");
+  if (title) title.textContent = project.project_title || project.project_code || "Project Details";
+  if (status) {
+    const statusValue = project.status || "Pending";
+    status.className = `status ${statusValue}`;
+    status.textContent = statusValue;
+  }
+}
+
+function openProjectDetailModal(project) {
+  updateProjectDetailHeader(project);
+  viewModal.style.display = "flex";
+}
+
+// VIEW FULL PROJECT DETAILS
+window.viewProject = async function(id, options = {}) {
+  if (!options.skipStateSave) {
+    saveProjectListState();
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", id);
+    window.history.pushState({ projectView: id }, "", url);
+  }
+
+  if (viewContent) {
+    viewContent.innerHTML = `<p class="muted">Loading project details...</p>`;
+  }
+
+  const project = await getProjectForAction(id, "Project");
+
+  if (!project) {
+    if (viewContent) viewContent.innerHTML = `<p class="muted">Unable to load project details.</p>`;
+    if (viewModal) viewModal.style.display = "flex";
+    return;
+  }
+
+  if (isFinanceScope()) {
+    const { data: expenses = [] } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("project_id", id);
+    const financials = getProjectFinancials(project, expenses);
+    const profit = financials.contract - financials.budget - financials.tax - financials.expenses;
+
+    viewContent.innerHTML = `
+      <div class="details-grid">
+        <div class="detail-item"><small>Project Code</small><strong>${project.project_code || "-"}</strong></div>
+        <div class="detail-item"><small>Project Title</small><strong>${project.project_title || "-"}</strong></div>
+        <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
+        <div class="detail-item"><small>Project Budget</small><strong>${peso(financials.budget)}</strong></div>
+        <div class="detail-item"><small>Contract Amount</small><strong>${peso(financials.contract)}</strong></div>
+        <div class="detail-item"><small>Down Payment</small><strong>${peso(financials.downPayment)}</strong></div>
+        <div class="detail-item"><small>Tax Amount</small><strong>${peso(financials.tax)}</strong></div>
+        <div class="detail-item"><small>Total Expenses</small><strong>${peso(financials.expenses)}</strong></div>
+        <div class="detail-item"><small>Balance Due</small><strong>${peso(Math.max(financials.contract - financials.downPayment, 0))}</strong></div>
+        <div class="detail-item"><small>Projected Profit</small><strong>${peso(profit)}</strong></div>
+      </div>
+    `;
+    openProjectDetailModal(project);
+    return;
+  }
+
+  if (isOperationsScope()) {
+    viewContent.innerHTML = `
+      <div class="details-grid">
+        <div class="detail-item"><small>Project Code</small><strong>${project.project_code || "-"}</strong></div>
+        <div class="detail-item"><small>Project Title</small><strong>${project.project_title || "-"}</strong></div>
+        <div class="detail-item"><small>Company Name</small><strong>${project.client_name || "-"}</strong></div>
+        <div class="detail-item"><small>Client Name</small><strong>${getProjectClientName(project) || "-"}</strong></div>
+        <div class="detail-item"><small>Contact Number</small><strong>${project.contact_number || "-"}</strong></div>
+        <div class="detail-item"><small>Location</small><strong>${project.location || "-"}</strong></div>
+        <div class="detail-item"><small>Start Date</small><strong>${project.start_date || "-"}</strong></div>
+        <div class="detail-item"><small>Target Completion</small><strong>${project.target_completion || "-"}</strong></div>
+        <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
+        <div class="detail-item full-row"><small>Remarks</small><strong>${project.remarks || "-"}</strong></div>
+      </div>
+    `;
+    openProjectDetailModal(project);
+    return;
+  }
+
+  return window.generateProjectQuotation(id, {
+    print: false,
+    includeBackButton: true
+  });
+};
+
+window.closeViewModal = function() {
+  window.backToProjectList();
+};
+
+window.backToProjectList = function() {
+  if (viewModal) {
+    viewModal.style.display = "none";
+  }
+
+  const scrollY = restoreProjectListState();
+  renderProjectList();
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("view");
+  window.history.replaceState({}, "", url);
+
+  const listSection = document.getElementById("projectListSection");
+  if (listSection) {
+    listSection.style.display = "block";
+  }
+
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: scrollY, behavior: "smooth" });
+  });
+};
+
+
 window.deleteSmartContract = function(contractId) {
   if (!confirm("Delete this smart contract record?")) return;
 
@@ -3505,7 +3578,7 @@ if (editProjectForm) {
 
     const uploadOk = await uploadProgressFiles(editingId);
 
-    if (savedProject) saveProjectContract(savedProject);
+    if (savedProject) await saveProjectContract(savedProject);
     alert(materialsOk === false
       ? "Project updated successfully. CCTV materials were not saved because the inventory table is not ready."
       : uploadOk === false

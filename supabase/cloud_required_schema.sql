@@ -302,6 +302,11 @@ alter table public.smart_contracts add column if not exists projected_profit num
 alter table public.smart_contracts add column if not exists status text;
 alter table public.smart_contracts add column if not exists project_status text;
 alter table public.smart_contracts add column if not exists smart_status text;
+alter table public.smart_contracts add column if not exists contract_number text;
+alter table public.smart_contracts add column if not exists quotation_number text;
+alter table public.smart_contracts add column if not exists quotation_type text;
+alter table public.smart_contracts add column if not exists quotation_snapshot jsonb default '{}'::jsonb;
+alter table public.smart_contracts add column if not exists finalized_at timestamptz;
 alter table public.smart_contracts add column if not exists rules jsonb default '[]'::jsonb;
 alter table public.smart_contracts add column if not exists created_at timestamptz default now();
 alter table public.smart_contracts add column if not exists updated_at timestamptz default now();

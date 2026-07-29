@@ -69,7 +69,10 @@
 
       <select id="projectStatusFilter">
         <option value="all">All status</option>
+        <option value="Draft">Draft</option>
         <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Rejected">Rejected</option>
         <option value="Ongoing">Ongoing</option>
         <option value="Completed">Completed</option>
         <option value="Cancelled">Cancelled</option>
@@ -187,10 +190,14 @@
         <div>
           <label>Status</label>
           <select id="edit_status">
+            <option>Draft</option>
             <option>Pending</option>
+            <option>Approved</option>
+            <option>Rejected</option>
             <option>Ongoing</option>
             <option>Completed</option>
             <option>Delayed</option>
+            <option>Cancelled</option>
           </select>
         </div>
 
@@ -252,10 +259,14 @@
           <div>
             <label>Status</label>
             <select id="edit_manpower_status">
+              <option>Draft</option>
               <option>Pending</option>
+              <option>Approved</option>
+              <option>Rejected</option>
               <option>Ongoing</option>
               <option>Completed</option>
               <option>Delayed</option>
+              <option>Cancelled</option>
             </select>
           </div>
 
@@ -396,19 +407,21 @@
 <div id="smartContractModal" class="modal">
   <div class="modal-box large-modal">
     <div class="modal-header">
-      <h2>Project Contract Draft</h2>
+      <h2>Formal Service Agreement</h2>
       <button type="button" onclick="closeSmartContractModal()">Close</button>
     </div>
 
     <div id="smartContractContent"></div>
 
     <div class="form-actions">
-      <button type="button" onclick="printSmartContract()">Print Contract</button>
+      <button type="button" id="refreshContractBtn" onclick="refreshSmartContractFromQuotation()">Refresh from Approved Quotation</button>
+      <button type="button" id="finalizeContractBtn" onclick="finalizeSmartContract()">Finalize Contract</button>
+      <button type="button" onclick="printSmartContract()">Print / Save as PDF</button>
     </div>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260729-ppr-feedback-remarks-v50"></script>
+<script type="module" src="js/app.js?v=20260729-formal-contract-v51"></script>
 
 </body>
 </html>

@@ -710,6 +710,20 @@ tbody tr:hover{
   font-weight:750;
 }
 
+.action-links .disabled-action{
+  color:#7b8794;
+  cursor:not-allowed;
+  font-weight:750;
+}
+
+.action-links .contract-disabled-message{
+  display:block;
+  max-width:170px;
+  color:#8a5a00;
+  font-size:11px;
+  line-height:1.25;
+}
+
 .action-links .danger-link{
   color:#dc2626;
 }
@@ -727,6 +741,8 @@ tbody tr:hover{
 
 .status.Completed,
 .badge.Completed,
+.status.Approved,
+.badge.Approved,
 .badge.Paid{
   background:#e7f5ed;
   color:#166534;
@@ -744,8 +760,18 @@ tbody tr:hover{
   color:#8a5a00;
 }
 
+.status.Draft,
+.badge.Draft{
+  background:#f1f5f9;
+  color:#475569;
+}
+
 .status.Delayed,
-.badge.Delayed{
+.badge.Delayed,
+.status.Rejected,
+.badge.Rejected,
+.status.Cancelled,
+.badge.Cancelled{
   background:#fdecec;
   color:#9f1d1d;
 }
