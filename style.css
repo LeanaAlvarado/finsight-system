@@ -2575,6 +2575,20 @@ tbody tr:hover{
   background:#eef7ff;
 }
 
+.inline-upload-comment{
+  display:block;
+  margin-top:8px;
+  font-weight:800;
+  color:var(--muted);
+}
+
+.inline-upload-comment textarea{
+  margin-top:4px;
+  width:100%;
+  min-height:54px;
+  resize:vertical;
+}
+
 .file-preview{
   width:118px;
   height:82px;

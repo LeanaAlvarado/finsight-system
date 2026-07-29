@@ -262,7 +262,7 @@ function getPprPhotoTitle(file = {}, index = 0) {
 }
 
 function getPprPhotoDescription(file = {}) {
-  return file.description || file.caption || file.remarks || "Project accomplishment photograph recorded in Project Monitoring.";
+  return file.description || file.caption || file.comment || "";
 }
 
 function getPprPhotos(projectFiles = []) {
@@ -3746,7 +3746,10 @@ document.getElementById("edit_manpower_down_payment")?.addEventListener("input",
 document.getElementById("progress_files")?.addEventListener("change", event => {
   const selectedFiles = Array.from(event.target.files || []);
   if (!selectedFiles.length) return;
-  pendingProgressFiles = [...pendingProgressFiles, ...selectedFiles];
+  pendingProgressFiles = [
+    ...pendingProgressFiles,
+    ...selectedFiles.map(file => ({ file, comment: "" }))
+  ];
   event.target.value = "";
   renderPendingProgressFiles();
 });
@@ -4186,8 +4189,7 @@ window.generatePPR = async function(id) {
                       <img src="${escapeProjectHtml(file.file_url)}" alt="${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}" onerror="console.warn('Skipped broken PPR image:', this.src); this.closest('.photo-card').style.display='none';">
                       <div class="photo-caption">
                         <div><strong>PHOTO ${String(photoNumber).padStart(2, "0")}</strong><span class="badge ${getPprStatusClass(category)}">${escapeProjectHtml(category.toUpperCase())}</span></div>
-                        <h3>${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}</h3>
-                        <p>${escapeProjectHtml(getPprPhotoDescription(file))}</p>
+                        ${getPprPhotoDescription(file) ? `<p>${escapeProjectHtml(getPprPhotoDescription(file))}</p>` : ""}
                         <small>Location: ${safePprText(file.location || project.location)} | Date Taken: ${formatDate(getPprFileDate(file), "Not Available")} | Uploaded By: ${safePprText(file.uploaded_by || file.created_by || "Project Monitoring")}</small>
                       </div>
                     </article>
@@ -4332,7 +4334,7 @@ async function uploadProgressFiles(projectId) {
   const progressInput = document.getElementById("progress_files");
   const files = pendingProgressFiles.length
     ? [...pendingProgressFiles]
-    : Array.from(progressInput?.files || []);
+    : Array.from(progressInput?.files || []).map(file => ({ file, comment: "" }));
 
   if (!files.length) return true;
 
@@ -4341,7 +4343,9 @@ async function uploadProgressFiles(projectId) {
     return false;
   }
 
-  for (const file of files) {
+  for (const entry of files) {
+    const file = entry.file || entry;
+    const comment = String(entry.comment || "").trim();
     let uploadedFile;
 
     try {
@@ -4354,7 +4358,8 @@ async function uploadProgressFiles(projectId) {
     const { error } = await supabase.from("project_files").insert([{
       project_id: projectId,
       file_name: file.name,
-      file_url: uploadedFile.publicUrl
+      file_url: uploadedFile.publicUrl,
+      description: comment
     }]);
 
     if (error) {
@@ -4378,21 +4383,33 @@ function renderPendingProgressFiles() {
       <div class="file-row pending-file-row">
         <div class="file-info">
           <strong>Pending upload</strong>
-          <span>${pendingProgressFiles.length} file${pendingProgressFiles.length === 1 ? "" : "s"} ready. Choose more files or press Update Project.</span>
+          <span>${pendingProgressFiles.length} file${pendingProgressFiles.length === 1 ? "" : "s"} ready. Add comments, choose more files, or press Update Project.</span>
         </div>
       </div>
-      ${pendingProgressFiles.map((file, index) => `
+      ${pendingProgressFiles.map((entry, index) => {
+        const file = entry.file || entry;
+        return `
         <div class="file-row pending-file-row">
           <div class="file-info">
             <strong>${escapeProjectHtml(file.name || "Selected file")}</strong>
             <span>${file.type || "File"}${file.size ? ` - ${(file.size / 1024).toFixed(1)} KB` : ""}</span>
+            <label class="inline-upload-comment">
+              Photo Comment
+              <textarea rows="2" placeholder="Comment shown in PPR for this photo" oninput="updatePendingProgressComment(${index}, this.value)">${escapeProjectHtml(entry.comment || "")}</textarea>
+            </label>
           </div>
           <button type="button" class="danger-btn" onclick="removePendingProgressFile(${index})">Remove</button>
         </div>
-      `).join("")}
+      `;
+      }).join("")}
     `
     : "";
 }
+
+window.updatePendingProgressComment = function(index, value) {
+  if (!pendingProgressFiles[index]) return;
+  pendingProgressFiles[index].comment = value;
+};
 
 window.removePendingProgressFile = function(index) {
   pendingProgressFiles.splice(index, 1);
@@ -4428,12 +4445,34 @@ async function loadProgressFiles(projectId) {
           <div class="file-info">
             <strong>${file.file_name || "Uploaded file"}</strong>
             <span>${file.uploaded_at ? new Date(file.uploaded_at).toLocaleString() : ""}</span>
+            <label class="inline-upload-comment">
+              Photo Comment
+              <textarea id="progress_file_comment_${file.id}" rows="2" placeholder="Comment shown in PPR for this photo">${escapeProjectHtml(file.description || "")}</textarea>
+            </label>
+            <button type="button" onclick="updateProgressFileComment('${file.id}')">Save Comment</button>
           </div>
           <button type="button" class="danger-btn" onclick="deleteProgressFile('${file.id}')">Delete</button>
         </div>
       `).join("")
     : `<p class="muted">No uploaded progress files yet.</p>`;
 }
+
+window.updateProgressFileComment = async function(fileId) {
+  const input = document.getElementById(`progress_file_comment_${fileId}`);
+  const description = input?.value || "";
+  const { error } = await supabase
+    .from("project_files")
+    .update({ description, updated_at: new Date().toISOString() })
+    .eq("id", fileId);
+
+  if (error) {
+    alert("Photo comment was not saved: " + error.message);
+    return;
+  }
+
+  alert("Photo comment saved.");
+  if (editingId) await loadProgressFiles(editingId);
+};
 
 window.deleteProgressFile = async function(fileId) {
   if (isFinanceScope()) {
