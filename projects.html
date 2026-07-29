@@ -431,7 +431,62 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260729-erp-ppr-v57"></script>
+<div id="pprEditorModal" class="modal">
+  <div class="modal-box large-modal">
+    <div class="modal-header">
+      <div>
+        <small>Project Monitoring / PPR Setup</small>
+        <h2>Edit Project Progress Report</h2>
+      </div>
+      <button type="button" onclick="closePprEditor()">Close</button>
+    </div>
+
+    <form id="pprEditorForm">
+      <input id="ppr_project_id" type="hidden">
+
+      <div class="form-grid">
+        <div>
+          <label>Coverage Start Date</label>
+          <input id="ppr_coverage_start" type="date">
+        </div>
+        <div>
+          <label>Coverage End Date</label>
+          <input id="ppr_coverage_end" type="date">
+        </div>
+      </div>
+
+      <label>Executive Summary</label>
+      <textarea id="ppr_executive_summary" placeholder="Summary shown on the executive dashboard page"></textarea>
+
+      <label>Accomplishments During the Reporting Period</label>
+      <textarea id="ppr_accomplishments" placeholder="Completed or ongoing work for this reporting period"></textarea>
+
+      <label>Issues or Challenges Encountered</label>
+      <textarea id="ppr_issues" placeholder="Issues, blockers, delays, or concerns"></textarea>
+
+      <label>Corrective Actions Taken</label>
+      <textarea id="ppr_corrective_actions" placeholder="Actions taken to resolve issues"></textarea>
+
+      <label>Next Planned Activities</label>
+      <textarea id="ppr_next_activities" placeholder="Next target activities or project steps"></textarea>
+
+      <label>Overall Project Remarks</label>
+      <textarea id="ppr_overall_remarks" placeholder="General notes for management or client review"></textarea>
+
+      <label class="inline-check">
+        <input id="ppr_include_financial_summary" type="checkbox" checked>
+        Include financial summary when the current role is authorized
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="secondary-btn" onclick="closePprEditor()">Cancel</button>
+        <button type="submit">Save PPR Details</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="js/app.js?v=20260729-editable-ppr-v58"></script>
 
 </body>
 </html>

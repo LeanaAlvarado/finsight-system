@@ -11,6 +11,7 @@ let projectCurrentPage = 1;
 const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
+const LOCAL_PPR_CONFIGS_KEY = "lemyu_ppr_report_configs";
 const MATERIAL_CATALOG_KEY = "lemyu_material_catalog";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
 const MATERIAL_UNIT_OPTIONS = ["PCS", "MTR", "SET", "ROLL", "BOX", "PACK", "UNIT", "LOT"];
@@ -294,6 +295,60 @@ function buildPprQrUrl(projectId) {
     feedbackLink,
     qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(feedbackLink)}`
   };
+}
+
+function getLocalPprConfigs() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_PPR_CONFIGS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalPprConfig(projectId, config = {}) {
+  if (!projectId) return;
+  const configs = getLocalPprConfigs();
+  configs[projectId] = config;
+  localStorage.setItem(LOCAL_PPR_CONFIGS_KEY, JSON.stringify(configs));
+}
+
+function normalizePprConfig(config = {}) {
+  const source = typeof config === "string"
+    ? (() => {
+        try { return JSON.parse(config); } catch { return {}; }
+      })()
+    : (config || {});
+
+  return {
+    coverageStart: source.coverageStart || source.coverage_start || "",
+    coverageEnd: source.coverageEnd || source.coverage_end || "",
+    executiveSummary: source.executiveSummary || source.executive_summary || "",
+    accomplishments: source.accomplishments || "",
+    issues: source.issues || "",
+    correctiveActions: source.correctiveActions || source.corrective_actions || "",
+    nextActivities: source.nextActivities || source.next_activities || "",
+    overallRemarks: source.overallRemarks || source.overall_remarks || "",
+    includeFinancialSummary: source.includeFinancialSummary !== false && source.include_financial_summary !== false
+  };
+}
+
+function getProjectPprConfig(project = {}) {
+  return normalizePprConfig(project.ppr_report_config || getLocalPprConfigs()[project.id] || {});
+}
+
+function getPprSectionText(value = "") {
+  const text = String(value || "").trim();
+  return text ? escapeProjectHtml(text) : "No information was recorded for this section.";
+}
+
+function getPprCoveragePeriod(project = {}, config = {}) {
+  if (config.coverageStart || config.coverageEnd) {
+    return `${formatDate(config.coverageStart, "Not Available")} to ${formatDate(config.coverageEnd, "Not Available")}`;
+  }
+
+  return project.start_date || project.target_completion
+    ? `${formatDate(project.start_date, "Not Available")} to ${formatDate(project.target_completion, "Not Available")}`
+    : "Not Available";
 }
 
 function getQuotationItemsFromForm(bodyId = "quotationItemsBody") {
@@ -3137,7 +3192,10 @@ function renderProjectList() {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
     const actionLinks = isOperations
-      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>`
+      ? `
+          <a href="#" onclick="editPPR('${project.id}'); return false;">Edit PPR</a>
+          <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
+        `
       : isFinanceScope()
       ? `<a href="#" onclick="viewProject('${project.id}'); return false;">View Costing</a>`
       : `
@@ -3145,6 +3203,7 @@ function renderProjectList() {
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
+          <a href="#" onclick="editPPR('${project.id}'); return false;">Edit PPR</a>
           <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
         `;
@@ -3885,9 +3944,8 @@ window.generatePPR = async function(id) {
   const isOperations = isOperationsScope();
   const generatedDate = new Date();
   const generatedBy = getPprGeneratedBy();
-  const reportPeriod = project.start_date || project.target_completion
-    ? `${formatDate(project.start_date, "Not Available")} to ${formatDate(project.target_completion, "Not Available")}`
-    : "Not Available";
+  const pprConfig = getProjectPprConfig(project);
+  const reportPeriod = getPprCoveragePeriod(project, pprConfig);
   const completionValue = getPprCompletionValue(project);
   const completionText = completionValue === null ? "Not Available" : `${completionValue}%`;
   const completionBar = completionValue === null ? 0 : completionValue;
@@ -3909,8 +3967,8 @@ window.generatePPR = async function(id) {
     .sort((a, b) => new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0))[0];
   const { feedbackLink, qrUrl } = buildPprQrUrl(id);
   const pages = [];
-  const statusClass = getPprStatusClass(project.status);
   const pprFileName = `PPR_${String(project.project_code || "PROJECT").replace(/[^\w-]+/g, "_")}_${generatedDate.toISOString().slice(0, 10)}.pdf`;
+  const showFinancialSummary = !isOperations && pprConfig.includeFinancialSummary !== false;
 
   const pprWindow = window.open("", "_blank");
   if (!pprWindow) {
@@ -3989,7 +4047,7 @@ window.generatePPR = async function(id) {
       </div>
       <div class="section-card">
         <h3>Executive Summary</h3>
-        <p>${project.remarks ? escapeProjectHtml(project.remarks) : "No executive summary was recorded for this project."}</p>
+        <p>${getPprSectionText(pprConfig.executiveSummary || project.remarks)}</p>
       </div>
     </section>
   `);
@@ -4098,10 +4156,16 @@ window.generatePPR = async function(id) {
         </tbody>
       </table>
       <div class="narrative-grid">
-        ${["Accomplishments During the Reporting Period", "Issues or Challenges Encountered", "Corrective Actions Taken", "Next Planned Activities", "Overall Project Remarks"].map((title, index) => `
+        ${[
+          ["Accomplishments During the Reporting Period", pprConfig.accomplishments],
+          ["Issues or Challenges Encountered", pprConfig.issues],
+          ["Corrective Actions Taken", pprConfig.correctiveActions],
+          ["Next Planned Activities", pprConfig.nextActivities],
+          ["Overall Project Remarks", pprConfig.overallRemarks || project.remarks]
+        ].map(([title, text]) => `
           <div class="section-card">
             <h3>${title}</h3>
-            <p>${index === 4 && project.remarks ? escapeProjectHtml(project.remarks) : "No information was recorded for this section."}</p>
+            <p>${getPprSectionText(text)}</p>
           </div>
         `).join("")}
       </div>
@@ -4113,8 +4177,8 @@ window.generatePPR = async function(id) {
       <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
       <h2>Financial Summary, Feedback, and Approval</h2>
       ${
-        isOperations
-          ? `<div class="empty-state">Financial summary is hidden for Project Manager / Operations Staff access.</div>`
+        !showFinancialSummary
+          ? `<div class="empty-state">${isOperations ? "Financial summary is hidden for Project Manager / Operations Staff access." : "Financial summary was excluded from this PPR configuration."}</div>`
           : `<div class="kpi-grid financial-grid">
               <div class="kpi-card"><span>Contract Amount</span><strong>${contractAmount ? peso(contractAmount) : "Not Available"}</strong></div>
               <div class="kpi-card"><span>Approved Variation Amount</span><strong>Not Available</strong></div>
@@ -4258,6 +4322,90 @@ window.generatePPR = async function(id) {
 
   pprWindow.document.close();
 };
+
+window.editPPR = async function(id) {
+  if (isFinanceScope()) {
+    alert("Finance Officer / Accountant can review costing only and cannot edit PPR details.");
+    return;
+  }
+
+  const project = await getProjectForAction(id, "PPR");
+  if (!project) return;
+
+  const config = getProjectPprConfig(project);
+  const modal = document.getElementById("pprEditorModal");
+  if (!modal) return;
+
+  ppr_project_id.value = project.id;
+  ppr_coverage_start.value = config.coverageStart || project.start_date || "";
+  ppr_coverage_end.value = config.coverageEnd || project.target_completion || "";
+  ppr_executive_summary.value = config.executiveSummary || project.remarks || "";
+  ppr_accomplishments.value = config.accomplishments || "";
+  ppr_issues.value = config.issues || "";
+  ppr_corrective_actions.value = config.correctiveActions || "";
+  ppr_next_activities.value = config.nextActivities || "";
+  ppr_overall_remarks.value = config.overallRemarks || "";
+  ppr_include_financial_summary.checked = config.includeFinancialSummary !== false;
+
+  modal.style.display = "flex";
+};
+
+window.closePprEditor = function() {
+  const modal = document.getElementById("pprEditorModal");
+  if (modal) modal.style.display = "none";
+};
+
+const pprEditorForm = document.getElementById("pprEditorForm");
+if (pprEditorForm) {
+  pprEditorForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const projectId = ppr_project_id.value;
+    const project = getProjectById(projectId) || await getProjectForAction(projectId, "PPR");
+    if (!project) return;
+
+    const config = {
+      coverageStart: ppr_coverage_start.value || "",
+      coverageEnd: ppr_coverage_end.value || "",
+      executiveSummary: ppr_executive_summary.value.trim(),
+      accomplishments: ppr_accomplishments.value.trim(),
+      issues: ppr_issues.value.trim(),
+      correctiveActions: ppr_corrective_actions.value.trim(),
+      nextActivities: ppr_next_activities.value.trim(),
+      overallRemarks: ppr_overall_remarks.value.trim(),
+      includeFinancialSummary: ppr_include_financial_summary.checked
+    };
+
+    saveLocalPprConfig(projectId, config);
+
+    if (!isLocalProjectId(projectId)) {
+      const { data, error } = await updateWithOptionalColumns(
+        "projects",
+        { ppr_report_config: config },
+        "id",
+        projectId,
+        ["ppr_report_config"],
+        { returnRecord: true }
+      );
+
+      if (error) {
+        alert("PPR details were saved locally but not in Supabase yet: " + error.message + "\n\nPlease run the latest Supabase SQL migration, then save again.");
+        return;
+      }
+
+      saveLocalProjectMirror({ ...(data || project), ppr_report_config: config });
+    } else {
+      updateLocalProjectMirror(projectId, { ppr_report_config: config });
+    }
+
+    const index = allProjects.findIndex(item => String(item.id || "") === String(projectId || ""));
+    if (index >= 0) allProjects[index] = { ...allProjects[index], ppr_report_config: config };
+
+    closePprEditor();
+    renderProjectList();
+    alert("PPR details saved. Generate PPR will use the updated report details.");
+  });
+}
 
 async function uploadProgressFiles(projectId) {
   const files = document.getElementById("progress_files").files;

@@ -38,6 +38,7 @@ create table if not exists public.projects (
   initial_actual_cost numeric default 0,
   ppr_prepared_by text,
   ppr_noted_by text,
+  ppr_report_config jsonb default '{}'::jsonb,
   remarks text,
   quotation_type text default 'manpower',
   quotation_items jsonb default '[]'::jsonb,
@@ -249,6 +250,7 @@ alter table public.projects add column if not exists tax_amount numeric;
 alter table public.projects add column if not exists initial_actual_cost numeric default 0;
 alter table public.projects add column if not exists ppr_prepared_by text;
 alter table public.projects add column if not exists ppr_noted_by text;
+alter table public.projects add column if not exists ppr_report_config jsonb default '{}'::jsonb;
 alter table public.projects add column if not exists remarks text;
 alter table public.projects add column if not exists quotation_type text default 'manpower';
 alter table public.projects add column if not exists quotation_items jsonb default '[]'::jsonb;

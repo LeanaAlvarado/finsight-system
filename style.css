@@ -632,6 +632,18 @@ textarea:focus{
   margin-top:18px;
 }
 
+.inline-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+  font-weight:700;
+}
+
+.inline-check input{
+  width:auto;
+}
+
 button,
 .btn{
   display:inline-flex;
