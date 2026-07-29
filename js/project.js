@@ -3921,25 +3921,20 @@ window.generatePPR = async function(id) {
 
   let feedbacks = [];
   let projectFiles = [];
-  let expenses = [];
 
   if (!isLocalProjectId(id)) {
-    const [feedbackResult, filesResult, expenseResult] = await Promise.all([
+    const [feedbackResult, filesResult] = await Promise.all([
       supabase.from("feedback").select("*").eq("project_id", id),
-      supabase.from("project_files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
-      supabase.from("expenses").select("*").eq("project_id", id)
+      supabase.from("project_files").select("*").eq("project_id", id).order("created_at", { ascending: false })
     ]);
 
     if (feedbackResult.error) console.warn("PPR feedback records could not be loaded.", feedbackResult.error);
     if (filesResult.error) console.warn("PPR project files could not be loaded.", filesResult.error);
-    if (expenseResult.error) console.warn("PPR expense records could not be loaded.", expenseResult.error);
 
     feedbacks = feedbackResult.data || [];
     projectFiles = filesResult.data || [];
-    expenses = expenseResult.data || [];
   }
 
-  const isOperations = isOperationsScope();
   const generatedDate = new Date();
   const generatedBy = getPprGeneratedBy();
   const pprConfig = getProjectPprConfig(project);
@@ -3947,11 +3942,6 @@ window.generatePPR = async function(id) {
   const completionValue = getPprCompletionValue(project);
   const completionText = completionValue === null ? "Not Available" : `${completionValue}%`;
   const completionBar = completionValue === null ? 0 : completionValue;
-  const financials = getProjectFinancials(project, expenses);
-  const contractAmount = Number(project.contract_amount || 0);
-  const downPayment = getProjectDownPayment(project);
-  const remainingBalance = Math.max(contractAmount - downPayment, 0);
-  const estimatedProfit = contractAmount - financials.tax - financials.expenses;
   const photos = getPprPhotos(projectFiles);
   const photoPages = chunkPprPhotos(photos, 4);
   const scopeItems = getPprScopeItems(project);
@@ -3965,7 +3955,6 @@ window.generatePPR = async function(id) {
   const { feedbackLink, qrUrl } = buildPprQrUrl(id);
   const pages = [];
   const pprFileName = `PPR_${String(project.project_code || "PROJECT").replace(/[^\w-]+/g, "_")}_${generatedDate.toISOString().slice(0, 10)}.pdf`;
-  const showFinancialSummary = !isOperations && pprConfig.includeFinancialSummary !== false;
 
   const pprWindow = window.open("", "_blank");
   if (!pprWindow) {
@@ -4022,19 +4011,12 @@ window.generatePPR = async function(id) {
       <h2>Executive Project Dashboard</h2>
       <div class="kpi-grid">
         <div class="kpi-card"><span>Overall Project Progress</span><strong>${completionText}</strong>${progressBar(completionBar)}</div>
-        ${isOperations ? "" : `<div class="kpi-card"><span>Contract Amount</span><strong>${contractAmount ? peso(contractAmount) : "Not Available"}</strong></div>`}
-        ${isOperations ? "" : `<div class="kpi-card"><span>Total Amount Paid</span><strong>${downPayment ? peso(downPayment) : "Not Available"}</strong></div>`}
-        ${isOperations ? "" : `<div class="kpi-card"><span>Remaining Balance</span><strong>${contractAmount ? peso(remainingBalance) : "Not Available"}</strong></div>`}
         <div class="kpi-card"><span>Project Duration</span><strong>${safePprText(getProjectDurationText(project))}</strong></div>
       </div>
       <div class="section-card">
         <h3>Overall Progress</h3>
         <div class="progress-head"><strong>${completionText}</strong>${statusBadge(project.status)}</div>
         ${progressBar(completionBar)}
-      </div>
-      <div class="section-card">
-        <h3>Project Timeline or Phase Summary</h3>
-        <p class="empty-text">No separate project phase records are stored for this project.</p>
       </div>
       <div class="section-card">
         <h3>Executive Summary</h3>
@@ -4124,20 +4106,7 @@ window.generatePPR = async function(id) {
   pages.push(`
     <section class="ppr-page">
       <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
-      <h2>Financial Summary, Feedback, and Approval</h2>
-      ${
-        !showFinancialSummary
-          ? `<div class="empty-state">${isOperations ? "Financial summary is hidden for Project Manager / Operations Staff access." : "Financial summary was excluded from this PPR configuration."}</div>`
-          : `<div class="kpi-grid financial-grid">
-              <div class="kpi-card"><span>Contract Amount</span><strong>${contractAmount ? peso(contractAmount) : "Not Available"}</strong></div>
-              <div class="kpi-card"><span>Approved Variation Amount</span><strong>Not Available</strong></div>
-              <div class="kpi-card"><span>Total Project Cost</span><strong>${financials.expenses ? peso(financials.expenses) : "Not Available"}</strong></div>
-              <div class="kpi-card"><span>Amount Paid</span><strong>${downPayment ? peso(downPayment) : "Not Available"}</strong></div>
-              <div class="kpi-card"><span>Remaining Receivable</span><strong>${contractAmount ? peso(remainingBalance) : "Not Available"}</strong></div>
-              <div class="kpi-card"><span>Estimated Profit / Margin</span><strong>${contractAmount ? peso(estimatedProfit) : "Not Available"}</strong></div>
-            </div>
-            <p class="disclaimer">Financial values shown in this report are based on records available in FinSight as of the report generation date.</p>`
-      }
+      <h2>Client Feedback and Approval</h2>
       <div class="feedback-qr-grid">
         <div class="section-card">
           <h3>Client Feedback</h3>
@@ -4204,7 +4173,6 @@ window.generatePPR = async function(id) {
         .cover-system{text-align:center;color:#64748B;font-size:9px;}
         .ppr-header{margin-bottom:14px;}
         .kpi-grid{grid-template-columns:repeat(3,1fr);margin-bottom:12px;}
-        .financial-grid{grid-template-columns:repeat(3,1fr);}
         .kpi-card{break-inside:avoid;min-height:72px;}
         .kpi-card strong{font-size:16px;}
         .progress-wrap{height:8px;background:#E2E8F0;border-radius:999px;margin-top:8px;overflow:hidden;}
