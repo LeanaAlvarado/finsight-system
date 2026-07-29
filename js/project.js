@@ -4006,11 +4006,6 @@ window.generatePPR = async function(id) {
           <div><span>Client</span><strong>${safePprText(project.client_name || getProjectClientName(project))}</strong></div>
           <div><span>Location</span><strong>${safePprText(project.location)}</strong></div>
         </div>
-        <div class="cover-progress">
-          <strong>${completionText}</strong>
-          ${progressBar(completionBar, "Overall project completion")}
-          ${statusBadge(project.status)}
-        </div>
       </div>
       <div class="cover-footer-grid">
         <div><span>Report Period</span><strong>${safePprText(reportPeriod)}</strong></div>
@@ -4207,8 +4202,6 @@ window.generatePPR = async function(id) {
         .cover-meta div,.cover-footer-grid div,.kpi-card,.section-card,.qr-card,.empty-state{border:1px solid #DCE4EA;background:#F8FAFC;border-radius:7px;padding:12px;}
         .cover-meta span,.cover-footer-grid span,.kpi-card span,.feedback-summary span{display:block;color:#64748B;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
         .cover-meta strong,.cover-footer-grid strong,.kpi-card strong{display:block;margin-top:4px;color:#111827;font-size:13px;}
-        .cover-progress{max-width:420px;margin:0 auto;}
-        .cover-progress>strong{display:block;color:#12304A;font-size:44px;}
         .cover-system{text-align:center;color:#64748B;font-size:9px;}
         .ppr-header{margin-bottom:14px;}
         .kpi-grid{grid-template-columns:repeat(3,1fr);margin-bottom:12px;}
