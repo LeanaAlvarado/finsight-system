@@ -1,4 +1,4 @@
-import { supabase, peso, updateWithOptionalColumns } from "./supabase.js";
+import { supabase, peso, escapeHtml, updateWithOptionalColumns } from "./supabase.js";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -7,12 +7,22 @@ let editingId = null;
 let editingProjectCode = "";
 let allProjects = [];
 let activeSmartContract = null;
+let projectCurrentPage = 1;
 const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const MATERIAL_CATALOG_KEY = "lemyu_material_catalog";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
 const MATERIAL_UNIT_OPTIONS = ["PCS", "MTR", "SET", "ROLL", "BOX", "PACK", "UNIT", "LOT"];
+const PROJECT_PAGE_SIZE = 10;
+const projectListState = {
+  search: "",
+  status: "all",
+  date: "all",
+  personnel: "",
+  type: "all",
+  sort: "newest"
+};
 
 function isFinanceScope() {
   return document.body.dataset.roleScope === "finance"
@@ -761,8 +771,211 @@ function renderSmartContracts() {
   `).join("");
 }
 
+function getProjectDateForList(project = {}) {
+  return project.start_date || project.created_at || project.updated_at || "";
+}
+
+function getProjectSearchText(project = {}) {
+  return [
+    project.project_code,
+    project.project_title,
+    project.client_name,
+    project.client_contact_name,
+    project.contact_number,
+    project.location,
+    project.company_name,
+    project.status,
+    project.prepared_by,
+    project.ppr_prepared_by,
+    project.ppr_noted_by,
+    getProjectQuotationLabel(project)
+  ].join(" ").toLowerCase();
+}
+
+function isWithinProjectDateFilter(project = {}) {
+  const dateFilter = projectListState.date;
+  if (dateFilter === "all") return true;
+
+  const rawDate = getProjectDateForList(project);
+  if (!rawDate) return dateFilter === "no_date";
+
+  const projectDate = new Date(rawDate);
+  if (Number.isNaN(projectDate.getTime())) return dateFilter === "no_date";
+
+  const today = new Date();
+  if (dateFilter === "this_month") {
+    return projectDate.getFullYear() === today.getFullYear()
+      && projectDate.getMonth() === today.getMonth();
+  }
+
+  if (dateFilter === "this_year") {
+    return projectDate.getFullYear() === today.getFullYear();
+  }
+
+  return true;
+}
+
+function getFilteredProjects() {
+  const search = projectListState.search.trim().toLowerCase();
+  const personnel = projectListState.personnel.trim().toLowerCase();
+
+  return allProjects
+    .filter(project => {
+      if (!search) return true;
+      return getProjectSearchText(project).includes(search);
+    })
+    .filter(project => {
+      if (projectListState.status === "all") return true;
+      return String(project.status || "").toLowerCase() === projectListState.status.toLowerCase();
+    })
+    .filter(project => isWithinProjectDateFilter(project))
+    .filter(project => {
+      if (!personnel) return true;
+      return [
+        project.prepared_by,
+        project.ppr_prepared_by,
+        project.ppr_noted_by,
+        project.client_contact_name
+      ].join(" ").toLowerCase().includes(personnel);
+    })
+    .filter(project => {
+      if (projectListState.type === "all") return true;
+      return getProjectQuotationLabel(project).toLowerCase().includes(projectListState.type);
+    })
+    .sort((a, b) => {
+      const dateA = new Date(getProjectDateForList(a) || 0).getTime() || 0;
+      const dateB = new Date(getProjectDateForList(b) || 0).getTime() || 0;
+      const titleA = String(a.project_title || "").toLowerCase();
+      const titleB = String(b.project_title || "").toLowerCase();
+      const statusA = String(a.status || "").toLowerCase();
+      const statusB = String(b.status || "").toLowerCase();
+      const contractA = Number(a.contract_amount || 0);
+      const contractB = Number(b.contract_amount || 0);
+
+      if (projectListState.sort === "oldest") return dateA - dateB || titleA.localeCompare(titleB);
+      if (projectListState.sort === "title_asc") return titleA.localeCompare(titleB) || dateB - dateA;
+      if (projectListState.sort === "status_asc") return statusA.localeCompare(statusB) || dateB - dateA;
+      if (projectListState.sort === "contract_desc") return contractB - contractA || titleA.localeCompare(titleB);
+      if (projectListState.sort === "contract_asc") return contractA - contractB || titleA.localeCompare(titleB);
+      return dateB - dateA || titleA.localeCompare(titleB);
+    });
+}
+
+function hasActiveProjectFilters() {
+  return Boolean(projectListState.search.trim())
+    || projectListState.status !== "all"
+    || projectListState.date !== "all"
+    || Boolean(projectListState.personnel.trim())
+    || projectListState.type !== "all";
+}
+
+function renderProjectPagination(totalItems) {
+  const pagination = document.getElementById("projectPagination");
+  const summary = document.getElementById("projectPaginationSummary");
+  const controls = document.getElementById("projectPaginationControls");
+  if (!pagination || !summary || !controls) return;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROJECT_PAGE_SIZE));
+  projectCurrentPage = Math.min(Math.max(projectCurrentPage, 1), totalPages);
+  const startIndex = totalItems ? ((projectCurrentPage - 1) * PROJECT_PAGE_SIZE) + 1 : 0;
+  const endIndex = Math.min(projectCurrentPage * PROJECT_PAGE_SIZE, totalItems);
+
+  pagination.hidden = false;
+  summary.textContent = totalItems
+    ? `Showing ${startIndex}-${endIndex} of ${totalItems} projects`
+    : "Showing 0 of 0 projects";
+
+  const pageWindow = 5;
+  const firstPage = Math.max(1, Math.min(projectCurrentPage - 2, totalPages - pageWindow + 1));
+  const lastPage = Math.min(totalPages, firstPage + pageWindow - 1);
+  const pageButtons = [];
+
+  for (let page = firstPage; page <= lastPage; page += 1) {
+    pageButtons.push(`
+      <button type="button" class="${page === projectCurrentPage ? "active" : ""}" ${page === projectCurrentPage ? "aria-current=\"page\"" : ""} onclick="goToProjectPage(${page})">${page}</button>
+    `);
+  }
+
+  controls.innerHTML = `
+    <button type="button" onclick="goToProjectPage(${projectCurrentPage - 1})" ${projectCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
+    ${pageButtons.join("")}
+    <button type="button" onclick="goToProjectPage(${projectCurrentPage + 1})" ${projectCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+}
+
+function renderProjectList() {
+  const projectTableBody = document.getElementById("projectTable");
+  if (!projectTableBody) return;
+
+  const headerRow = document.querySelector(".monitoring-table thead tr");
+  if (headerRow) {
+    headerRow.innerHTML = `
+    <th>Code</th>
+    <th>Title</th>
+    <th>Client</th>
+    <th>Contact</th>
+    <th>Quotation Type</th>
+    <th>Status</th>
+    <th>Actions</th>
+  `;
+  }
+
+  const projects = getFilteredProjects();
+  const totalItems = projects.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROJECT_PAGE_SIZE));
+  projectCurrentPage = Math.min(Math.max(projectCurrentPage, 1), totalPages);
+  const startIndex = (projectCurrentPage - 1) * PROJECT_PAGE_SIZE;
+  const pageProjects = projects.slice(startIndex, startIndex + PROJECT_PAGE_SIZE);
+  const isOperations = isOperationsScope();
+
+  if (!pageProjects.length) {
+    const message = allProjects.length && hasActiveProjectFilters()
+      ? "No projects match the selected filters."
+      : "No project records found.";
+    projectTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">${message}</td></tr>`;
+    renderProjectPagination(totalItems);
+    return;
+  }
+
+  projectTableBody.innerHTML = pageProjects.map(project => {
+    const statusValue = project.status || "Pending";
+    const quotationLabel = getProjectQuotationLabel(project);
+    const actionLinks = isOperations
+      ? `<a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>`
+      : isFinanceScope()
+      ? `<a href="#" onclick="viewProject('${project.id}')">View Costing</a>`
+      : `
+          <a href="#" onclick="viewProject('${project.id}')">View</a>
+          <a href="#" onclick="editProject('${project.id}')">Edit</a>
+          <a href="#" onclick="generateProjectQuotation('${project.id}')">${escapeHtml(quotationLabel)}</a>
+          <a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>
+          <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
+        `;
+
+    return `
+      <tr>
+        <td>${escapeHtml(project.project_code || "-")}</td>
+        <td>${escapeHtml(project.project_title || "-")}</td>
+        <td>${escapeHtml(project.client_name || "-")}</td>
+        <td>${escapeHtml(project.contact_number || "-")}</td>
+        <td>${escapeHtml(quotationLabel)}</td>
+        <td><span class="status ${escapeHtml(statusValue)}">${escapeHtml(statusValue)}</span></td>
+        <td class="action-links">
+          ${actionLinks}
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  renderProjectPagination(totalItems);
+}
+
 // LOAD PROJECTS
 async function loadProjects() {
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading project records...</td></tr>`;
+  }
+
   const { data: supabaseProjects, error } = await supabase
     .from("projects")
     .select("*")
@@ -770,6 +983,14 @@ async function loadProjects() {
 
   if (error) {
     console.log(error);
+    if (!getLocalSavedProjects().length) {
+      allProjects = [];
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+      }
+      renderProjectPagination(0);
+      return;
+    }
   }
 
   const projects = mergeProjects(error ? [] : (supabaseProjects || []));
@@ -788,63 +1009,7 @@ async function loadProjects() {
 
   syncProjectContracts(allProjects, expenses);
   renderSmartContracts();
-
-  const tbody = document.getElementById("projectTable");
-  const isOperations = isOperationsScope();
-
-  document.querySelector(".monitoring-table thead tr").innerHTML = `
-    <th>Code</th>
-    <th>Title</th>
-    <th>Client</th>
-    <th>Contact</th>
-    <th>Quotation Type</th>
-    <th>Status</th>
-    <th>Actions</th>
-  `;
-
-  tbody.innerHTML = "";
-
-  if (!projects || projects.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align:center;">No projects found.</td>
-      </tr>
-    `;
-    return;
-  }
-
-  projects.forEach(project => {
-    const statusValue = project.status || "Pending";
-
-    const quotationLabel = getProjectQuotationLabel(project);
-    const actionLinks = isOperations
-      ? `
-          <a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>
-        `
-      : isFinanceScope()
-      ? `<a href="#" onclick="viewProject('${project.id}')">View Costing</a>`
-      : `
-          <a href="#" onclick="viewProject('${project.id}')">View</a>
-          <a href="#" onclick="editProject('${project.id}')">Edit</a>
-          <a href="#" onclick="generateProjectQuotation('${project.id}')">${quotationLabel}</a>
-          <a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>
-          <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
-        `;
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${project.project_code || "-"}</td>
-        <td>${project.project_title || "-"}</td>
-        <td>${project.client_name || "-"}</td>
-        <td>${project.contact_number || "-"}</td>
-        <td>${quotationLabel}</td>
-        <td><span class="status ${statusValue}">${statusValue}</span></td>
-        <td class="action-links">
-          ${actionLinks}
-        </td>
-      </tr>
-    `;
-  });
+  renderProjectList();
 }
 
 window.addEventListener("storage", event => {
@@ -3758,8 +3923,38 @@ window.showProjectQR = function(projectId) {
   qrWindow.document.close();
 };
 
+window.goToProjectPage = function(page) {
+  const totalPages = Math.max(1, Math.ceil(getFilteredProjects().length / PROJECT_PAGE_SIZE));
+  projectCurrentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
+  renderProjectList();
+};
+
+function bindProjectListFilters() {
+  const controls = [
+    ["projectSearch", "search"],
+    ["projectStatusFilter", "status"],
+    ["projectDateFilter", "date"],
+    ["projectPersonnelFilter", "personnel"],
+    ["projectTypeFilter", "type"],
+    ["projectSort", "sort"]
+  ];
+
+  controls.forEach(([id, stateKey]) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+
+    const eventName = element.type === "search" ? "input" : "change";
+    element.addEventListener(eventName, event => {
+      projectListState[stateKey] = event.target.value || (["search", "personnel"].includes(stateKey) ? "" : "all");
+      projectCurrentPage = 1;
+      renderProjectList();
+    });
+  });
+}
+
 // INITIAL LOAD
 applyFinanceProjectScope();
 applyOperationsProjectScope();
+bindProjectListFilters();
 resetQuotationItems();
 loadProjects();

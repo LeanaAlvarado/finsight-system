@@ -64,6 +64,42 @@
     <h3><span class="num">01</span> Project Monitoring List</h3>
     <p class="muted">Review project progress, quotation type, and available actions in one table.</p>
 
+    <div class="inventory-list-toolbar">
+      <input id="projectSearch" class="search" type="search" placeholder="Search project, client, code, or location">
+
+      <select id="projectStatusFilter">
+        <option value="all">All status</option>
+        <option value="Pending">Pending</option>
+        <option value="Ongoing">Ongoing</option>
+        <option value="Completed">Completed</option>
+        <option value="Cancelled">Cancelled</option>
+      </select>
+
+      <select id="projectDateFilter">
+        <option value="all">All dates</option>
+        <option value="this_month">This month</option>
+        <option value="this_year">This year</option>
+        <option value="no_date">No start date</option>
+      </select>
+
+      <input id="projectPersonnelFilter" type="search" placeholder="Assigned personnel">
+
+      <select id="projectTypeFilter">
+        <option value="all">All quotation types</option>
+        <option value="manpower">Manpower</option>
+        <option value="cctv">CCTV</option>
+      </select>
+
+      <select id="projectSort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="title_asc">Project A-Z</option>
+        <option value="status_asc">Status A-Z</option>
+        <option value="contract_desc">Highest contract</option>
+        <option value="contract_asc">Lowest contract</option>
+      </select>
+    </div>
+
     <div class="table-wrap">
       <table class="monitoring-table">
         <thead>
@@ -80,6 +116,11 @@
 
         <tbody id="projectTable"></tbody>
       </table>
+    </div>
+
+    <div id="projectPagination" class="pagination-bar" hidden>
+      <span id="projectPaginationSummary">Showing 0 of 0 projects</span>
+      <div id="projectPaginationControls" class="pagination-controls"></div>
     </div>
   </section>
 
@@ -362,7 +403,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260729-revenue-pagination-v39"></script>
+<script type="module" src="js/app.js?v=20260729-project-pagination-v40"></script>
 
 </body>
 </html>
