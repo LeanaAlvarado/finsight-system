@@ -4,6 +4,7 @@ let projectRecords = [];
 let expenseRecords = [];
 let editingExpenseId = null;
 const EXPENSE_PROOF_BUCKETS = ["expense-proofs", "expenses", "receipts", "proofs", "progress-files", "contracts"];
+const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
 
 function isOperationsScope() {
   return document.body.dataset.roleScope === "operations"
@@ -82,6 +83,39 @@ function renderProofLink(expense) {
   const proofUrl = getProofUrl(expense);
   if (!proofUrl) return "-";
   return `<a href="${escapeHtml(proofUrl)}" target="_blank" rel="noopener">${escapeHtml(getProofName(expense))}</a>`;
+}
+
+function parseAmountInput(input, { required = true } = {}) {
+  const rawValue = String(input?.value ?? "").trim();
+
+  if (!rawValue && !required) {
+    input?.setCustomValidity("");
+    return 0;
+  }
+
+  if (!rawValue || !AMOUNT_PATTERN.test(rawValue)) {
+    input?.setCustomValidity("Please enter a valid amount.");
+    input?.reportValidity();
+    input?.focus();
+    return null;
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    input?.setCustomValidity("Please enter a valid amount.");
+    input?.reportValidity();
+    input?.focus();
+    return null;
+  }
+
+  input.setCustomValidity("");
+  return parsed;
+}
+
+function normalizeAmountInput(input) {
+  const parsed = parseAmountInput(input, { required: input?.required });
+  if (parsed === null) return;
+  input.value = String(parsed);
 }
 
 function resetExpenseForm() {
@@ -258,8 +292,11 @@ window.deleteExpense = async function(id) {
 document.getElementById("payrollForm")?.addEventListener("submit", async event => {
   event.preventDefault();
 
-  const salary = number(salary_amount.value);
-  const deduction = number(deduction_amount.value);
+  const salary = parseAmountInput(salary_amount);
+  if (salary === null) return;
+
+  const deduction = parseAmountInput(deduction_amount, { required: false });
+  if (deduction === null) return;
 
   const payrollRecord = {
     employee_name: employee_name.value,
@@ -306,6 +343,9 @@ document.getElementById("payrollForm")?.addEventListener("submit", async event =
 document.getElementById("expenseForm")?.addEventListener("submit", async event => {
   event.preventDefault();
   const proofFile = document.getElementById("expenseProof")?.files?.[0] || null;
+  const expenseAmount = parseAmountInput(amount);
+  if (expenseAmount === null) return;
+
   let uploadedProof = null;
 
   if (proofFile) {
@@ -323,7 +363,7 @@ document.getElementById("expenseForm")?.addEventListener("submit", async event =
     client_name: getSelectedExpenseProject()?.client_name || "",
     project_id: projectSelect.value || null,
     category: category.value,
-    amount: number(amount.value),
+    amount: expenseAmount,
     date: date.value,
     expense_date: date.value,
     description: expense_description.value,
@@ -368,6 +408,24 @@ document.getElementById("expenseForm")?.addEventListener("submit", async event =
 });
 
 document.getElementById("cancelExpenseEditBtn")?.addEventListener("click", resetExpenseForm);
+
+document.querySelectorAll(".amount-input").forEach(input => {
+  input.addEventListener("keydown", event => {
+    if (["e", "E", "+", "-"].includes(event.key)) {
+      event.preventDefault();
+    }
+  });
+
+  input.addEventListener("input", () => {
+    input.setCustomValidity("");
+  });
+
+  input.addEventListener("blur", () => {
+    if (String(input.value || "").trim()) {
+      normalizeAmountInput(input);
+    }
+  });
+});
 
 applyOperationsExpenseScope();
 loadPayrollAndExpenses();
