@@ -31,6 +31,7 @@ create table if not exists public.projects (
   target_completion date,
   completed_date date,
   status text default 'Pending',
+  progress_percentage numeric default 0,
   project_budget numeric default 0,
   contract_amount numeric default 0,
   down_payment numeric default 0,
@@ -243,6 +244,7 @@ alter table public.projects add column if not exists start_date date;
 alter table public.projects add column if not exists target_completion date;
 alter table public.projects add column if not exists completed_date date;
 alter table public.projects add column if not exists status text default 'Pending';
+alter table public.projects add column if not exists progress_percentage numeric default 0;
 alter table public.projects add column if not exists project_budget numeric default 0;
 alter table public.projects add column if not exists contract_amount numeric default 0;
 alter table public.projects add column if not exists down_payment numeric default 0;
@@ -258,6 +260,22 @@ alter table public.projects add column if not exists contract_file_name text;
 alter table public.projects add column if not exists contract_file_url text;
 alter table public.projects add column if not exists created_at timestamptz default now();
 alter table public.projects add column if not exists updated_at timestamptz default now();
+
+update public.projects
+set progress_percentage = least(greatest(coalesce(progress_percentage, 0), 0), 100);
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'projects_progress_percentage_check'
+  ) then
+    alter table public.projects
+      add constraint projects_progress_percentage_check
+      check (progress_percentage >= 0 and progress_percentage <= 100);
+  end if;
+end $$;
 
 alter table public.inventory add column if not exists project_id text;
 alter table public.inventory add column if not exists project_code text;

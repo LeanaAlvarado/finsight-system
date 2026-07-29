@@ -16,6 +16,7 @@ const project_duration_days = document.getElementById("project_duration_days");
 const start_date = document.getElementById("start_date");
 const target_completion = document.getElementById("target_completion");
 const status = document.getElementById("status");
+const progress_percentage = document.getElementById("progress_percentage");
 const project_budget = document.getElementById("project_budget");
 const contract_amount = document.getElementById("contract_amount");
 const down_payment = document.getElementById("down_payment");
@@ -29,6 +30,7 @@ const manpower_client_email = document.getElementById("manpower_client_email");
 const manpower_location = document.getElementById("manpower_location");
 const manpower_duration_days = document.getElementById("manpower_duration_days");
 const manpower_amount_paid = document.getElementById("manpower_amount_paid");
+const manpower_progress_percentage = document.getElementById("manpower_progress_percentage");
 const manpower_prepared_by = document.getElementById("manpower_prepared_by");
 const manpower_prepared_position = document.getElementById("manpower_prepared_position");
 const manpower_terms = document.getElementById("manpower_terms");
@@ -75,6 +77,7 @@ const MANPOWER_HIDDEN_FIELD_IDS = [
   "start_date",
   "target_completion",
   "status",
+  "progress_percentage",
   "project_budget",
   "contract_amount",
   "down_payment",
@@ -570,6 +573,13 @@ function getCctvItemsAmount() {
   return getProposalQuotationItems().reduce((sum, item) => sum + number(item.amount), 0);
 }
 
+function getOverallProjectProgressValue() {
+  const source = quotationTypeInput.value === "manpower" ? manpower_progress_percentage : progress_percentage;
+  const value = Number(source?.value || 0);
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(Math.max(Math.trunc(value), 0), 100);
+}
+
 function updateProposalComputedAmount() {
   if (quotationTypeInput.value === "manpower") {
     const manpowerAmount = getManpowerAmount();
@@ -787,6 +797,7 @@ proposalForm.addEventListener("submit", async event => {
       start_date: start_date?.value || null,
       target_completion: target_completion?.value || null,
       status: status.value || "Pending",
+      progress_percentage: getOverallProjectProgressValue(),
       project_budget: isManpower ? (number(project_budget.value) || number(contract_amount.value)) : number(project_budget.value),
       contract_amount: number(contract_amount.value),
       down_payment: isManpower ? number(manpower_amount_paid?.value || down_payment.value) : number(down_payment.value),
@@ -811,6 +822,7 @@ proposalForm.addEventListener("submit", async event => {
         "client_contact_name",
         "client_email",
         "tax_amount",
+        "progress_percentage",
         "ppr_prepared_by",
         "ppr_noted_by",
         "quotation_type",

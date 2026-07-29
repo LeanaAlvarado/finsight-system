@@ -178,7 +178,7 @@ function getPprGeneratedBy() {
   return getCurrentAccountName() || localStorage.getItem("lemyu_user_email") || "FinSight User";
 }
 
-function getPprCompletionValue(project = {}) {
+function getExplicitProjectProgress(project = {}) {
   const candidates = [
     project.completion_percentage,
     project.progress_percentage,
@@ -190,6 +190,18 @@ function getPprCompletionValue(project = {}) {
     const value = Number(raw);
     if (Number.isFinite(value)) return Math.min(Math.max(value, 0), 100);
   }
+  return "";
+}
+
+function getProjectProgressInputValue(input) {
+  const value = Number(input?.value || 0);
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(Math.max(Math.trunc(value), 0), 100);
+}
+
+function getPprCompletionValue(project = {}) {
+  const explicitProgress = getExplicitProjectProgress(project);
+  if (explicitProgress !== "") return explicitProgress;
 
   const status = String(project.status || "").trim().toLowerCase();
   if (status === "completed") return 100;
@@ -1644,6 +1656,7 @@ const EDIT_MANPOWER_HIDDEN_FIELD_IDS = [
   "edit_target_completion",
   "edit_completed_date",
   "edit_status",
+  "edit_progress_percentage",
   "edit_project_budget",
   "edit_contract_amount",
   "edit_down_payment",
@@ -3321,6 +3334,7 @@ form.addEventListener("submit", async function(e) {
 
   const quotationItems = getQuotationItemsFromForm();
 
+  const projectProgressInput = document.getElementById("progress_percentage");
   const record = {
     project_code: project_code.value,
     project_title: project_title.value,
@@ -3341,6 +3355,10 @@ form.addEventListener("submit", async function(e) {
     quotation_items: quotationItems
   };
 
+  if (projectProgressInput) {
+    record.progress_percentage = getProjectProgressInputValue(projectProgressInput);
+  }
+
   if (fileUrl) {
     record.contract_file_url = fileUrl;
     record.contract_file_name = fileName;
@@ -3354,7 +3372,7 @@ form.addEventListener("submit", async function(e) {
       record,
       "id",
       editingId,
-      ["quotation_items", "contract_file_url", "contract_file_name"],
+      ["progress_percentage", "quotation_items", "contract_file_url", "contract_file_name"],
       { returnRecord: true }
     );
   } else {
@@ -3624,6 +3642,9 @@ window.editProject = async function(id) {
   edit_project_duration_days.value = manpowerDetails.durationDays || "";
   edit_completed_date.value = project.completed_date || "";
   edit_status.value = project.status || "Pending";
+  edit_progress_percentage.value = getExplicitProjectProgress(project) || 0;
+  const editManpowerProgress = document.getElementById("edit_manpower_progress_percentage");
+  if (editManpowerProgress) editManpowerProgress.value = edit_progress_percentage.value;
   edit_project_budget.value = project.project_budget || 0;
   edit_contract_amount.value = project.contract_amount || 0;
   edit_down_payment.value = getProjectDownPayment(project);
@@ -3744,6 +3765,9 @@ if (editProjectForm) {
       status: isManpower
         ? (document.getElementById("edit_manpower_status")?.value || currentProject.status || "Pending")
         : (edit_status.value || currentProject.status || "Pending"),
+      progress_percentage: getProjectProgressInputValue(isManpower
+        ? document.getElementById("edit_manpower_progress_percentage")
+        : edit_progress_percentage),
       project_budget: isManpower ? Number(manpowerAmount || edit_project_budget.value || currentProject.project_budget || 0) : Number(edit_project_budget.value || currentProject.project_budget || 0),
       contract_amount: isManpower ? manpowerContractAmount : Number(edit_contract_amount.value || currentProject.contract_amount || 0),
       down_payment: isManpower ? manpowerDownPaymentAmount : Number(edit_down_payment.value || currentProject.down_payment || 0),
@@ -3764,7 +3788,7 @@ if (editProjectForm) {
         record,
         "id",
         editingId,
-        ["completed_date", "client_email", "quotation_type", "quotation_items"],
+        ["completed_date", "client_email", "progress_percentage", "quotation_type", "quotation_items"],
         { returnRecord: true }
       );
 
