@@ -25,6 +25,7 @@ const remarks = document.getElementById("remarks");
 const manpower_client_name = document.getElementById("manpower_client_name");
 const manpower_client_contact = document.getElementById("manpower_client_contact");
 const manpower_client_email = document.getElementById("manpower_client_email");
+const manpower_location = document.getElementById("manpower_location");
 const manpower_prepared_by = document.getElementById("manpower_prepared_by");
 const manpower_prepared_position = document.getElementById("manpower_prepared_position");
 const manpower_terms = document.getElementById("manpower_terms");
@@ -777,7 +778,7 @@ proposalForm.addEventListener("submit", async event => {
       client_contact_name: isManpower ? (client_contact_name.value || manpower_client_name.value) : client_contact_name.value,
       contact_number: isManpower ? (contact_number.value || manpower_client_contact.value) : contact_number.value,
       client_email: isManpower ? manpower_client_email.value : "",
-      location: location.value,
+      location: isManpower ? (location.value || manpower_location.value) : location.value,
       start_date: start_date.value || null,
       target_completion: target_completion.value || null,
       status: status.value || "Pending",
