@@ -4188,7 +4188,7 @@ window.generatePPR = async function(id) {
                       <img src="${escapeProjectHtml(file.file_url)}" alt="${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}" onerror="console.warn('Skipped broken PPR image:', this.src); this.closest('.photo-card').style.display='none';">
                       <div class="photo-caption">
                         <div><strong>PHOTO ${String(photoNumber).padStart(2, "0")}</strong></div>
-                        ${photoComment ? `<p>${escapeProjectHtml(photoComment)}</p>` : ""}
+                        <p><b>Comment:</b> ${escapeProjectHtml(photoComment || "No comment saved")}</p>
                       </div>
                     </article>
                   `;
