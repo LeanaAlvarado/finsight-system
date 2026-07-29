@@ -4177,20 +4177,18 @@ window.generatePPR = async function(id) {
       <section class="ppr-page">
         <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
         <h2>PROJECT ACCOMPLISHMENT PHOTOGRAPHS</h2>
-        <p class="section-subtitle">Photographic documentation of completed and ongoing project activities</p>
         ${
           photoChunk.length
             ? `<div class="photo-grid ${photoChunk.length === 1 ? "single-photo" : ""}">
                 ${photoChunk.map((file, index) => {
                   const photoNumber = pageIndex * 4 + index + 1;
-                  const category = getPprPhotoCategory(file);
+                  const photoComment = getPprPhotoDescription(file);
                   return `
                     <article class="photo-card">
                       <img src="${escapeProjectHtml(file.file_url)}" alt="${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}" onerror="console.warn('Skipped broken PPR image:', this.src); this.closest('.photo-card').style.display='none';">
                       <div class="photo-caption">
-                        <div><strong>PHOTO ${String(photoNumber).padStart(2, "0")}</strong><span class="badge ${getPprStatusClass(category)}">${escapeProjectHtml(category.toUpperCase())}</span></div>
-                        ${getPprPhotoDescription(file) ? `<p>${escapeProjectHtml(getPprPhotoDescription(file))}</p>` : ""}
-                        <small>Location: ${safePprText(file.location || project.location)} | Date Taken: ${formatDate(getPprFileDate(file), "Not Available")} | Uploaded By: ${safePprText(file.uploaded_by || file.created_by || "Project Monitoring")}</small>
+                        <div><strong>PHOTO ${String(photoNumber).padStart(2, "0")}</strong></div>
+                        ${photoComment ? `<p>${escapeProjectHtml(photoComment)}</p>` : ""}
                       </div>
                     </article>
                   `;
