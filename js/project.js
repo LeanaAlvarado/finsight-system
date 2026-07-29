@@ -1959,7 +1959,7 @@ function buildEditManpowerRemarks() {
     "Quotation Type: Manpower",
     edit_manpower_client_email.value ? `Client Email: ${edit_manpower_client_email.value}` : "",
     edit_manpower_down_payment.value ? `Down Payment Percent: ${edit_manpower_down_payment.value}%` : "",
-    edit_manpower_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(Number(edit_manpower_duration_days.value || 0)))}` : "",
+    edit_project_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(Number(edit_project_duration_days.value || 0)))}` : "",
     edit_manpower_prepared_by.value ? `Prepared By: ${edit_manpower_prepared_by.value}` : "",
     edit_manpower_prepared_position.value ? `Position: ${edit_manpower_prepared_position.value}` : "",
     edit_manpower_terms.value ? `Terms of Service: ${edit_manpower_terms.value}` : "",
@@ -3426,6 +3426,7 @@ window.editProject = async function(id) {
   edit_location.value = project.location || "";
   edit_start_date.value = project.start_date || "";
   edit_target_completion.value = project.target_completion || "";
+  edit_project_duration_days.value = manpowerDetails.durationDays || "";
   edit_completed_date.value = project.completed_date || "";
   edit_status.value = project.status || "Pending";
   edit_project_budget.value = project.project_budget || 0;
@@ -3439,7 +3440,6 @@ window.editProject = async function(id) {
   edit_manpower_client_contact.value = project.contact_number || "";
   edit_manpower_client_email.value = manpowerDetails.clientEmail || project.client_email || "";
   edit_manpower_location.value = project.location || "";
-  edit_manpower_duration_days.value = manpowerDetails.durationDays || "";
   edit_manpower_down_payment.value = getPercentFromAmount(getProjectDownPayment(project), project.contract_amount).toFixed(2);
   const editManpowerStatus = document.getElementById("edit_manpower_status");
   if (editManpowerStatus) editManpowerStatus.value = project.status || "Pending";
