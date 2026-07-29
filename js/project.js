@@ -3942,6 +3942,8 @@ window.generatePPR = async function(id) {
   const completionValue = getPprCompletionValue(project);
   const completionText = completionValue === null ? "Not Available" : `${completionValue}%`;
   const completionBar = completionValue === null ? 0 : completionValue;
+  const contractAmount = Number(project.contract_amount || 0);
+  const amountPaid = getProjectDownPayment(project);
   const photos = getPprPhotos(projectFiles);
   const photoPages = chunkPprPhotos(photos, 4);
   const scopeItems = getPprScopeItems(project);
@@ -4011,6 +4013,8 @@ window.generatePPR = async function(id) {
       <h2>Executive Project Dashboard</h2>
       <div class="kpi-grid">
         <div class="kpi-card"><span>Overall Project Progress</span><strong>${completionText}</strong>${progressBar(completionBar)}</div>
+        <div class="kpi-card"><span>Contract Amount</span><strong>${contractAmount ? peso(contractAmount) : "Not Available"}</strong></div>
+        <div class="kpi-card"><span>Amount Paid</span><strong>${amountPaid ? peso(amountPaid) : "Not Available"}</strong></div>
         <div class="kpi-card"><span>Project Duration</span><strong>${safePprText(getProjectDurationText(project))}</strong></div>
       </div>
       <div class="section-card">
