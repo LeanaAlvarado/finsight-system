@@ -3184,10 +3184,7 @@ function renderProjectList() {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
     const actionLinks = isOperations
-      ? `
-          <a href="#" onclick="editPPR('${project.id}'); return false;">Edit PPR</a>
-          <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
-        `
+      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>`
       : isFinanceScope()
       ? `<a href="#" onclick="viewProject('${project.id}'); return false;">View Costing</a>`
       : `
@@ -3195,7 +3192,6 @@ function renderProjectList() {
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
-          <a href="#" onclick="editPPR('${project.id}'); return false;">Edit PPR</a>
           <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
         `;
@@ -4265,90 +4261,6 @@ window.generatePPR = async function(id) {
 
   pprWindow.document.close();
 };
-
-window.editPPR = async function(id) {
-  if (isFinanceScope()) {
-    alert("Finance Officer / Accountant can review costing only and cannot edit PPR details.");
-    return;
-  }
-
-  const project = await getProjectForAction(id, "PPR");
-  if (!project) return;
-
-  const config = getProjectPprConfig(project);
-  const modal = document.getElementById("pprEditorModal");
-  if (!modal) return;
-
-  ppr_project_id.value = project.id;
-  ppr_coverage_start.value = config.coverageStart || project.start_date || "";
-  ppr_coverage_end.value = config.coverageEnd || project.target_completion || "";
-  ppr_executive_summary.value = config.executiveSummary || project.remarks || "";
-  ppr_accomplishments.value = config.accomplishments || "";
-  ppr_issues.value = config.issues || "";
-  ppr_corrective_actions.value = config.correctiveActions || "";
-  ppr_next_activities.value = config.nextActivities || "";
-  ppr_overall_remarks.value = config.overallRemarks || "";
-  ppr_include_financial_summary.checked = config.includeFinancialSummary !== false;
-
-  modal.style.display = "flex";
-};
-
-window.closePprEditor = function() {
-  const modal = document.getElementById("pprEditorModal");
-  if (modal) modal.style.display = "none";
-};
-
-const pprEditorForm = document.getElementById("pprEditorForm");
-if (pprEditorForm) {
-  pprEditorForm.addEventListener("submit", async event => {
-    event.preventDefault();
-
-    const projectId = ppr_project_id.value;
-    const project = getProjectById(projectId) || await getProjectForAction(projectId, "PPR");
-    if (!project) return;
-
-    const config = {
-      coverageStart: ppr_coverage_start.value || "",
-      coverageEnd: ppr_coverage_end.value || "",
-      executiveSummary: ppr_executive_summary.value.trim(),
-      accomplishments: ppr_accomplishments.value.trim(),
-      issues: ppr_issues.value.trim(),
-      correctiveActions: ppr_corrective_actions.value.trim(),
-      nextActivities: ppr_next_activities.value.trim(),
-      overallRemarks: ppr_overall_remarks.value.trim(),
-      includeFinancialSummary: ppr_include_financial_summary.checked
-    };
-
-    saveLocalPprConfig(projectId, config);
-
-    if (!isLocalProjectId(projectId)) {
-      const { error } = await updateWithOptionalColumns(
-        "projects",
-        { ppr_report_config: config },
-        "id",
-        projectId,
-        ["ppr_report_config"],
-        { returnRecord: false }
-      );
-
-      if (error) {
-        alert("PPR details were saved locally but not in Supabase yet: " + error.message + "\n\nPlease run the latest Supabase SQL migration, then save again.");
-        return;
-      }
-
-      saveLocalProjectMirror({ ...project, ppr_report_config: config, updated_at: new Date().toISOString() });
-    } else {
-      updateLocalProjectMirror(projectId, { ppr_report_config: config });
-    }
-
-    const index = allProjects.findIndex(item => String(item.id || "") === String(projectId || ""));
-    if (index >= 0) allProjects[index] = { ...allProjects[index], ppr_report_config: config };
-
-    closePprEditor();
-    renderProjectList();
-    alert("PPR details saved. Generate PPR will use the updated report details.");
-  });
-}
 
 async function uploadProgressFiles(projectId) {
   const files = document.getElementById("progress_files").files;
