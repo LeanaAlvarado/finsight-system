@@ -2143,7 +2143,7 @@ function buildEditManpowerRemarks() {
   const lines = [
     "Quotation Type: Manpower",
     edit_manpower_client_email.value ? `Client Email: ${edit_manpower_client_email.value}` : "",
-    edit_manpower_down_payment.value ? `Down Payment Percent: ${edit_manpower_down_payment.value}%` : "",
+    edit_manpower_down_payment.value ? `Amount Paid: ${edit_manpower_down_payment.value}` : "",
     edit_project_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(Number(edit_project_duration_days.value || 0)))}` : "",
     edit_manpower_prepared_by.value ? `Prepared By: ${edit_manpower_prepared_by.value}` : "",
     edit_manpower_prepared_position.value ? `Position: ${edit_manpower_prepared_position.value}` : "",
@@ -3625,7 +3625,7 @@ window.editProject = async function(id) {
   edit_manpower_client_contact.value = project.contact_number || "";
   edit_manpower_client_email.value = manpowerDetails.clientEmail || project.client_email || "";
   edit_manpower_location.value = project.location || "";
-  edit_manpower_down_payment.value = getPercentFromAmount(getProjectDownPayment(project), project.contract_amount).toFixed(2);
+  edit_manpower_down_payment.value = getProjectDownPayment(project);
   const editManpowerStatus = document.getElementById("edit_manpower_status");
   if (editManpowerStatus) editManpowerStatus.value = project.status || "Pending";
   edit_manpower_prepared_by.value = manpowerDetails.preparedBy || project.ppr_prepared_by || "";
@@ -3711,8 +3711,7 @@ if (editProjectForm) {
       ? currentProject.quotation_items
       : getLocalQuotationItems(editingId);
     const manpowerContractAmount = Number(manpowerAmount || currentProject.contract_amount || 0);
-    const manpowerDownPaymentPercent = Math.min(Math.max(Number(edit_manpower_down_payment.value || 0), 0), 100);
-    const manpowerDownPaymentAmount = manpowerContractAmount * (manpowerDownPaymentPercent / 100);
+    const manpowerDownPaymentAmount = Math.max(Number(edit_manpower_down_payment.value || 0), 0);
 
     const record = {
       quotation_type: quotationType,
