@@ -3421,6 +3421,7 @@ window.editProject = async function(id) {
   edit_manpower_client_name.value = getProjectClientName(project) || project.client_name || "";
   edit_manpower_client_contact.value = project.contact_number || "";
   edit_manpower_client_email.value = manpowerDetails.clientEmail || project.client_email || "";
+  edit_manpower_location.value = project.location || "";
   edit_manpower_down_payment.value = getPercentFromAmount(getProjectDownPayment(project), project.contract_amount).toFixed(2);
   const editManpowerStatus = document.getElementById("edit_manpower_status");
   if (editManpowerStatus) editManpowerStatus.value = project.status || "Pending";
@@ -3520,7 +3521,7 @@ if (editProjectForm) {
       client_contact_name: isManpower ? (edit_manpower_client_name.value || currentProject.client_contact_name || currentProject.client_name || "") : edit_client_contact_name.value,
       contact_number: isManpower ? (edit_manpower_client_contact.value || currentProject.contact_number || "") : edit_contact_number.value,
       client_email: isManpower ? (edit_manpower_client_email.value || currentProject.client_email || "") : "",
-      location: edit_location.value || currentProject.location || "",
+      location: isManpower ? (edit_manpower_location.value || edit_location.value || currentProject.location || "") : (edit_location.value || currentProject.location || ""),
       start_date: edit_start_date.value || currentProject.start_date || null,
       target_completion: edit_target_completion.value || currentProject.target_completion || null,
       completed_date: edit_completed_date.value || currentProject.completed_date || null,
