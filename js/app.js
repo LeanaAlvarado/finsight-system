@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-cost-overrun-alerts-v36";
+const appVersion = "20260729-inventory-pagination-v37";
 
 function toTitleCase(value = "") {
   return String(value || "User")

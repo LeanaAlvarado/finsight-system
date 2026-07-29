@@ -138,6 +138,30 @@
 <section class="card">
   <h3><span class="num">03</span> Inventory Materials</h3>
 
+  <div class="inventory-list-controls" aria-label="Inventory list controls">
+    <input id="inventorySearch" class="search" type="search" placeholder="Search materials">
+    <select id="inventoryCategoryFilter" class="search compact-select" aria-label="Category filter">
+      <option value="">All categories</option>
+      <option value="project">Project materials</option>
+      <option value="general">General materials</option>
+    </select>
+    <select id="inventoryStockFilter" class="search compact-select" aria-label="Stock status filter">
+      <option value="">All stock status</option>
+      <option value="available">Available quantity</option>
+      <option value="low">Low stock</option>
+      <option value="zero">Zero quantity</option>
+    </select>
+    <select id="inventorySort" class="search compact-select" aria-label="Sort inventory materials">
+      <option value="created_desc">Newest first</option>
+      <option value="name_asc">Material A-Z</option>
+      <option value="name_desc">Material Z-A</option>
+      <option value="qty_desc">Quantity high-low</option>
+      <option value="qty_asc">Quantity low-high</option>
+      <option value="price_desc">Unit price high-low</option>
+      <option value="price_asc">Unit price low-high</option>
+    </select>
+  </div>
+
   <div class="table-wrap">
     <table class="inventory-materials-table">
       <thead>
@@ -157,12 +181,17 @@
       <tbody id="inventoryTable"></tbody>
     </table>
   </div>
+
+  <div class="pagination-bar" id="inventoryPagination" hidden>
+    <span id="inventoryPaginationSummary">Showing 0 of 0 materials</span>
+    <div class="pagination-controls" id="inventoryPaginationControls"></div>
+  </div>
 </section>
 
 </main>
 
 <!-- SCRIPT -->
-<script type="module" src="js/app.js?v=20260729-cost-overrun-alerts-v36"></script>
+<script type="module" src="js/app.js?v=20260729-inventory-pagination-v37"></script>
 
 
 </body>

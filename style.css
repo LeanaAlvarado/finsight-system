@@ -911,6 +911,13 @@ tbody tr:hover{
   min-width:280px;
 }
 
+.inventory-list-controls{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) repeat(3,minmax(170px,220px));
+  gap:10px;
+  margin:14px 0;
+}
+
 .inventory-materials-table{
   min-width:1240px;
   table-layout:fixed;
@@ -1118,6 +1125,54 @@ tbody tr:hover{
   padding:8px 10px;
   border-radius:6px;
   font-size:11px;
+}
+
+.pagination-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+
+.pagination-bar span{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+
+.pagination-controls{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.pagination-controls button{
+  width:auto;
+  min-width:34px;
+  height:32px;
+  margin:0;
+  padding:0 10px;
+  border:1px solid #bcd3e6;
+  border-radius:6px;
+  background:#fff;
+  color:var(--primary);
+  font-size:12px;
+  font-weight:800;
+}
+
+.pagination-controls button:hover:not(:disabled),
+.pagination-controls button.active{
+  background:var(--primary);
+  color:#fff;
+}
+
+.pagination-controls button:disabled{
+  cursor:not-allowed;
+  opacity:.45;
 }
 
 .mini-card small{
@@ -2713,6 +2768,10 @@ tbody tr:hover{
     max-width:none;
     text-align:left;
   }
+
+  .inventory-list-controls{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
 }
 
 @media(max-width:900px){
@@ -2817,6 +2876,15 @@ tbody tr:hover{
 
   .compact-select{
     max-width:none;
+  }
+
+  .inventory-list-controls{
+    grid-template-columns:1fr;
+  }
+
+  .pagination-bar{
+    align-items:flex-start;
+    flex-direction:column;
   }
 
   .expense-breakdown-layout{

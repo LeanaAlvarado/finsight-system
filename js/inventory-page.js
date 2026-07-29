@@ -10,6 +10,18 @@ let editingInventoryItemId = null;
 let currentInventoryItems = [];
 let currentInventoryProjects = [];
 const INVENTORY_UNIT_OPTIONS = ["PCS", "MTR", "SET", "ROLL", "BOX", "PACK", "UNIT", "LOT"];
+const INVENTORY_PAGE_SIZE = 10;
+const LOW_STOCK_THRESHOLD = 5;
+
+let inventoryCurrentPage = 1;
+let inventoryFilteredItems = [];
+
+const inventoryListState = {
+  search: "",
+  category: "",
+  stock: "",
+  sort: "created_desc"
+};
 
 async function uploadInventoryPicture(file) {
   const safeName = file.name.replace(/[^\w.\-]+/g, "_");
@@ -215,7 +227,7 @@ function createInventoryItemRow(item = {}) {
   tr.innerHTML = `
     <td><input class="inventory-item-name" required value="${escapeHtml(item.name || "")}" placeholder="Material name"></td>
     <td><input class="inventory-item-description" value="${escapeHtml(item.description || "")}" placeholder="Description"></td>
-    <td><input class="inventory-item-qty" type="number" min="0" step="0.01" required value="${item.qty ?? 1}"></td>
+    <td><input class="inventory-item-qty" type="number" min="0" step="1" inputmode="numeric" required value="${toInventoryQuantity(item.qty ?? 1)}"></td>
     <td>
       <select class="inventory-item-unit">
         <option value="">Select Unit</option>
@@ -231,6 +243,39 @@ function createInventoryItemRow(item = {}) {
   return tr;
 }
 
+function toInventoryQuantity(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(0, Math.trunc(parsed));
+}
+
+function validateInventoryQuantityInput(input) {
+  const rawValue = String(input?.value ?? "").trim();
+  const parsed = Number(rawValue);
+
+  if (!rawValue || !Number.isFinite(parsed) || parsed < 0 || !Number.isInteger(parsed)) {
+    input?.setCustomValidity("Quantity must be a whole number.");
+    return false;
+  }
+
+  input.setCustomValidity("");
+  input.value = String(parsed);
+  return true;
+}
+
+function validateInventoryQuantityFields() {
+  const quantityInputs = [...document.querySelectorAll(".inventory-item-qty")];
+  const invalidInput = quantityInputs.find(input => !validateInventoryQuantityInput(input));
+
+  if (invalidInput) {
+    invalidInput.reportValidity();
+    invalidInput.focus();
+    return false;
+  }
+
+  return true;
+}
+
 function getInventoryItemsFromForm() {
   const projectCode = document.getElementById("inventory_project_code")?.value || "";
 
@@ -239,7 +284,7 @@ function getInventoryItemsFromForm() {
       project_code: projectCode,
       name: row.querySelector(".inventory-item-name")?.value.trim() || "",
       description: row.querySelector(".inventory-item-description")?.value.trim() || "",
-      qty: number(row.querySelector(".inventory-item-qty")?.value),
+      qty: toInventoryQuantity(row.querySelector(".inventory-item-qty")?.value),
       unit: row.querySelector(".inventory-item-unit")?.value.trim() || "",
       price: number(row.querySelector(".inventory-item-price")?.value),
       picture_name: row.dataset.pictureName || "",
@@ -257,7 +302,7 @@ function getInventoryDraftItems() {
       project_code: projectCode,
       name: row.querySelector(".inventory-item-name")?.value.trim() || "",
       description: row.querySelector(".inventory-item-description")?.value.trim() || "",
-      qty: number(row.querySelector(".inventory-item-qty")?.value),
+      qty: toInventoryQuantity(row.querySelector(".inventory-item-qty")?.value),
       unit: row.querySelector(".inventory-item-unit")?.value.trim() || "",
       price: number(row.querySelector(".inventory-item-price")?.value),
       is_draft: true
@@ -447,7 +492,7 @@ function normalizeInventoryRecord(item = {}) {
     material_name: name,
     project_code: item.project_code || "",
     description: item.description || "",
-    qty: number(item.qty),
+    qty: toInventoryQuantity(item.qty),
     unit: item.unit || "",
     price: number(item.price)
   };
@@ -522,8 +567,8 @@ function getInventoryDbRecord(record = {}) {
     material_name: record.material_name || record.name || "",
     name: record.name || record.material_name || "",
     description: record.description || "",
-    qty: number(record.qty),
-    stock_qty: number(record.stock_qty ?? record.qty),
+    qty: toInventoryQuantity(record.qty),
+    stock_qty: toInventoryQuantity(record.stock_qty ?? record.qty),
     unit: record.unit || "",
     price: number(record.price),
     picture_name: record.picture_name || "",
@@ -940,6 +985,157 @@ function renderInventoryProjectSummary(items = [], projects = []) {
   `).join("") : `<p class="muted">No inventory materials grouped by project yet.</p>`;
 }
 
+function getInventoryFilteredItems(items = currentInventoryItems) {
+  const search = inventoryListState.search.trim().toLowerCase();
+  const category = inventoryListState.category;
+  const stock = inventoryListState.stock;
+
+  return items
+    .filter(item => !item.is_catalog_only)
+    .filter(item => {
+      if (!search) return true;
+
+      const haystack = [
+        item.name,
+        item.material_name,
+        getItemDescription(item),
+        getItemProjectCode(item),
+        getItemUnit(item),
+        getProjectNameByCode(currentInventoryProjects, getItemProjectCode(item))
+      ].join(" ").toLowerCase();
+
+      return haystack.includes(search);
+    })
+    .filter(item => {
+      const projectCode = getItemProjectCode(item);
+      if (category === "project") return Boolean(projectCode);
+      if (category === "general") return !projectCode;
+      return true;
+    })
+    .filter(item => {
+      const qtyValue = toInventoryQuantity(item.qty);
+      if (stock === "available") return qtyValue > 0;
+      if (stock === "low") return qtyValue > 0 && qtyValue < LOW_STOCK_THRESHOLD;
+      if (stock === "zero") return qtyValue === 0;
+      return true;
+    })
+    .sort((a, b) => {
+      const sort = inventoryListState.sort;
+      const nameA = String(a.name || a.material_name || "").toLowerCase();
+      const nameB = String(b.name || b.material_name || "").toLowerCase();
+      const qtyA = toInventoryQuantity(a.qty);
+      const qtyB = toInventoryQuantity(b.qty);
+      const priceA = number(a.price);
+      const priceB = number(b.price);
+      const dateA = new Date(a.created_at || 0).getTime() || 0;
+      const dateB = new Date(b.created_at || 0).getTime() || 0;
+
+      if (sort === "name_asc") return nameA.localeCompare(nameB);
+      if (sort === "name_desc") return nameB.localeCompare(nameA);
+      if (sort === "qty_asc") return qtyA - qtyB || nameA.localeCompare(nameB);
+      if (sort === "qty_desc") return qtyB - qtyA || nameA.localeCompare(nameB);
+      if (sort === "price_asc") return priceA - priceB || nameA.localeCompare(nameB);
+      if (sort === "price_desc") return priceB - priceA || nameA.localeCompare(nameB);
+      return dateB - dateA || nameA.localeCompare(nameB);
+    });
+}
+
+function renderInventoryPagination(totalItems) {
+  const pagination = document.getElementById("inventoryPagination");
+  const summary = document.getElementById("inventoryPaginationSummary");
+  const controls = document.getElementById("inventoryPaginationControls");
+  if (!pagination || !summary || !controls) return;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / INVENTORY_PAGE_SIZE));
+  inventoryCurrentPage = Math.min(Math.max(inventoryCurrentPage, 1), totalPages);
+  const startIndex = totalItems ? ((inventoryCurrentPage - 1) * INVENTORY_PAGE_SIZE) + 1 : 0;
+  const endIndex = Math.min(inventoryCurrentPage * INVENTORY_PAGE_SIZE, totalItems);
+
+  pagination.hidden = false;
+  summary.textContent = totalItems
+    ? `Showing ${startIndex}-${endIndex} of ${totalItems} materials`
+    : "Showing 0 of 0 materials";
+
+  const pageWindow = 5;
+  const firstPage = Math.max(1, Math.min(inventoryCurrentPage - 2, totalPages - pageWindow + 1));
+  const lastPage = Math.min(totalPages, firstPage + pageWindow - 1);
+  const pageButtons = [];
+
+  for (let page = firstPage; page <= lastPage; page += 1) {
+    pageButtons.push(`
+      <button type="button" class="${page === inventoryCurrentPage ? "active" : ""}" ${page === inventoryCurrentPage ? "aria-current=\"page\"" : ""} onclick="goToInventoryPage(${page})">${page}</button>
+    `);
+  }
+
+  controls.innerHTML = `
+    <button type="button" onclick="goToInventoryPage(${inventoryCurrentPage - 1})" ${inventoryCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
+    ${pageButtons.join("")}
+    <button type="button" onclick="goToInventoryPage(${inventoryCurrentPage + 1})" ${inventoryCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+}
+
+function renderInventoryMaterialsTable(items = currentInventoryItems, projects = currentInventoryProjects) {
+  const table = document.getElementById("inventoryTable");
+  if (!table) return;
+
+  inventoryFilteredItems = getInventoryFilteredItems(items);
+  const totalItems = inventoryFilteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / INVENTORY_PAGE_SIZE));
+  inventoryCurrentPage = Math.min(Math.max(inventoryCurrentPage, 1), totalPages);
+  const startIndex = (inventoryCurrentPage - 1) * INVENTORY_PAGE_SIZE;
+  const pageItems = inventoryFilteredItems.slice(startIndex, startIndex + INVENTORY_PAGE_SIZE);
+
+  if (!pageItems.length) {
+    table.innerHTML = `<tr><td colspan="9" style="text-align:center;">No inventory materials found.</td></tr>`;
+    renderInventoryPagination(totalItems);
+    return;
+  }
+
+  table.innerHTML = pageItems.map(i => {
+    const qtyValue = toInventoryQuantity(i.qty);
+    const priceValue = number(i.price);
+    const itemPicture = getItemPicture(i);
+    const itemDescription = getItemDescription(i);
+    const projectCode = getItemProjectCode(i);
+    const projectTitle = getProjectNameByCode(projects, projectCode);
+    const total = qtyValue * priceValue;
+
+    return `
+      <tr>
+        <td>
+          ${
+            itemPicture
+              ? `<img class="material-thumb" src="${escapeHtml(itemPicture)}" alt="${escapeHtml(i.name || "Material picture")}">`
+              : `<span class="muted">No<br>picture</span>`
+          }
+        </td>
+        <td>
+          <strong>${escapeHtml(projectCode || "General")}</strong>
+          ${projectTitle ? `<br><span class="muted">${escapeHtml(projectTitle)}</span>` : ""}
+        </td>
+        <td>${escapeHtml(i.name || "-")}</td>
+        <td>${escapeHtml(itemDescription || "-")}</td>
+        <td>${qtyValue}</td>
+        <td>${escapeHtml(getItemUnit(i) || "-")}</td>
+        <td>${peso(priceValue)}</td>
+        <td>${peso(total)}</td>
+        <td class="action-links">
+          <button type="button" onclick="editInventoryMaterial('${escapeHtml(i.id || "")}')">Edit</button>
+          <button type="button" class="danger-btn" onclick="deleteInventoryMaterial('${escapeHtml(i.id || "")}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  renderInventoryPagination(totalItems);
+}
+
+window.goToInventoryPage = function(page) {
+  const totalPages = Math.max(1, Math.ceil(inventoryFilteredItems.length / INVENTORY_PAGE_SIZE));
+  inventoryCurrentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
+  renderInventoryMaterialsTable();
+};
+
 async function loadInventory(){
   saveLocalInventoryRecords(getLocalInventoryRecords());
 
@@ -965,56 +1161,11 @@ async function loadInventory(){
   currentInventoryProjects = projects;
   setInventoryProjectOptions(projects);
   renderInventoryProjectSummary(items, projects);
-  let totalVal = 0;
-  let low = 0;
-
-  inventoryTable.innerHTML = "";
-
-  if (!items.length) {
-    inventoryTable.innerHTML = `<tr><td colspan="9" style="text-align:center;">No inventory materials yet.</td></tr>`;
-  }
-
-  items.filter(item => !item.is_catalog_only).forEach(i=>{
-
-    const qtyValue = number(i.qty);
-    const priceValue = number(i.price);
-    const itemPicture = getItemPicture(i);
-    const itemDescription = getItemDescription(i);
-    const projectCode = getItemProjectCode(i);
-    const projectTitle = getProjectNameByCode(projects, projectCode);
-    const total = qtyValue * priceValue;
-    totalVal += total;
-
-    if(qtyValue < 5){
-      low++;
-    }
-
-    inventoryTable.innerHTML += `
-      <tr>
-        <td>
-          ${
-            itemPicture
-              ? `<img class="material-thumb" src="${escapeHtml(itemPicture)}" alt="${escapeHtml(i.name || "Material picture")}">`
-              : `<span class="muted">No<br>picture</span>`
-          }
-        </td>
-        <td>
-          <strong>${escapeHtml(projectCode || "General")}</strong>
-          ${projectTitle ? `<br><span class="muted">${escapeHtml(projectTitle)}</span>` : ""}
-        </td>
-        <td>${escapeHtml(i.name || "-")}</td>
-        <td>${escapeHtml(itemDescription || "-")}</td>
-        <td>${qtyValue}</td>
-        <td>${escapeHtml(getItemUnit(i) || "-")}</td>
-        <td>${peso(priceValue)}</td>
-        <td>${peso(total)}</td>
-        <td class="action-links">
-          <button type="button" onclick="editInventoryMaterial('${escapeHtml(i.id || "")}')">Edit</button>
-          <button type="button" class="danger-btn" onclick="deleteInventoryMaterial('${escapeHtml(i.id || "")}')">Delete</button>
-        </td>
-      </tr>
-    `;
-  });
+  const totalVal = items.reduce((sum, item) => sum + (toInventoryQuantity(item.qty) * number(item.price)), 0);
+  const low = items.filter(item => {
+    const qtyValue = toInventoryQuantity(item.qty);
+    return qtyValue > 0 && qtyValue < LOW_STOCK_THRESHOLD;
+  }).length;
 
   setText("totalItems", items.length);
   setText("totalValue", peso(totalVal));
@@ -1022,6 +1173,7 @@ async function loadInventory(){
 
   const revenue = projects.reduce((s,p)=>s + number(p.contract_amount),0);
   setText("totalRevenue", peso(revenue));
+  renderInventoryMaterialsTable(items, projects);
 }
 
 // SAVE
@@ -1031,6 +1183,7 @@ inventoryForm.addEventListener("submit", async(e)=>{
 
   const submitBtn = document.getElementById("inventorySubmitBtn");
   if (submitBtn?.disabled) return;
+  if (!validateInventoryQuantityFields()) return;
   if (submitBtn) submitBtn.disabled = true;
 
   try {
@@ -1069,7 +1222,7 @@ inventoryForm.addEventListener("submit", async(e)=>{
       updated_at: new Date().toISOString()
     };
     record.material_name = record.name;
-    record.stock_qty = number(record.qty);
+    record.stock_qty = toInventoryQuantity(record.qty);
 
     let error = null;
     let savedData = null;
@@ -1154,7 +1307,7 @@ inventoryForm.addEventListener("submit", async(e)=>{
 
   for (const record of records) {
     record.material_name = record.name;
-    record.stock_qty = number(record.qty);
+    record.stock_qty = toInventoryQuantity(record.qty);
     const existingExact = currentInventoryItems.find(item => {
       return !item.is_catalog_only
         && !item.is_project_material
@@ -1246,7 +1399,43 @@ document.getElementById("inventoryItemsBody")?.addEventListener("input", () => {
 });
 
 document.getElementById("inventoryItemsBody")?.addEventListener("change", () => {
+  document.querySelectorAll(".inventory-item-qty").forEach(input => {
+    if (validateInventoryQuantityInput(input)) {
+      input.value = String(toInventoryQuantity(input.value));
+    }
+  });
   renderInventoryProjectSummary(currentInventoryItems, currentInventoryProjects);
+});
+
+document.getElementById("inventoryItemsBody")?.addEventListener("keydown", event => {
+  if (event.target?.classList?.contains("inventory-item-qty") && [".", ",", "e", "E", "-", "+"].includes(event.key)) {
+    event.preventDefault();
+  }
+});
+
+function resetInventoryListPage() {
+  inventoryCurrentPage = 1;
+  renderInventoryMaterialsTable();
+}
+
+document.getElementById("inventorySearch")?.addEventListener("input", event => {
+  inventoryListState.search = event.target.value || "";
+  resetInventoryListPage();
+});
+
+document.getElementById("inventoryCategoryFilter")?.addEventListener("change", event => {
+  inventoryListState.category = event.target.value || "";
+  resetInventoryListPage();
+});
+
+document.getElementById("inventoryStockFilter")?.addEventListener("change", event => {
+  inventoryListState.stock = event.target.value || "";
+  resetInventoryListPage();
+});
+
+document.getElementById("inventorySort")?.addEventListener("change", event => {
+  inventoryListState.sort = event.target.value || "created_desc";
+  resetInventoryListPage();
 });
 
 const materialCatalogForm = document.getElementById("materialCatalogForm");

@@ -54,8 +54,8 @@ create table if not exists public.inventory (
   material_name text,
   name text,
   description text,
-  qty numeric default 0,
-  stock_qty numeric default 0,
+  qty integer default 0,
+  stock_qty integer default 0,
   unit text,
   price numeric default 0,
   picture_name text,
@@ -251,8 +251,8 @@ alter table public.inventory add column if not exists project_code text;
 alter table public.inventory add column if not exists material_name text;
 alter table public.inventory add column if not exists name text;
 alter table public.inventory add column if not exists description text;
-alter table public.inventory add column if not exists qty numeric default 0;
-alter table public.inventory add column if not exists stock_qty numeric default 0;
+alter table public.inventory add column if not exists qty integer default 0;
+alter table public.inventory add column if not exists stock_qty integer default 0;
 alter table public.inventory add column if not exists unit text;
 alter table public.inventory add column if not exists price numeric default 0;
 alter table public.inventory add column if not exists picture_name text;
@@ -395,6 +395,14 @@ create index if not exists cost_overrun_alerts_severity_idx on public.cost_overr
 create unique index if not exists cost_overrun_alerts_active_project_severity_uidx
 on public.cost_overrun_alerts (project_id, severity)
 where status in ('Active', 'Viewed');
+
+alter table public.inventory
+  drop constraint if exists inventory_qty_nonnegative,
+  add constraint inventory_qty_nonnegative check (qty >= 0);
+
+alter table public.inventory
+  drop constraint if exists inventory_stock_qty_nonnegative,
+  add constraint inventory_stock_qty_nonnegative check (stock_qty >= 0);
 
 do $$
 declare
