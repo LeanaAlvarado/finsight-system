@@ -23,11 +23,11 @@ function getCurrentRole() {
 
 function canViewCostOverrunAlerts() {
   const role = getCurrentRole();
-  if (/(finance|accountant|accounting|project\s*manager|operations?\s*staff|operations?)/i.test(role)) {
+  if (["finance officer/accountant", "project manager/operations staff"].includes(role)) {
     return false;
   }
 
-  return /(owner|manager|administrator|admin|system administrator)/i.test(role);
+  return ["owner/manager", "system administrator"].includes(role);
 }
 
 function readLocalJson(key, fallback) {

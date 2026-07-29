@@ -61,24 +61,41 @@ const OWNER_PERMISSIONS = [
   "User & Role Management"
 ];
 
+const ROLE_LABELS = {
+  systemAdmin: "System Administrator",
+  ownerManager: "Owner/Manager",
+  financeOfficer: "Finance Officer/Accountant",
+  projectManager: "Project Manager/Operations Staff",
+  needsReview: "Needs Role Review"
+};
+
 const FINANCE_PERMISSIONS = [
-  "Dashboard",
   "Payroll & Expenses",
   "Taxes & Revenue",
-  "Project Monitoring"
+  "Project Monitoring",
+  "Reports & Audit Logs"
 ];
 
 const OPERATIONS_PERMISSIONS = [
-  "Payroll & Expenses",
-  "Project Monitoring"
+  "Project Monitoring",
+  "Reports & Audit Logs"
 ];
 
+function canonicalRoleLabel(roleName = "") {
+  const normalized = String(roleName || "").trim().toLowerCase().replace(/\s*\/\s*/g, "/");
+  if (["system administrator", "administrator", "admin", "system_admin"].includes(normalized)) return ROLE_LABELS.systemAdmin;
+  if (["owner/manager", "owner", "manager", "owner_manager"].includes(normalized)) return ROLE_LABELS.ownerManager;
+  if (["finance officer/accountant", "finance officer / accountant", "finance", "accountant", "accounting", "finance_officer"].includes(normalized)) return ROLE_LABELS.financeOfficer;
+  if (["project manager/operations staff", "project manager / operations staff", "project manager", "operations", "operations staff", "project_manager"].includes(normalized)) return ROLE_LABELS.projectManager;
+  return ROLE_LABELS.needsReview;
+}
+
 function isFinanceRole(roleName = "") {
-  return /(finance|accountant|accounting)/i.test(String(roleName || ""));
+  return canonicalRoleLabel(roleName) === ROLE_LABELS.financeOfficer;
 }
 
 function isOperationsRole(roleName = "") {
-  return /(project\s*manager|operations?\s*staff|operations?)/i.test(String(roleName || ""));
+  return canonicalRoleLabel(roleName) === ROLE_LABELS.projectManager;
 }
 
 const FALLBACK_ACCOUNTS = [
@@ -86,7 +103,7 @@ const FALLBACK_ACCOUNTS = [
     username: "owner",
     email: "owner@lemyu.local",
     password: "owner123",
-    role: "Owner",
+    role: ROLE_LABELS.ownerManager,
     status: "Active",
     fullName: "System Owner"
   },
@@ -94,7 +111,7 @@ const FALLBACK_ACCOUNTS = [
     username: "maria",
     email: "marialeanarutha@gmail.com",
     password: "July2026_eye",
-    role: "Administrator",
+    role: ROLE_LABELS.systemAdmin,
     status: "Active",
     fullName: "Maria Leana Ruth Alvarado"
   },
@@ -102,7 +119,7 @@ const FALLBACK_ACCOUNTS = [
     username: "anael",
     email: "anael081787@gmail.com",
     password: "July2026_eye",
-    role: "Administrator",
+    role: ROLE_LABELS.systemAdmin,
     status: "Active",
     fullName: "Anael"
   },
@@ -110,7 +127,7 @@ const FALLBACK_ACCOUNTS = [
     username: "dimplesouthluzon2",
     email: "dimplesouthluzon2@gmail.com",
     password: "July2026_eye",
-    role: "Administrator",
+    role: ROLE_LABELS.systemAdmin,
     status: "Active",
     fullName: "Dimplesouthluzon2"
   }
@@ -176,11 +193,12 @@ function showResetPasswordView() {
 }
 
 function normalizeUser(user) {
+  const role = canonicalRoleLabel(user.role || user.role_name || ROLE_LABELS.ownerManager);
   return {
     username: user.username || "",
     email: user.email || user.user_email || "",
     password: user.password_hash || user.password || user.user_password || "",
-    role: user.role || user.role_name || "Owner",
+    role,
     status: user.status || user.account_status || "Active",
     fullName: user.fullName || user.full_name || user.name || user.username || "User"
   };
@@ -225,7 +243,7 @@ function mergeUsers(primaryUsers, secondaryUsers) {
       ...existing,
       password: existing.password || user.password,
       status: existing.status || user.status || "Active",
-      role: existing.role || user.role || "Owner",
+      role: canonicalRoleLabel(existing.role || user.role || ROLE_LABELS.ownerManager),
       fullName: existing.fullName || user.fullName || existing.username || user.username || "User"
     };
 
@@ -274,8 +292,9 @@ function parsePermissions(value) {
 }
 
 function normalizeRole(role) {
+  const roleName = canonicalRoleLabel(role.name || role.role_name || role.role || "");
   return {
-    name: role.name || role.role_name || role.role || "",
+    name: roleName,
     permissions: parsePermissions(role.permissions || role.allowed_modules || role.modules)
   };
 }
@@ -499,7 +518,11 @@ async function completeLogin(appUser) {
   clearLoginLockout(pendingEmail);
   startSession(appUser, permissions);
   alert("Login successful.");
-  window.location.href = isOperationsRole(appUser.role) ? "projects.html" : "dashboard.html";
+  window.location.href = isOperationsRole(appUser.role)
+    ? "projects.html"
+    : isFinanceRole(appUser.role)
+      ? "expenses.html"
+      : "dashboard.html";
 }
 
 loginForm.addEventListener("submit", async event => {

@@ -18,7 +18,14 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-reports-print-audit-v43";
+const appVersion = "20260729-approved-user-roles-v44";
+const approvedRoleLabels = new Set([
+  "System Administrator",
+  "Owner/Manager",
+  "Finance Officer/Accountant",
+  "Project Manager/Operations Staff",
+  "Needs Role Review"
+]);
 
 function toTitleCase(value = "") {
   return String(value || "User")
@@ -72,7 +79,7 @@ function getCurrentAccount() {
 
   return {
     username: toTitleCase(accountName),
-    role: toTitleCase(role)
+    role: approvedRoleLabels.has(role) ? role : toTitleCase(role)
   };
 }
 

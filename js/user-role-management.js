@@ -12,55 +12,76 @@ const MODULES = [
   "User & Role Management"
 ];
 
+const ROLE_LABELS = {
+  system_admin: "System Administrator",
+  owner_manager: "Owner/Manager",
+  finance_officer: "Finance Officer/Accountant",
+  project_manager: "Project Manager/Operations Staff",
+  needs_review: "Needs Role Review"
+};
+
+const APPROVED_ROLE_LABELS = [
+  ROLE_LABELS.system_admin,
+  ROLE_LABELS.owner_manager,
+  ROLE_LABELS.finance_officer,
+  ROLE_LABELS.project_manager
+];
+
+const ASSIGNABLE_ROLE_LABELS = [
+  ROLE_LABELS.owner_manager,
+  ROLE_LABELS.finance_officer,
+  ROLE_LABELS.project_manager
+];
+
+const ROLE_PERMISSIONS = {
+  [ROLE_LABELS.system_admin]: [...MODULES],
+  [ROLE_LABELS.owner_manager]: [
+    "Dashboard",
+    "Inventory",
+    "Payroll & Expenses",
+    "Taxes & Revenue",
+    "Project Monitoring",
+    "Proposal / Quotation & Feedback",
+    "Reports & Audit Logs"
+  ],
+  [ROLE_LABELS.finance_officer]: [
+    "Payroll & Expenses",
+    "Taxes & Revenue",
+    "Project Monitoring",
+    "Reports & Audit Logs"
+  ],
+  [ROLE_LABELS.project_manager]: [
+    "Project Monitoring",
+    "Reports & Audit Logs"
+  ],
+  [ROLE_LABELS.needs_review]: []
+};
+
 const DEFAULT_ROLES = [
   {
-    id: "role-owner",
-    name: "Owner",
-    permissions: [...MODULES]
+    id: "role-system-admin",
+    name: ROLE_LABELS.system_admin,
+    permissions: ROLE_PERMISSIONS[ROLE_LABELS.system_admin]
   },
   {
-    id: "role-admin",
-    name: "Administrator",
-    permissions: [...MODULES]
+    id: "role-owner-manager",
+    name: ROLE_LABELS.owner_manager,
+    permissions: ROLE_PERMISSIONS[ROLE_LABELS.owner_manager]
   },
   {
-    id: "role-staff",
-    name: "Staff",
-    permissions: [
-      "Dashboard",
-      "Inventory",
-      "Payroll & Expenses",
-      "Project Monitoring",
-      "Proposal / Quotation & Feedback"
-    ]
+    id: "role-finance-officer",
+    name: ROLE_LABELS.finance_officer,
+    permissions: ROLE_PERMISSIONS[ROLE_LABELS.finance_officer]
   },
   {
-    id: "role-finance-officer-accountant",
-    name: "Finance Officer / Accountant",
-    permissions: [
-      "Dashboard",
-      "Payroll & Expenses",
-      "Taxes & Revenue",
-      "Project Monitoring"
-    ]
+    id: "role-project-manager",
+    name: ROLE_LABELS.project_manager,
+    permissions: ROLE_PERMISSIONS[ROLE_LABELS.project_manager]
   },
   {
-    id: "role-project-manager-operations-staff",
-    name: "Project Manager / Operations Staff",
-    permissions: [
-      "Payroll & Expenses",
-      "Project Monitoring"
-    ]
-  },
-  {
-    id: "role-viewer",
-    name: "Viewer",
-    permissions: [
-      "Dashboard",
-      "Taxes & Revenue",
-      "Project Monitoring",
-      "Reports & Audit Logs"
-    ]
+    id: "role-needs-review",
+    name: ROLE_LABELS.needs_review,
+    permissions: ROLE_PERMISSIONS[ROLE_LABELS.needs_review]
   }
 ];
 
@@ -71,7 +92,7 @@ const DEFAULT_USERS = [
     username: "owner",
     email: "owner@lemyu.local",
     password: "owner123",
-    role: "Owner",
+    role: ROLE_LABELS.owner_manager,
     status: "Active",
     createdAt: new Date().toISOString()
   },
@@ -81,7 +102,7 @@ const DEFAULT_USERS = [
     username: "maria",
     email: "marialeanarutha@gmail.com",
     password: "July2026_eye",
-    role: "Administrator",
+    role: ROLE_LABELS.system_admin,
     status: "Active",
     createdAt: new Date().toISOString()
   },
@@ -91,7 +112,7 @@ const DEFAULT_USERS = [
     username: "anael",
     email: "anael081787@gmail.com",
     password: "July2026_eye",
-    role: "Administrator",
+    role: ROLE_LABELS.system_admin,
     status: "Active",
     createdAt: new Date().toISOString()
   },
@@ -101,7 +122,7 @@ const DEFAULT_USERS = [
     username: "dimplesouthluzon2",
     email: "dimplesouthluzon2@gmail.com",
     password: "July2026_eye",
-    role: "Administrator",
+    role: ROLE_LABELS.system_admin,
     status: "Active",
     createdAt: new Date().toISOString()
   }
@@ -147,11 +168,48 @@ function parsePermissions(value) {
   }
 }
 
+function canonicalRoleLabel(roleValue = "") {
+  const normalized = String(roleValue || "").trim().toLowerCase().replace(/\s*\/\s*/g, "/");
+
+  if (["system_admin", "system administrator", "administrator", "admin"].includes(normalized)) {
+    return ROLE_LABELS.system_admin;
+  }
+
+  if (["owner_manager", "owner/manager", "owner", "manager"].includes(normalized)) {
+    return ROLE_LABELS.owner_manager;
+  }
+
+  if (["finance_officer", "finance officer/accountant", "finance officer / accountant", "finance", "accountant", "accounting"].includes(normalized)) {
+    return ROLE_LABELS.finance_officer;
+  }
+
+  if (["project_manager", "project manager/operations staff", "project manager / operations staff", "operations", "operation", "operations staff"].includes(normalized)) {
+    return ROLE_LABELS.project_manager;
+  }
+
+  if (["viewer", "staff", "needs_review", "needs role review"].includes(normalized)) {
+    return ROLE_LABELS.needs_review;
+  }
+
+  return APPROVED_ROLE_LABELS.includes(roleValue) ? roleValue : ROLE_LABELS.needs_review;
+}
+
+function getRolePermissions(roleName = "") {
+  return ROLE_PERMISSIONS[canonicalRoleLabel(roleName)] || [];
+}
+
+function isAssignableRole(roleName = "") {
+  return ASSIGNABLE_ROLE_LABELS.includes(canonicalRoleLabel(roleName));
+}
+
 function normalizeRole(role) {
+  const roleName = canonicalRoleLabel(role.name || role.role_name || role.role || "");
   return {
-    id: role.id || `role-${String(role.name || role.role_name || role.role || "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    name: role.name || role.role_name || role.role || "",
-    permissions: parsePermissions(role.permissions || role.allowed_modules || role.modules),
+    id: role.id || `role-${roleName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    name: roleName,
+    permissions: getRolePermissions(roleName).length
+      ? getRolePermissions(roleName)
+      : parsePermissions(role.permissions || role.allowed_modules || role.modules),
     source: role
   };
 }
@@ -170,14 +228,15 @@ function firstValue(...values) {
 }
 
 function normalizeUser(user) {
+  const role = canonicalRoleLabel(firstValue(user.role, user.role_name, user.user_role));
   return {
     id: user.id || createStableUserId(user),
     fullName: firstValue(user.fullName, user.full_name, user.name, user.fullname, user.display_name, user.username, "User"),
     username: firstValue(user.username, user.user_name, user.name),
     email: firstValue(user.email, user.user_email, user.email_address, user.mail),
     password: firstValue(user.password_hash, user.user_password, user.password),
-    role: firstValue(user.role, user.role_name, user.user_role),
-    status: user.status || user.account_status || "Active",
+    role,
+    status: role === ROLE_LABELS.needs_review ? "Inactive" : (user.status || user.account_status || "Active"),
     createdAt: user.createdAt || user.created_at || user.created || new Date().toISOString(),
     source: user
   };
@@ -337,7 +396,7 @@ function mergeUsers(primaryUsers, secondaryUsers) {
       ...existing,
       password: existing.password || user.password,
       status: existing.status || user.status || "Active",
-      role: existing.role || user.role || "Owner",
+      role: canonicalRoleLabel(existing.role || user.role || ROLE_LABELS.owner_manager),
       fullName: existing.fullName || user.fullName || existing.username || user.username || "User"
     };
 
@@ -347,14 +406,25 @@ function mergeUsers(primaryUsers, secondaryUsers) {
 
 function hasRoleRecord(roles, targetRole) {
   return roles.some(role => {
-    return String(role.name || "").toLowerCase() === String(targetRole.name || "").toLowerCase();
+    return canonicalRoleLabel(role.name) === canonicalRoleLabel(targetRole.name);
+  });
+}
+
+function uniqueRoles(roles) {
+  const seen = new Set();
+
+  return roles.filter(role => {
+    const key = canonicalRoleLabel(role.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
 function ensureDefaultRoles(roles) {
-  return DEFAULT_ROLES.reduce((records, defaultRole) => {
+  return uniqueRoles(DEFAULT_ROLES.reduce((records, defaultRole) => {
     return hasRoleRecord(records, defaultRole) ? records : [...records, defaultRole];
-  }, roles);
+  }, roles));
 }
 
 function ensureDefaultUsers(users) {
@@ -707,6 +777,7 @@ function renderPermissionOptions() {
 
 function renderRoleSelect(roles = rolesCache) {
   user_role.innerHTML = roles
+    .filter(role => ASSIGNABLE_ROLE_LABELS.includes(canonicalRoleLabel(role.name)))
     .map(role => `<option value="${escapeHtml(role.name)}">${escapeHtml(role.name)}</option>`)
     .join("");
 }
@@ -725,15 +796,15 @@ function renderUsers() {
 
   setText("totalUsers", users.length);
   setText("activeUsers", users.filter(isActiveUser).length);
-  setText("roleCount", roles.length);
-  setText("adminUsers", users.filter(user => ["Owner", "Administrator"].includes(user.role)).length);
+  setText("roleCount", APPROVED_ROLE_LABELS.length);
+  setText("adminUsers", users.filter(user => canonicalRoleLabel(user.role) === ROLE_LABELS.system_admin).length);
 
   userTable.innerHTML = users.length ? users.map(user => `
     <tr>
       <td>${escapeHtml(user.fullName)}</td>
       <td>${escapeHtml(getDisplayUsername(user))}</td>
       <td>${escapeHtml(user.email || "-")}</td>
-      <td>${escapeHtml(user.role)}</td>
+      <td>${escapeHtml(canonicalRoleLabel(user.role))}</td>
       <td><span class="badge ${isActiveUser(user) ? "Paid" : "Pending"}">${escapeHtml(user.status)}</span></td>
       <td>${formatDate(user.createdAt)}</td>
       <td class="action-links">
@@ -772,6 +843,7 @@ userForm.addEventListener("submit", async event => {
 
   const users = usersCache;
   const emailValue = user_email.value.trim().toLowerCase();
+  const selectedRole = canonicalRoleLabel(user_role.value);
 
   if (!isValidEmail(emailValue)) {
     alert("Please enter a valid email address.");
@@ -779,9 +851,20 @@ userForm.addEventListener("submit", async event => {
     return;
   }
 
+  if (!isAssignableRole(selectedRole)) {
+    alert("Please select a valid FinSight user role.");
+    user_role.focus();
+    return;
+  }
+
   const existingUser = users.find(user => {
     return String(user.email || "").toLowerCase() === emailValue;
   });
+
+  if (existingUser && canonicalRoleLabel(existingUser.role) === ROLE_LABELS.system_admin) {
+    alert("System Administrator accounts cannot be changed through the business-user role form.");
+    return;
+  }
 
   const passwordCheck = validateStrongPassword(user_password.value, "", emailValue);
 
@@ -796,7 +879,7 @@ userForm.addEventListener("submit", async event => {
     username: "",
     email: emailValue,
     password: await hashPassword(user_password.value),
-    role: user_role.value,
+    role: selectedRole,
     status: user_status.value,
     createdAt: new Date().toISOString()
   };
@@ -921,6 +1004,17 @@ window.toggleUserStatus = async function(userId) {
 
   const nextStatus = isActiveUser(currentUser) ? "Inactive" : "Active";
 
+  if (canonicalRoleLabel(currentUser.role) === ROLE_LABELS.system_admin && nextStatus === "Inactive") {
+    const activeAdmins = usersCache.filter(user => {
+      return canonicalRoleLabel(user.role) === ROLE_LABELS.system_admin && isActiveUser(user);
+    });
+
+    if (activeAdmins.length <= 1) {
+      alert("The last active System Administrator cannot be deactivated.");
+      return;
+    }
+  }
+
   if (!usingLocalUsersFallback) {
     try {
       await updateUserStatusInSupabase(userId, nextStatus);
@@ -954,6 +1048,17 @@ window.deleteUser = async function(userId) {
 
   if (!confirm("Delete this user account?")) return;
 
+  if (canonicalRoleLabel(user.role) === ROLE_LABELS.system_admin) {
+    const activeAdmins = usersCache.filter(item => {
+      return canonicalRoleLabel(item.role) === ROLE_LABELS.system_admin && isActiveUser(item);
+    });
+
+    if (activeAdmins.length <= 1) {
+      alert("The last active System Administrator cannot be deleted.");
+      return;
+    }
+  }
+
   if (!usingLocalUsersFallback) {
     try {
       await deleteUserFromSupabase(user);
@@ -974,8 +1079,8 @@ window.deleteRole = async function(roleId) {
 
   if (!role) return;
 
-  if (["Owner", "Administrator"].includes(role.name)) {
-    alert("Core administrative roles cannot be deleted.");
+  if (APPROVED_ROLE_LABELS.includes(canonicalRoleLabel(role.name))) {
+    alert("Approved FinSight roles cannot be deleted.");
     return;
   }
 

@@ -14,19 +14,26 @@ const PAGE_PERMISSIONS = {
 };
 
 const FINANCE_MODULES = [
-  "Dashboard",
   "Payroll & Expenses",
   "Taxes & Revenue",
-  "Project Monitoring"
+  "Project Monitoring",
+  "Reports & Audit Logs"
 ];
 
-const FINANCE_ROLE_PATTERN = /(finance|accountant|accounting)/i;
 const OPERATIONS_MODULES = [
-  "Payroll & Expenses",
-  "Project Monitoring"
+  "Project Monitoring",
+  "Reports & Audit Logs"
 ];
-const OPERATIONS_ROLE_PATTERN = /(project\s*manager|operations?\s*staff|operations?)/i;
 const LEGACY_PROJECT_PERMISSION = `Project Monitoring ${String.fromCharCode(38)} ${String.fromCharCode(65, 110, 97, 108, 121, 116, 105, 99, 115)}`;
+
+function canonicalRoleLabel(roleValue = "") {
+  const normalized = String(roleValue || "").trim().toLowerCase().replace(/\s*\/\s*/g, "/");
+  if (["system administrator", "administrator", "admin", "system_admin"].includes(normalized)) return "system administrator";
+  if (["owner/manager", "owner", "manager", "owner_manager"].includes(normalized)) return "owner/manager";
+  if (["finance officer/accountant", "finance officer / accountant", "finance", "accountant", "accounting", "finance_officer"].includes(normalized)) return "finance officer/accountant";
+  if (["project manager/operations staff", "project manager / operations staff", "project manager", "operations", "operations staff", "project_manager"].includes(normalized)) return "project manager/operations staff";
+  return "needs role review";
+}
 
 function getCurrentPage() {
   return window.location.pathname.split("/").pop() || "dashboard.html";
@@ -51,11 +58,11 @@ function redirectToLogin(message) {
 }
 
 function isFinanceRole(roleValue = localStorage.getItem("lemyu_user_role")) {
-  return FINANCE_ROLE_PATTERN.test(String(roleValue || ""));
+  return canonicalRoleLabel(roleValue) === "finance officer/accountant";
 }
 
 function isOperationsRole(roleValue = localStorage.getItem("lemyu_user_role")) {
-  return OPERATIONS_ROLE_PATTERN.test(String(roleValue || ""));
+  return canonicalRoleLabel(roleValue) === "project manager/operations staff";
 }
 
 function getEffectivePermissions(role, permissions) {
@@ -81,10 +88,7 @@ function trimSidebarForRole(permissions) {
     const page = href.split("/").pop();
 
     if (page === "index.html") return;
-    if ((financeScope || operationsScope) && page === "reports-audit.html") {
-      link.remove();
-      return;
-    }
+    if ((financeScope || operationsScope) && page === "reports-audit.html") link.textContent = "Reports";
     if (operationsScope && page === "projects.html") {
       link.textContent = "Project Monitoring";
     }
@@ -105,7 +109,7 @@ function enforceAccess() {
     return;
   }
 
-  const role = String(localStorage.getItem("lemyu_user_role") || "").toLowerCase();
+  const role = canonicalRoleLabel(localStorage.getItem("lemyu_user_role") || "");
   const permissions = getEffectivePermissions(role, getPermissions());
 
   trimSidebarForRole(permissions);
@@ -118,9 +122,9 @@ function enforceAccess() {
     document.body.dataset.roleScope = "operations";
   }
 
-  if (!["owner", "administrator", "admin"].includes(role) && !permissions.includes(requiredPermission)) {
+  if (!["owner/manager", "system administrator"].includes(role) && !permissions.includes(requiredPermission)) {
     alert("Unauthorized access. Your role cannot open this module.");
-    window.location.href = isOperationsRole(role) ? "projects.html" : "dashboard.html";
+    window.location.href = isOperationsRole(role) ? "projects.html" : isFinanceRole(role) ? "expenses.html" : "dashboard.html";
     return;
   }
 

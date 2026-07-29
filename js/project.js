@@ -25,12 +25,12 @@ const projectListState = {
 
 function isFinanceScope() {
   return document.body.dataset.roleScope === "finance"
-    || /(finance|accountant|accounting)/i.test(localStorage.getItem("lemyu_user_role") || "");
+    || String(localStorage.getItem("lemyu_user_role") || "").toLowerCase() === "finance officer/accountant";
 }
 
 function isOperationsScope() {
   return document.body.dataset.roleScope === "operations"
-    || /(project\s*manager|operations?\s*staff|operations?)/i.test(localStorage.getItem("lemyu_user_role") || "");
+    || String(localStorage.getItem("lemyu_user_role") || "").toLowerCase() === "project manager/operations staff";
 }
 
 function applyFinanceProjectScope() {

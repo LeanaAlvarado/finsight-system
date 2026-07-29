@@ -488,7 +488,7 @@ as $$
     auth.jwt() -> 'user_metadata' ->> 'role',
     auth.jwt() -> 'app_metadata' ->> 'role',
     ''
-  )) in ('owner', 'owner/manager', 'manager', 'administrator', 'admin', 'system administrator');
+  )) in ('owner/manager', 'system administrator');
 $$;
 
 drop policy if exists "cost_overrun_alerts_authenticated_select" on public.cost_overrun_alerts;
@@ -544,10 +544,10 @@ end $$;
 
 with seed_roles (name, role_name, permissions, allowed_modules) as (
   values
-    ('Owner', 'Owner', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
-    ('Administrator', 'Administrator', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
-    ('Finance', 'Finance', '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb, '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb),
-    ('Operations', 'Operations', '["Payroll & Expenses","Project Monitoring"]'::jsonb, '["Payroll & Expenses","Project Monitoring"]'::jsonb)
+    ('System Administrator', 'System Administrator', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
+    ('Owner/Manager', 'Owner/Manager', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs"]'::jsonb),
+    ('Finance Officer/Accountant', 'Finance Officer/Accountant', '["Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb),
+    ('Project Manager/Operations Staff', 'Project Manager/Operations Staff', '["Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Project Monitoring","Reports & Audit Logs"]'::jsonb)
 )
 insert into public.roles (name, role_name, permissions, allowed_modules)
 select seed_roles.name, seed_roles.role_name, seed_roles.permissions, seed_roles.allowed_modules
@@ -560,10 +560,10 @@ where not exists (
 
 with seed_roles (name, role_name, permissions, allowed_modules) as (
   values
-    ('Owner', 'Owner', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
-    ('Administrator', 'Administrator', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
-    ('Finance', 'Finance', '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb, '["Dashboard","Payroll & Expenses","Taxes & Revenue","Project Monitoring"]'::jsonb),
-    ('Operations', 'Operations', '["Payroll & Expenses","Project Monitoring"]'::jsonb, '["Payroll & Expenses","Project Monitoring"]'::jsonb)
+    ('System Administrator', 'System Administrator', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs","User & Role Management"]'::jsonb),
+    ('Owner/Manager', 'Owner/Manager', '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs"]'::jsonb, '["Dashboard","Inventory","Payroll & Expenses","Taxes & Revenue","Project Monitoring","Proposal / Quotation & Feedback","Reports & Audit Logs"]'::jsonb),
+    ('Finance Officer/Accountant', 'Finance Officer/Accountant', '["Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Payroll & Expenses","Taxes & Revenue","Project Monitoring","Reports & Audit Logs"]'::jsonb),
+    ('Project Manager/Operations Staff', 'Project Manager/Operations Staff', '["Project Monitoring","Reports & Audit Logs"]'::jsonb, '["Project Monitoring","Reports & Audit Logs"]'::jsonb)
 )
 update public.roles
 set

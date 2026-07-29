@@ -8,7 +8,7 @@ const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
 
 function isOperationsScope() {
   return document.body.dataset.roleScope === "operations"
-    || /(project\s*manager|operations?\s*staff|operations?)/i.test(localStorage.getItem("lemyu_user_role") || "");
+    || String(localStorage.getItem("lemyu_user_role") || "").toLowerCase() === "project manager/operations staff";
 }
 
 function applyOperationsExpenseScope() {

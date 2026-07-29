@@ -81,12 +81,12 @@ const MANPOWER_HIDDEN_FIELD_IDS = [
 
 function isFinanceScope() {
   return document.body.dataset.roleScope === "finance"
-    || /(finance|accountant|accounting)/i.test(localStorage.getItem("lemyu_user_role") || "");
+    || String(localStorage.getItem("lemyu_user_role") || "").toLowerCase() === "finance officer/accountant";
 }
 
 function isOwnerRole() {
   const role = String(localStorage.getItem("lemyu_user_role") || localStorage.getItem("lemyu_user_role_label") || "").toLowerCase();
-  return ["owner", "administrator", "admin"].includes(role);
+  return ["owner/manager", "system administrator"].includes(role);
 }
 
 function applyFinanceScope() {
@@ -134,7 +134,7 @@ function applyContractOwnerScope() {
 
   const proposalNote = document.querySelector("#proposalSection .muted");
   if (proposalNote) {
-    proposalNote.textContent = "Only Owner or Administrator accounts can add new project contracts.";
+    proposalNote.textContent = "Only Owner/Manager or System Administrator accounts can add new project contracts.";
   }
 }
 
@@ -736,7 +736,7 @@ proposalForm.addEventListener("submit", async event => {
   event.preventDefault();
 
   if (!isOwnerRole()) {
-    alert("Only Owner or Administrator accounts can add and save new project contracts.");
+    alert("Only Owner/Manager or System Administrator accounts can add and save new project contracts.");
     return;
   }
 

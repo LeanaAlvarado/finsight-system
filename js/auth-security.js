@@ -120,11 +120,12 @@ export function createOtp() {
 
 export function startSession(user, permissions = []) {
   const expiresAt = Date.now() + SESSION_TIMEOUT_MS;
+  const roleLabel = user.role || "Owner/Manager";
 
   localStorage.setItem("lemyu_is_authenticated", "true");
   localStorage.setItem("lemyu_session_expires_at", String(expiresAt));
-  localStorage.setItem("lemyu_user_role", String(user.role || "Owner").toLowerCase());
-  localStorage.setItem("lemyu_user_role_label", user.role || "Owner");
+  localStorage.setItem("lemyu_user_role", String(roleLabel).toLowerCase());
+  localStorage.setItem("lemyu_user_role_label", roleLabel);
   localStorage.setItem("lemyu_user_name", user.fullName || user.username || "User");
   localStorage.setItem("lemyu_username", user.username || user.email || "User");
   localStorage.setItem("lemyu_user_email", user.email || "");
