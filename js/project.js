@@ -3434,7 +3434,7 @@ window.viewProject = async function(id, options = {}) {
         <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
         <div class="detail-item"><small>Project Budget</small><strong>${peso(financials.budget)}</strong></div>
         <div class="detail-item"><small>Contract Amount</small><strong>${peso(financials.contract)}</strong></div>
-        <div class="detail-item"><small>Down Payment</small><strong>${peso(financials.downPayment)}</strong></div>
+        <div class="detail-item"><small>Amount Paid</small><strong>${peso(financials.downPayment)}</strong></div>
         <div class="detail-item"><small>Tax Amount</small><strong>${peso(financials.tax)}</strong></div>
         <div class="detail-item"><small>Total Expenses</small><strong>${peso(financials.expenses)}</strong></div>
         <div class="detail-item"><small>Balance Due</small><strong>${peso(Math.max(financials.contract - financials.downPayment, 0))}</strong></div>
@@ -3832,7 +3832,7 @@ window.printProject = async function(id) {
   const financialRows = isOperationsScope() ? "" : `
         <tr><td>Project Budget</td><td>${peso(project.project_budget)}</td></tr>
         <tr><td>Contract Amount</td><td>${peso(project.contract_amount)}</td></tr>
-        <tr><td>Down Payment</td><td>${peso(getProjectDownPayment(project))}</td></tr>
+        <tr><td>Amount Paid</td><td>${peso(getProjectDownPayment(project))}</td></tr>
         <tr><td>Tax Percent</td><td>${optionalPercent(project.tax_amount)}</td></tr>
   `;
 
