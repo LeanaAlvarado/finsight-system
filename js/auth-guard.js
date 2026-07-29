@@ -16,13 +16,11 @@ const PAGE_PERMISSIONS = {
 const FINANCE_MODULES = [
   "Payroll & Expenses",
   "Taxes & Revenue",
-  "Project Monitoring",
-  "Reports & Audit Logs"
+  "Project Monitoring"
 ];
 
 const OPERATIONS_MODULES = [
-  "Project Monitoring",
-  "Reports & Audit Logs"
+  "Project Monitoring"
 ];
 const LEGACY_PROJECT_PERMISSION = `Project Monitoring ${String.fromCharCode(38)} ${String.fromCharCode(65, 110, 97, 108, 121, 116, 105, 99, 115)}`;
 

@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-quotation-signature-v48";
+const appVersion = "20260729-owner-audit-logs-v49";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

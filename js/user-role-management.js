@@ -47,12 +47,10 @@ const ROLE_PERMISSIONS = {
   [ROLE_LABELS.finance_officer]: [
     "Payroll & Expenses",
     "Taxes & Revenue",
-    "Project Monitoring",
-    "Reports & Audit Logs"
+    "Project Monitoring"
   ],
   [ROLE_LABELS.project_manager]: [
-    "Project Monitoring",
-    "Reports & Audit Logs"
+    "Project Monitoring"
   ],
   [ROLE_LABELS.needs_review]: []
 };

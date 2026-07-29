@@ -56,6 +56,19 @@ function isSystemAdminScope() {
   return String(localStorage.getItem("lemyu_user_role") || "").toLowerCase() === "system administrator";
 }
 
+function isOwnerManagerScope() {
+  const role = String(
+    localStorage.getItem("lemyu_user_role_label")
+    || localStorage.getItem("lemyu_user_role")
+    || ""
+  ).toLowerCase();
+  return ["owner/manager", "owner", "manager", "owner_manager"].includes(role);
+}
+
+function canViewAuditLogs() {
+  return isSystemAdminScope() || isOwnerManagerScope();
+}
+
 function getDayStart(date) {
   const nextDate = new Date(date);
   nextDate.setHours(0, 0, 0, 0);
@@ -182,7 +195,7 @@ function applyFinanceReportScope() {
 }
 
 function applyAuditAccessScope() {
-  if (isSystemAdminScope()) return;
+  if (canViewAuditLogs()) return;
   if (auditSection) auditSection.style.display = "none";
 }
 
@@ -316,7 +329,7 @@ function renderAuditPagination(totalItems) {
 }
 
 function renderAuditTable() {
-  if (!auditTable || !isSystemAdminScope()) return;
+  if (!auditTable || !canViewAuditLogs()) return;
 
   if (reportsLoadError) {
     auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">Unable to load audit log records. Please try again.</td></tr>`;
@@ -370,7 +383,7 @@ function renderReports() {
   setText("projectReportCount", projects.length);
   setText("financialScope", operationsOnly ? "-" : peso(totalRevenue));
   setText("expenseReportCount", operationsOnly ? "-" : expenseRecords);
-  setText("auditCount", isSystemAdminScope() ? auditEvents.length : "-");
+  setText("auditCount", canViewAuditLogs() ? auditEvents.length : "-");
   setText("reportRevenue", operationsOnly ? "-" : peso(totalRevenue));
   setText("reportExpenses", operationsOnly ? "-" : peso(totalExpenses + totalPayroll));
   setText("reportProfit", operationsOnly ? "-" : peso(totalRevenue - totalExpenses - totalPayroll));
@@ -383,7 +396,7 @@ function renderReports() {
 }
 
 async function loadReports() {
-  if (auditTable && isSystemAdminScope()) {
+  if (auditTable && canViewAuditLogs()) {
     auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading audit log records...</td></tr>`;
   }
 
