@@ -121,7 +121,7 @@ input:focus{
 }
 
 .password-field input{
-  padding-right:46px;
+  padding-right:48px;
 }
 
 .password-field input::-ms-reveal,
@@ -132,29 +132,31 @@ input:focus{
 button.password-toggle{
   position:absolute;
   top:50%;
-  right:1px;
-  width:40px;
-  height:calc(100% - 2px);
+  right:8px;
+  width:28px;
+  height:28px;
   margin:0;
   padding:0;
   transform:translateY(-50%);
   display:grid;
   place-items:center;
   border:0;
-  border-radius:0 5px 5px 0;
-  background:#fff;
+  border-radius:50%;
+  background:transparent;
   color:var(--muted);
+  cursor:pointer;
 }
 
 button.password-toggle:hover,
 button.password-toggle:focus-visible{
   background:#eef4f8;
   color:var(--primary-dark);
+  outline:none;
 }
 
 button.password-toggle svg{
-  width:20px;
-  height:20px;
+  width:18px;
+  height:18px;
   fill:none;
   stroke:currentColor;
   stroke-width:2;
@@ -355,7 +357,7 @@ button:hover{
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260729-password-eye-single-v32"></script>
+<script type="module" src="js/app.js?v=20260729-password-eye-css-v33"></script>
 
 </body>
 </html>
