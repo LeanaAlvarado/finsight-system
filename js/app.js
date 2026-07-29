@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-password-eye-state-v30";
+const appVersion = "20260729-password-eye-clean-v31";
 
 function toTitleCase(value = "") {
   return String(value || "User")

@@ -124,7 +124,12 @@ input:focus{
   padding-right:46px;
 }
 
-.password-toggle{
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear{
+  display:none;
+}
+
+button.password-toggle{
   position:absolute;
   top:50%;
   right:5px;
@@ -140,13 +145,13 @@ input:focus{
   color:var(--muted);
 }
 
-.password-toggle:hover,
-.password-toggle:focus-visible{
+button.password-toggle:hover,
+button.password-toggle:focus-visible{
   background:#eef4f8;
   color:var(--primary-dark);
 }
 
-.password-toggle svg{
+button.password-toggle svg{
   width:20px;
   height:20px;
   fill:none;
@@ -353,7 +358,7 @@ button:hover{
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260729-password-eye-state-v30"></script>
+<script type="module" src="js/app.js?v=20260729-password-eye-clean-v31"></script>
 
 </body>
 </html>
