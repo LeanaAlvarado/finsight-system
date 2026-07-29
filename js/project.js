@@ -186,9 +186,19 @@ function getPprCompletionValue(project = {}) {
     project.percent_complete
   ];
   const raw = candidates.find(value => value !== null && value !== undefined && value !== "");
-  if (raw === null || raw === undefined || raw === "") return null;
-  const value = Number(raw);
-  return Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : null;
+  if (raw !== null && raw !== undefined && raw !== "") {
+    const value = Number(raw);
+    if (Number.isFinite(value)) return Math.min(Math.max(value, 0), 100);
+  }
+
+  const status = String(project.status || "").trim().toLowerCase();
+  if (status === "completed") return 100;
+  if (status === "ongoing") return 50;
+  if (status === "approved") return 25;
+  if (status === "delayed" || status === "on hold") return 40;
+  if (status === "cancelled" || status === "rejected") return 0;
+  if (status === "pending" || status === "draft" || status === "not started") return 0;
+  return 0;
 }
 
 function getPprStatusClass(status = "") {
