@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, updateWithOptionalColumns } from "./supabase.js";
+import { supabase, peso, escapeHtml, formatDate, updateWithOptionalColumns } from "./supabase.js";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -3693,6 +3693,41 @@ window.generatePPR = async function(id) {
       ).toFixed(1)
     : "No feedback yet";
 
+  const feedbackRemarksHtml = feedbacks
+    .slice()
+    .sort((a, b) => new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0))
+    .map((feedback, index) => {
+      const ratingValue = Number(feedback.rating || feedback.overall_satisfaction || 0);
+      const commentsText = feedback.comments || "";
+      const recommendationsText = feedback.recommendations || "";
+      const feedbackDate = feedback.date || feedback.feedback_date || feedback.created_at || "";
+
+      return `
+        <div class="feedback-entry">
+          <div class="feedback-entry-head">
+            <strong>${escapeProjectHtml(feedback.client_name || `Client ${index + 1}`)}</strong>
+            <span>${ratingValue ? `${ratingValue}/5` : "No rating"}${feedbackDate ? ` | ${escapeProjectHtml(formatDate(feedbackDate))}` : ""}</span>
+          </div>
+          ${
+            commentsText
+              ? `<p><b>Feedback / Remarks:</b> ${escapeProjectHtml(commentsText)}</p>`
+              : ""
+          }
+          ${
+            recommendationsText
+              ? `<p><b>Recommendations:</b> ${escapeProjectHtml(recommendationsText)}</p>`
+              : ""
+          }
+          ${
+            !commentsText && !recommendationsText
+              ? `<p class="muted">No written remarks submitted.</p>`
+              : ""
+          }
+        </div>
+      `;
+    })
+    .join("");
+
   const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?project_id=${id}`;
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(feedbackLink)}`;
@@ -3754,6 +3789,43 @@ window.generatePPR = async function(id) {
         .qr-box img{
           width:140px;
           height:140px;
+        }
+        .feedback-list{
+          margin-top:18px;
+          border:1px solid #dbe7f3;
+          border-radius:10px;
+          padding:14px;
+          break-inside:avoid;
+        }
+        .feedback-list h3{
+          margin:0 0 10px;
+          color:#1557a6;
+        }
+        .feedback-entry{
+          border-top:1px solid #e2ebf4;
+          padding:10px 0;
+          break-inside:avoid;
+        }
+        .feedback-entry:first-of-type{
+          border-top:0;
+          padding-top:0;
+        }
+        .feedback-entry-head{
+          display:flex;
+          justify-content:space-between;
+          gap:12px;
+          margin-bottom:6px;
+          font-size:14px;
+        }
+        .feedback-entry-head span,
+        .feedback-entry .muted{
+          color:#52616f;
+        }
+        .feedback-entry p{
+          margin:4px 0;
+          font-size:14px;
+          line-height:1.35;
+          white-space:pre-wrap;
         }
         .signatures{
           display:flex;
@@ -3882,6 +3954,17 @@ window.generatePPR = async function(id) {
             </div>
           </div>
           `
+      }
+
+      ${
+        hasFeedback
+          ? `
+            <div class="feedback-list">
+              <h3>Client Feedback Remarks</h3>
+              ${feedbackRemarksHtml}
+            </div>
+          `
+          : ""
       }
 
       <div class="signatures">
