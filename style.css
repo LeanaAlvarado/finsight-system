@@ -2567,6 +2567,14 @@ tbody tr:hover{
   background:#fff;
 }
 
+.pending-upload-list{
+  margin:8px 0 12px;
+}
+
+.pending-file-row{
+  background:#eef7ff;
+}
+
 .file-preview{
   width:118px;
   height:82px;

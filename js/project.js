@@ -8,6 +8,7 @@ let editingProjectCode = "";
 let allProjects = [];
 let activeSmartContract = null;
 let projectCurrentPage = 1;
+let pendingProgressFiles = [];
 const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
@@ -3661,6 +3662,10 @@ window.editProject = async function(id) {
 
   editingId = id;
   editingProjectCode = project.project_code || "";
+  pendingProgressFiles = [];
+  const progressInput = document.getElementById("progress_files");
+  if (progressInput) progressInput.value = "";
+  renderPendingProgressFiles();
    const addProjectSection = document.getElementById("addProjectSection");
    const projectListSection = document.getElementById("projectListSection");
    const editProjectSection = document.getElementById("editProjectSection");
@@ -3737,6 +3742,13 @@ const editProjectForm = document.getElementById("editProjectForm");
 document.getElementById("edit_quotation_type")?.addEventListener("change", toggleEditQuotationTypeView);
 document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
   if (edit_down_payment) edit_down_payment.value = event.target.value;
+});
+document.getElementById("progress_files")?.addEventListener("change", event => {
+  const selectedFiles = Array.from(event.target.files || []);
+  if (!selectedFiles.length) return;
+  pendingProgressFiles = [...pendingProgressFiles, ...selectedFiles];
+  event.target.value = "";
+  renderPendingProgressFiles();
 });
 document.getElementById("edit_cctv_material_select")?.addEventListener("change", event => {
   applyEditCctvSelectedMaterial(event.target.value);
@@ -4317,7 +4329,10 @@ window.generatePPR = async function(id) {
 };
 
 async function uploadProgressFiles(projectId) {
-  const files = document.getElementById("progress_files").files;
+  const progressInput = document.getElementById("progress_files");
+  const files = pendingProgressFiles.length
+    ? [...pendingProgressFiles]
+    : Array.from(progressInput?.files || []);
 
   if (!files.length) return true;
 
@@ -4348,9 +4363,41 @@ async function uploadProgressFiles(projectId) {
     }
   }
 
-  document.getElementById("progress_files").value = "";
+  pendingProgressFiles = [];
+  if (progressInput) progressInput.value = "";
+  renderPendingProgressFiles();
   return true;
 }
+
+function renderPendingProgressFiles() {
+  const pendingBox = document.getElementById("progressPendingFiles");
+  if (!pendingBox) return;
+
+  pendingBox.innerHTML = pendingProgressFiles.length
+    ? `
+      <div class="file-row pending-file-row">
+        <div class="file-info">
+          <strong>Pending upload</strong>
+          <span>${pendingProgressFiles.length} file${pendingProgressFiles.length === 1 ? "" : "s"} ready. Choose more files or press Update Project.</span>
+        </div>
+      </div>
+      ${pendingProgressFiles.map((file, index) => `
+        <div class="file-row pending-file-row">
+          <div class="file-info">
+            <strong>${escapeProjectHtml(file.name || "Selected file")}</strong>
+            <span>${file.type || "File"}${file.size ? ` - ${(file.size / 1024).toFixed(1)} KB` : ""}</span>
+          </div>
+          <button type="button" class="danger-btn" onclick="removePendingProgressFile(${index})">Remove</button>
+        </div>
+      `).join("")}
+    `
+    : "";
+}
+
+window.removePendingProgressFile = function(index) {
+  pendingProgressFiles.splice(index, 1);
+  renderPendingProgressFiles();
+};
 
 async function loadProgressFiles(projectId) {
   if (isLocalProjectId(projectId)) {
