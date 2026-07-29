@@ -536,6 +536,11 @@ function getProjectQuotationLabel(project = {}) {
   return getProjectQuotationType(project) === "cctv" ? "CCTV Quotation" : "Manpower Quotation";
 }
 
+function cleanSignatoryName(value = "") {
+  const cleaned = String(value || "").trim();
+  return cleaned && cleaned !== "-" ? cleaned : "";
+}
+
 function getPrintableViewControlsStyle() {
   return `
         .print-view-actions{
@@ -2391,6 +2396,8 @@ window.generateQuotation = async function(id, options = {}) {
     day: "numeric"
   });
   const workDescription = manpower.workDescription || manpower.scope || project.project_title || "";
+  const preparedByName = cleanSignatoryName(manpower.preparedBy || project.ppr_prepared_by);
+  const preparedPosition = cleanSignatoryName(manpower.preparedPosition);
 
   const quotationWindow = window.open("", "_blank");
 
@@ -2576,17 +2583,19 @@ window.generateQuotation = async function(id, options = {}) {
           print-color-adjust:exact;
         }
         .prepared{
-          margin-top:34px;
+          margin-top:18px;
           width:360px;
           min-height:0;
           font-size:15px;
           text-transform:uppercase;
+          break-inside:avoid;
+          page-break-inside:avoid;
         }
         .prepared-line{
           border-top:1px solid #111;
           width:330px;
-          margin:2px 0 6px 0;
-          padding-top:6px;
+          margin:0 0 5px 0;
+          padding-top:5px;
           margin-bottom:6px;
         }
         .prepared-label,
@@ -2596,8 +2605,8 @@ window.generateQuotation = async function(id, options = {}) {
         }
         .prepared-signature{
           width:245px;
-          height:78px;
-          margin:0 0 0 42px;
+          height:50px;
+          margin:0 0 -2px 42px;
           opacity:1;
         }
         .prepared-signature .signature-svg{
@@ -2632,6 +2641,11 @@ window.generateQuotation = async function(id, options = {}) {
           table,
           .scope-box{
             break-inside:avoid;
+          }
+          .thank-you,
+          .prepared{
+            break-inside:avoid;
+            page-break-inside:avoid;
           }
         }
         ${includeBackButton ? getPrintableViewControlsStyle() : ""}
@@ -2718,9 +2732,9 @@ window.generateQuotation = async function(id, options = {}) {
         <div class="prepared-signature">${markSignatureSvg()}</div>
         <div class="prepared-line">
           <span class="prepared-label">Prepared By: </span>
-          <span class="prepared-name">${escapeProjectHtml(manpower.preparedBy || project.ppr_prepared_by || "-")}</span>
+          <span class="prepared-name">${escapeProjectHtml(preparedByName) || "&nbsp;"}</span>
         </div>
-        <div class="prepared-position">${escapeProjectHtml(manpower.preparedPosition || "Position")}</div>
+        <div class="prepared-position">${escapeProjectHtml(preparedPosition) || "&nbsp;"}</div>
       </div>
     </body>
     </html>
