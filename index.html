@@ -116,6 +116,47 @@ input:focus{
   box-shadow:0 0 0 3px rgba(31,78,121,.14);
 }
 
+.password-field{
+  position:relative;
+}
+
+.password-field input{
+  padding-right:46px;
+}
+
+.password-toggle{
+  position:absolute;
+  top:50%;
+  right:5px;
+  width:36px;
+  height:36px;
+  margin:0;
+  padding:0;
+  transform:translateY(-50%);
+  display:grid;
+  place-items:center;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible{
+  background:#eef4f8;
+  color:var(--primary-dark);
+}
+
+.password-toggle svg{
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  pointer-events:none;
+}
+
 button{
   width:100%;
   height:42px;
@@ -218,7 +259,28 @@ button:hover{
 
         <div class="input-group">
           <label for="password">Password</label>
-          <input id="password" type="password" placeholder="Enter password" required>
+          <div class="password-field">
+            <input id="password" type="password" placeholder="Enter password" required>
+            <button
+              type="button"
+              id="passwordToggle"
+              class="password-toggle"
+              aria-label="Show password"
+              aria-pressed="false"
+              title="Show password"
+            >
+              <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m3 3 18 18"></path>
+                <path d="M10.6 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-2.1 3.1"></path>
+                <path d="M6.6 6.6C3.6 8.6 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.1-.9"></path>
+                <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <button type="submit" id="sendOtpBtn">Login</button>
@@ -291,7 +353,7 @@ button:hover{
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260727-feedback-rating-no-note-v29"></script>
+<script type="module" src="js/app.js?v=20260729-password-eye-state-v30"></script>
 
 </body>
 </html>

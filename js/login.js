@@ -20,6 +20,7 @@ const resetPasswordView = document.getElementById("resetPasswordView");
 const otpMessage = document.getElementById("otpMessage");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
+const passwordToggle = document.getElementById("passwordToggle");
 const otpInput = document.getElementById("otp");
 const resetPasswordForm = document.getElementById("resetPasswordForm");
 const resetEmailInput = document.getElementById("resetEmail");
@@ -32,6 +33,20 @@ const sendOtpBtn = document.getElementById("sendOtpBtn");
 const resetPasswordBtn = document.getElementById("resetPasswordBtn");
 const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
 const backToLoginFromResetBtn = document.getElementById("backToLoginFromResetBtn");
+
+function setPasswordVisibility(isVisible) {
+  passwordInput.type = isVisible ? "text" : "password";
+  passwordToggle.setAttribute("aria-pressed", String(isVisible));
+  passwordToggle.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
+  passwordToggle.title = isVisible ? "Hide password" : "Show password";
+  passwordToggle.querySelector(".eye-open").hidden = !isVisible;
+  passwordToggle.querySelector(".eye-closed").hidden = isVisible;
+}
+
+passwordToggle.addEventListener("click", () => {
+  setPasswordVisibility(passwordInput.type === "password");
+  passwordInput.focus();
+});
 
 const OWNER_PERMISSIONS = [
   "Dashboard",
