@@ -2497,6 +2497,28 @@ tbody tr:hover{
   margin-bottom:16px;
 }
 
+.project-detail-title{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.project-detail-title small{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.project-detail-title h2{
+  margin:2px 0 6px;
+}
+
+.project-back-btn{
+  white-space:nowrap;
+}
+
 .large-modal{
   width:880px;
   max-width:95%;
@@ -2960,6 +2982,16 @@ tbody tr:hover{
 
   .custom-coverage-controls{
     grid-template-columns:1fr;
+  }
+
+  .modal-header,
+  .project-detail-title{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .project-back-btn{
+    width:100%;
   }
 
   .expense-breakdown-layout{

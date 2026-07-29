@@ -22,6 +22,53 @@ const projectListState = {
   type: "all",
   sort: "newest"
 };
+const PROJECT_LIST_STATE_KEY = "lemyu_project_monitoring_list_state";
+let pendingDetailProjectId = new URLSearchParams(window.location.search).get("view") || "";
+
+function getProjectListStateSnapshot() {
+  return {
+    page: projectCurrentPage,
+    search: projectListState.search,
+    status: projectListState.status,
+    date: projectListState.date,
+    type: projectListState.type,
+    sort: projectListState.sort,
+    scrollY: window.scrollY || 0
+  };
+}
+
+function saveProjectListState() {
+  sessionStorage.setItem(PROJECT_LIST_STATE_KEY, JSON.stringify(getProjectListStateSnapshot()));
+}
+
+function restoreProjectListState() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(PROJECT_LIST_STATE_KEY) || "{}");
+    projectListState.search = saved.search ?? projectListState.search;
+    projectListState.status = saved.status ?? projectListState.status;
+    projectListState.date = saved.date ?? projectListState.date;
+    projectListState.type = saved.type ?? projectListState.type;
+    projectListState.sort = saved.sort ?? projectListState.sort;
+    projectCurrentPage = Number(saved.page || projectCurrentPage) || 1;
+
+    const fieldMap = {
+      projectSearch: projectListState.search,
+      projectStatusFilter: projectListState.status,
+      projectDateFilter: projectListState.date,
+      projectTypeFilter: projectListState.type,
+      projectSort: projectListState.sort
+    };
+
+    Object.entries(fieldMap).forEach(([id, value]) => {
+      const field = document.getElementById(id);
+      if (field) field.value = value;
+    });
+
+    return Number(saved.scrollY || 0);
+  } catch {
+    return 0;
+  }
+}
 
 function isFinanceScope() {
   return document.body.dataset.roleScope === "finance"
@@ -929,14 +976,14 @@ function renderProjectList() {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
     const actionLinks = isOperations
-      ? `<a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>`
+      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>`
       : isFinanceScope()
-      ? `<a href="#" onclick="viewProject('${project.id}')">View Costing</a>`
+      ? `<a href="#" onclick="viewProject('${project.id}'); return false;">View Costing</a>`
       : `
-          <a href="#" onclick="viewProject('${project.id}')">View</a>
-          <a href="#" onclick="editProject('${project.id}')">Edit</a>
-          <a href="#" onclick="generateProjectQuotation('${project.id}')">${escapeHtml(quotationLabel)}</a>
-          <a href="#" onclick="generatePPR('${project.id}')">Generate PPR</a>
+          <a href="#" onclick="viewProject('${project.id}'); return false;">View</a>
+          <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
+          <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
+          <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
         `;
 
@@ -998,6 +1045,12 @@ async function loadProjects() {
   syncProjectContracts(allProjects, expenses);
   renderSmartContracts();
   renderProjectList();
+
+  if (pendingDetailProjectId) {
+    const projectId = pendingDetailProjectId;
+    pendingDetailProjectId = "";
+    window.viewProject(projectId, { skipStateSave: true });
+  }
 }
 
 window.addEventListener("storage", event => {
@@ -1006,6 +1059,14 @@ window.addEventListener("storage", event => {
   }
 });
 window.addEventListener("lemyu:data-sync-complete", loadProjects);
+window.addEventListener("popstate", () => {
+  const projectId = new URLSearchParams(window.location.search).get("view");
+  if (projectId) {
+    window.viewProject(projectId, { skipStateSave: true });
+  } else {
+    window.backToProjectList();
+  }
+});
 
 // SAVE OR UPDATE PROJECT
 if (form) {
@@ -1102,11 +1163,40 @@ form.addEventListener("submit", async function(e) {
 });
 }
 
+function updateProjectDetailHeader(project = {}) {
+  const title = document.getElementById("viewProjectTitle");
+  const status = document.getElementById("viewProjectStatus");
+  if (title) title.textContent = project.project_title || project.project_code || "Project Details";
+  if (status) {
+    const statusValue = project.status || "Pending";
+    status.className = `status ${statusValue}`;
+    status.textContent = statusValue;
+  }
+}
+
+function openProjectDetailModal(project) {
+  updateProjectDetailHeader(project);
+  viewModal.style.display = "flex";
+}
+
 // VIEW FULL PROJECT DETAILS
-window.viewProject = async function(id) {
+window.viewProject = async function(id, options = {}) {
+  if (!options.skipStateSave) {
+    saveProjectListState();
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", id);
+    window.history.pushState({ projectView: id }, "", url);
+  }
+
+  if (viewContent) {
+    viewContent.innerHTML = `<p class="muted">Loading project details...</p>`;
+  }
+
   const project = await getProjectForAction(id, "Project");
 
   if (!project) {
+    if (viewContent) viewContent.innerHTML = `<p class="muted">Unable to load project details.</p>`;
+    if (viewModal) viewModal.style.display = "flex";
     return;
   }
 
@@ -1132,11 +1222,9 @@ window.viewProject = async function(id) {
         <div class="detail-item"><small>Projected Profit</small><strong>${peso(profit)}</strong></div>
       </div>
     `;
-    viewModal.style.display = "flex";
+    openProjectDetailModal(project);
     return;
   }
-
-  return window.generateProjectQuotation(id, { print: false });
 
   if (isOperationsScope()) {
     viewContent.innerHTML = `
@@ -1153,7 +1241,7 @@ window.viewProject = async function(id) {
         <div class="detail-item full-row"><small>Remarks</small><strong>${project.remarks || "-"}</strong></div>
       </div>
     `;
-    viewModal.style.display = "flex";
+    openProjectDetailModal(project);
     return;
   }
 
@@ -1198,11 +1286,33 @@ window.viewProject = async function(id) {
     </div>
   `;
 
-  viewModal.style.display = "flex";
+  openProjectDetailModal(project);
 };
 
 window.closeViewModal = function() {
-  viewModal.style.display = "none";
+  window.backToProjectList();
+};
+
+window.backToProjectList = function() {
+  if (viewModal) {
+    viewModal.style.display = "none";
+  }
+
+  const scrollY = restoreProjectListState();
+  renderProjectList();
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("view");
+  window.history.replaceState({}, "", url);
+
+  const listSection = document.getElementById("projectListSection");
+  if (listSection) {
+    listSection.style.display = "block";
+  }
+
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: scrollY, behavior: "smooth" });
+  });
 };
 
 async function getOrCreateProjectContract(projectId) {
@@ -3914,6 +4024,7 @@ window.showProjectQR = function(projectId) {
 window.goToProjectPage = function(page) {
   const totalPages = Math.max(1, Math.ceil(getFilteredProjects().length / PROJECT_PAGE_SIZE));
   projectCurrentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
+  saveProjectListState();
   renderProjectList();
 };
 
@@ -3934,6 +4045,7 @@ function bindProjectListFilters() {
     element.addEventListener(eventName, event => {
       projectListState[stateKey] = event.target.value || (stateKey === "search" ? "" : "all");
       projectCurrentPage = 1;
+      saveProjectListState();
       renderProjectList();
     });
   });
@@ -3943,5 +4055,6 @@ function bindProjectListFilters() {
 applyFinanceProjectScope();
 applyOperationsProjectScope();
 bindProjectListFilters();
+restoreProjectListState();
 resetQuotationItems();
 loadProjects();

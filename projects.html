@@ -378,8 +378,15 @@
 <div id="viewModal" class="modal">
   <div class="modal-box large-modal">
     <div class="modal-header">
-      <h2>Project Full Details</h2>
-      <button type="button" onclick="closeViewModal()">Close</button>
+      <div class="project-detail-title">
+        <button type="button" class="secondary-btn project-back-btn screen-only" onclick="backToProjectList()">Back to Project List</button>
+        <div>
+          <small>Project Monitoring / Project Details</small>
+          <h2 id="viewProjectTitle">Project Full Details</h2>
+          <span id="viewProjectStatus" class="status Pending">Pending</span>
+        </div>
+      </div>
+      <button type="button" class="screen-only" onclick="closeViewModal()">Close</button>
     </div>
 
     <div id="viewContent"></div>
@@ -401,7 +408,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260729-approved-user-roles-v44"></script>
+<script type="module" src="js/app.js?v=20260729-project-view-back-v45"></script>
 
 </body>
 </html>
