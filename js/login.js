@@ -21,6 +21,7 @@ const otpMessage = document.getElementById("otpMessage");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const passwordToggle = document.getElementById("passwordToggle");
+const passwordEyeIcon = document.getElementById("passwordEyeIcon");
 const otpInput = document.getElementById("otp");
 const resetPasswordForm = document.getElementById("resetPasswordForm");
 const resetEmailInput = document.getElementById("resetEmail");
@@ -39,8 +40,9 @@ function setPasswordVisibility(isVisible) {
   passwordToggle.setAttribute("aria-pressed", String(isVisible));
   passwordToggle.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
   passwordToggle.title = isVisible ? "Hide password" : "Show password";
-  passwordToggle.querySelector(".eye-open").hidden = !isVisible;
-  passwordToggle.querySelector(".eye-closed").hidden = isVisible;
+  passwordEyeIcon.innerHTML = isVisible
+    ? `<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle>`
+    : `<path d="m3 3 18 18"></path><path d="M10.6 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-2.1 3.1"></path><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.1-.9"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>`;
 }
 
 passwordToggle.addEventListener("click", () => {
