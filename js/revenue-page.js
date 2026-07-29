@@ -2,6 +2,21 @@ import { supabase, peso, escapeHtml, number, readTable, setText } from "./supaba
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
+const REVENUE_PAGE_SIZE = 10;
+
+let revenueProjects = [];
+let revenueExpenses = [];
+let revenuePayroll = [];
+let revenueCurrentPage = 1;
+let revenueLoadError = "";
+const revenueListState = {
+  search: "",
+  date: "all",
+  tax: "all",
+  profit: "all",
+  projectStatus: "all",
+  sort: "newest"
+};
 
 function getLocalSavedProjects() {
   try {
@@ -57,7 +72,8 @@ function mergeProjects(supabaseProjects = [], localProjects = getLocalSavedProje
 }
 
 function getRevenueProjectById(projectId) {
-  return mergeProjects().find(project => String(project.id || "") === String(projectId || ""));
+  return revenueProjects.find(project => String(project.id || "") === String(projectId || ""))
+    || mergeProjects().find(project => String(project.id || "") === String(projectId || ""));
 }
 
 function getDownPaymentsMap() {
@@ -93,15 +109,222 @@ function isLocalProjectId(projectId = "") {
   return String(projectId || "").startsWith("local-");
 }
 
+function getProjectDate(project = {}) {
+  return project.start_date || project.created_at || project.updated_at || "";
+}
+
+function getProjectFinancials(project = {}) {
+  const projectExpenses = revenueExpenses
+    .filter(e => recordBelongsToProject(e, project) && e.category !== "Payroll")
+    .reduce((sum, e) => sum + number(e.amount), 0);
+
+  const projectPayroll = revenuePayroll
+    .filter(pr => recordBelongsToProject(pr, project))
+    .reduce((sum, pr) => sum + number(pr.salary_amount), 0);
+
+  const contract = number(project.contract_amount);
+  const budget = number(project.project_budget);
+  const downPayment = getProjectDownPayment(project);
+  const balance = Math.max(contract - downPayment, 0);
+  const taxPercent = project.tax_amount === null || project.tax_amount === undefined || project.tax_amount === ""
+    ? 0
+    : number(project.tax_amount);
+  const tax = contract * (taxPercent / 100);
+  const net = contract - budget - tax - projectExpenses - projectPayroll;
+
+  return {
+    project,
+    projectExpenses,
+    projectPayroll,
+    contract,
+    budget,
+    downPayment,
+    balance,
+    taxPercent,
+    tax,
+    net
+  };
+}
+
+function isWithinRevenueDateFilter(project = {}) {
+  const dateFilter = revenueListState.date;
+  if (dateFilter === "all") return true;
+
+  const rawDate = getProjectDate(project);
+  if (!rawDate) return dateFilter === "no_date";
+
+  const projectDate = new Date(rawDate);
+  if (Number.isNaN(projectDate.getTime())) return dateFilter === "no_date";
+
+  const today = new Date();
+  if (dateFilter === "this_month") {
+    return projectDate.getFullYear() === today.getFullYear()
+      && projectDate.getMonth() === today.getMonth();
+  }
+
+  if (dateFilter === "this_year") {
+    return projectDate.getFullYear() === today.getFullYear();
+  }
+
+  return true;
+}
+
+function getFilteredRevenueRows() {
+  const search = revenueListState.search.trim().toLowerCase();
+  const rows = revenueProjects
+    .map(project => getProjectFinancials(project))
+    .filter(row => {
+      if (!search) return true;
+
+      const haystack = [
+        row.project.project_code,
+        row.project.project_title,
+        row.project.client_name,
+        row.project.company_name,
+        row.project.status
+      ].join(" ").toLowerCase();
+
+      return haystack.includes(search);
+    })
+    .filter(row => isWithinRevenueDateFilter(row.project))
+    .filter(row => {
+      if (revenueListState.tax === "with_tax") return row.project.tax_amount !== null && row.project.tax_amount !== undefined && row.project.tax_amount !== "";
+      if (revenueListState.tax === "no_tax") return row.project.tax_amount === null || row.project.tax_amount === undefined || row.project.tax_amount === "";
+      return true;
+    })
+    .filter(row => {
+      if (revenueListState.profit === "profit") return row.net > 0;
+      if (revenueListState.profit === "loss") return row.net < 0;
+      if (revenueListState.profit === "break_even") return row.net === 0;
+      return true;
+    })
+    .filter(row => {
+      if (revenueListState.projectStatus === "all") return true;
+      return String(row.project.status || "").toLowerCase() === revenueListState.projectStatus.toLowerCase();
+    });
+
+  return rows.sort((a, b) => {
+    const dateA = new Date(getProjectDate(a.project) || 0).getTime() || 0;
+    const dateB = new Date(getProjectDate(b.project) || 0).getTime() || 0;
+    const titleA = String(a.project.project_title || "").toLowerCase();
+    const titleB = String(b.project.project_title || "").toLowerCase();
+
+    if (revenueListState.sort === "oldest") return dateA - dateB || titleA.localeCompare(titleB);
+    if (revenueListState.sort === "contract_desc") return b.contract - a.contract || titleA.localeCompare(titleB);
+    if (revenueListState.sort === "contract_asc") return a.contract - b.contract || titleA.localeCompare(titleB);
+    if (revenueListState.sort === "net_desc") return b.net - a.net || titleA.localeCompare(titleB);
+    if (revenueListState.sort === "net_asc") return a.net - b.net || titleA.localeCompare(titleB);
+    if (revenueListState.sort === "title_asc") return titleA.localeCompare(titleB) || dateB - dateA;
+    return dateB - dateA || titleA.localeCompare(titleB);
+  });
+}
+
+function hasActiveRevenueFilters() {
+  return Boolean(revenueListState.search.trim())
+    || revenueListState.date !== "all"
+    || revenueListState.tax !== "all"
+    || revenueListState.profit !== "all"
+    || revenueListState.projectStatus !== "all";
+}
+
+function renderRevenuePagination(totalItems) {
+  const pagination = document.getElementById("revenuePagination");
+  const summary = document.getElementById("revenuePaginationSummary");
+  const controls = document.getElementById("revenuePaginationControls");
+  if (!pagination || !summary || !controls) return;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / REVENUE_PAGE_SIZE));
+  revenueCurrentPage = Math.min(Math.max(revenueCurrentPage, 1), totalPages);
+  const startIndex = totalItems ? ((revenueCurrentPage - 1) * REVENUE_PAGE_SIZE) + 1 : 0;
+  const endIndex = Math.min(revenueCurrentPage * REVENUE_PAGE_SIZE, totalItems);
+
+  pagination.hidden = false;
+  summary.textContent = totalItems
+    ? `Showing ${startIndex}-${endIndex} of ${totalItems} projects`
+    : "Showing 0 of 0 projects";
+
+  const pageWindow = 5;
+  const firstPage = Math.max(1, Math.min(revenueCurrentPage - 2, totalPages - pageWindow + 1));
+  const lastPage = Math.min(totalPages, firstPage + pageWindow - 1);
+  const pageButtons = [];
+
+  for (let page = firstPage; page <= lastPage; page += 1) {
+    pageButtons.push(`
+      <button type="button" class="${page === revenueCurrentPage ? "active" : ""}" ${page === revenueCurrentPage ? "aria-current=\"page\"" : ""} onclick="goToRevenuePage(${page})">${page}</button>
+    `);
+  }
+
+  controls.innerHTML = `
+    <button type="button" onclick="goToRevenuePage(${revenueCurrentPage - 1})" ${revenueCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
+    ${pageButtons.join("")}
+    <button type="button" onclick="goToRevenuePage(${revenueCurrentPage + 1})" ${revenueCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+  `;
+}
+
+function renderRevenueTable() {
+  if (!revenueTable) return;
+
+  if (revenueLoadError) {
+    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+    renderRevenuePagination(0);
+    return;
+  }
+
+  const rows = getFilteredRevenueRows();
+  const totalItems = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / REVENUE_PAGE_SIZE));
+  revenueCurrentPage = Math.min(Math.max(revenueCurrentPage, 1), totalPages);
+  const startIndex = (revenueCurrentPage - 1) * REVENUE_PAGE_SIZE;
+  const pageRows = rows.slice(startIndex, startIndex + REVENUE_PAGE_SIZE);
+
+  if (!pageRows.length) {
+    const message = revenueProjects.length && hasActiveRevenueFilters()
+      ? "No projects match the selected filters."
+      : "No project records found.";
+    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">${message}</td></tr>`;
+    renderRevenuePagination(totalItems);
+    return;
+  }
+
+  revenueTable.innerHTML = pageRows.map(row => `
+    <tr>
+      <td>${escapeHtml(row.project.project_title || "-")}</td>
+      <td>${escapeHtml(row.project.client_name || "-")}</td>
+      <td>${peso(row.contract)}</td>
+      <td>${peso(row.budget)}</td>
+      <td>${peso(row.downPayment)}</td>
+      <td>${peso(row.balance)}</td>
+      <td>
+        <div class="inline-edit">
+          <input class="tax-input" id="tax_${row.project.id}" type="number" min="0" max="100" step="0.01" placeholder="Blank" value="${row.project.tax_amount ?? ""}">
+          <span class="input-suffix">%</span>
+          <button type="button" onclick="saveProjectTax('${row.project.id}')">Save</button>
+        </div>
+      </td>
+      <td>${peso(row.tax)}</td>
+      <td>${peso(row.projectExpenses)}</td>
+      <td>${peso(row.projectPayroll)}</td>
+      <td class="${row.net >= 0 ? "good" : "bad"}">${peso(row.net)}</td>
+    </tr>
+  `).join("");
+
+  renderRevenuePagination(totalItems);
+}
+
 async function loadRevenue() {
+  if (revenueTable) {
+    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">Loading project records...</td></tr>`;
+  }
+
   const [projectResult, expenseResult, payrollResult] = await Promise.all([
-    readTable("projects"),
+    readTable("projects", { orderBy: "created_at", ascending: false }),
     readTable("expenses"),
     readTable("payroll")
   ]);
 
   if (expenseResult.error || payrollResult.error) {
-    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">Unable to load revenue records.</td></tr>`;
+    revenueLoadError = (expenseResult.error || payrollResult.error)?.message || "Unable to load project records.";
+    renderRevenueTable();
     console.error(expenseResult.error || payrollResult.error);
     return;
   }
@@ -110,9 +333,10 @@ async function loadRevenue() {
     console.warn("Unable to load synced projects. Showing locally saved projects only.", projectResult.error);
   }
 
-  const projects = mergeProjects(projectResult.error ? [] : (projectResult.data || []));
-  const expenses = expenseResult.data || [];
-  const payroll = payrollResult.data || [];
+  revenueLoadError = "";
+  revenueProjects = mergeProjects(projectResult.error ? [] : (projectResult.data || []));
+  revenueExpenses = expenseResult.data || [];
+  revenuePayroll = payrollResult.data || [];
 
   let totalContractVal = 0;
   let totalBudgetVal = 0;
@@ -120,58 +344,13 @@ async function loadRevenue() {
   let totalExpenseVal = 0;
   let totalPayrollVal = 0;
 
-  revenueTable.innerHTML = "";
-
-  if (!projects.length) {
-    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">No project revenue records yet.</td></tr>`;
-  }
-
-  projects.forEach(p => {
-    const projectExpenses = expenses
-      .filter(e => recordBelongsToProject(e, p) && e.category !== "Payroll")
-      .reduce((sum, e) => sum + number(e.amount), 0);
-
-    const projectPayroll = payroll
-      .filter(pr => recordBelongsToProject(pr, p))
-      .reduce((sum, pr) => sum + number(pr.salary_amount), 0);
-
-    const contract = number(p.contract_amount);
-    const budget = number(p.project_budget);
-    const downPayment = getProjectDownPayment(p);
-    const balance = Math.max(contract - downPayment, 0);
-    const taxPercent = p.tax_amount === null || p.tax_amount === undefined || p.tax_amount === ""
-      ? 0
-      : number(p.tax_amount);
-    const tax = contract * (taxPercent / 100);
-    const net = contract - budget - tax - projectExpenses - projectPayroll;
-
-    totalContractVal += contract;
-    totalBudgetVal += budget;
-    totalTaxVal += tax;
-    totalExpenseVal += projectExpenses;
-    totalPayrollVal += projectPayroll;
-
-    revenueTable.innerHTML += `
-      <tr>
-        <td>${escapeHtml(p.project_title || "-")}</td>
-        <td>${escapeHtml(p.client_name || "-")}</td>
-        <td>${peso(contract)}</td>
-        <td>${peso(budget)}</td>
-        <td>${peso(downPayment)}</td>
-        <td>${peso(balance)}</td>
-        <td>
-          <div class="inline-edit">
-            <input class="tax-input" id="tax_${p.id}" type="number" min="0" max="100" step="0.01" placeholder="Blank" value="${p.tax_amount ?? ""}">
-            <span class="input-suffix">%</span>
-            <button type="button" onclick="saveProjectTax('${p.id}')">Save</button>
-          </div>
-        </td>
-        <td>${peso(tax)}</td>
-        <td>${peso(projectExpenses)}</td>
-        <td>${peso(projectPayroll)}</td>
-        <td class="${net >= 0 ? "good" : "bad"}">${peso(net)}</td>
-      </tr>
-    `;
+  revenueProjects.forEach(project => {
+    const row = getProjectFinancials(project);
+    totalContractVal += row.contract;
+    totalBudgetVal += row.budget;
+    totalTaxVal += row.tax;
+    totalExpenseVal += row.projectExpenses;
+    totalPayrollVal += row.projectPayroll;
   });
 
   const netRevenueVal = totalContractVal - totalBudgetVal - totalTaxVal - totalExpenseVal - totalPayrollVal;
@@ -181,6 +360,7 @@ async function loadRevenue() {
   setText("totalExpenses", peso(totalExpenseVal));
   setText("totalPayroll", peso(totalPayrollVal));
   setText("netRevenue", peso(netRevenueVal));
+  renderRevenueTable();
 }
 
 window.saveProjectTax = async function(projectId) {
@@ -221,6 +401,35 @@ window.saveProjectTax = async function(projectId) {
   await loadRevenue();
 };
 
+window.goToRevenuePage = function(page) {
+  const totalPages = Math.max(1, Math.ceil(getFilteredRevenueRows().length / REVENUE_PAGE_SIZE));
+  revenueCurrentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
+  renderRevenueTable();
+};
+
+function bindRevenueFilters() {
+  const controls = [
+    ["revenueSearch", "search"],
+    ["revenueDateFilter", "date"],
+    ["revenueTaxFilter", "tax"],
+    ["revenueProfitFilter", "profit"],
+    ["revenueProjectStatusFilter", "projectStatus"],
+    ["revenueSort", "sort"]
+  ];
+
+  controls.forEach(([id, stateKey]) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+
+    element.addEventListener(element.type === "search" ? "input" : "change", event => {
+      revenueListState[stateKey] = event.target.value || (stateKey === "search" ? "" : "all");
+      revenueCurrentPage = 1;
+      renderRevenueTable();
+    });
+  });
+}
+
+bindRevenueFilters();
 loadRevenue();
 
 window.addEventListener("storage", event => {

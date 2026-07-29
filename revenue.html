@@ -87,6 +87,48 @@
 <section class="card">
   <h3><span class="num">01</span> Project Revenue Breakdown</h3>
 
+  <div class="inventory-list-toolbar">
+    <input id="revenueSearch" class="search" type="search" placeholder="Search project, client, or code">
+
+    <select id="revenueDateFilter">
+      <option value="all">All dates</option>
+      <option value="this_month">This month</option>
+      <option value="this_year">This year</option>
+      <option value="no_date">No start date</option>
+    </select>
+
+    <select id="revenueTaxFilter">
+      <option value="all">All tax status</option>
+      <option value="with_tax">With tax percent</option>
+      <option value="no_tax">No tax percent</option>
+    </select>
+
+    <select id="revenueProfitFilter">
+      <option value="all">All revenue status</option>
+      <option value="profit">Profitable</option>
+      <option value="loss">Loss</option>
+      <option value="break_even">Break even</option>
+    </select>
+
+    <select id="revenueProjectStatusFilter">
+      <option value="all">All project status</option>
+      <option value="Pending">Pending</option>
+      <option value="Ongoing">Ongoing</option>
+      <option value="Completed">Completed</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+
+    <select id="revenueSort">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="contract_desc">Highest contract</option>
+      <option value="contract_asc">Lowest contract</option>
+      <option value="net_desc">Highest net profit</option>
+      <option value="net_asc">Lowest net profit</option>
+      <option value="title_asc">Project A-Z</option>
+    </select>
+  </div>
+
   <div class="table-wrap">
     <table>
       <thead>
@@ -108,12 +150,17 @@
       <tbody id="revenueTable"></tbody>
     </table>
   </div>
+
+  <div id="revenuePagination" class="pagination-bar" hidden>
+    <span id="revenuePaginationSummary">Showing 0 of 0 projects</span>
+    <div id="revenuePaginationControls" class="pagination-controls"></div>
+  </div>
 </section>
 
 </main>
 
 <!-- SCRIPT -->
-<script type="module" src="js/app.js?v=20260729-expense-amount-inputs-v38"></script>
+<script type="module" src="js/app.js?v=20260729-revenue-pagination-v39"></script>
 
 
 </body>

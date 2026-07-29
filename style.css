@@ -613,6 +613,18 @@ textarea:focus{
   -moz-appearance:textfield;
 }
 
+.inventory-list-toolbar{
+  display:grid;
+  grid-template-columns:minmax(220px, 1.4fr) repeat(5, minmax(145px, 1fr));
+  gap:10px;
+  margin:14px 0;
+}
+
+.inventory-list-toolbar input,
+.inventory-list-toolbar select{
+  width:100%;
+}
+
 .form-actions{
   display:flex;
   justify-content:flex-end;
@@ -2889,6 +2901,10 @@ tbody tr:hover{
   }
 
   .inventory-list-controls{
+    grid-template-columns:1fr;
+  }
+
+  .inventory-list-toolbar{
     grid-template-columns:1fr;
   }
 
