@@ -168,6 +168,134 @@ function isVideoFile(fileName = "", fileUrl = "") {
   return /\.(mp4|webm|ogg|mov)$/i.test(fileName) || /\.(mp4|webm|ogg|mov)(\?|$)/i.test(fileUrl);
 }
 
+function safePprText(value, fallback = "Not Available") {
+  const text = String(value ?? "").trim();
+  return text && text !== "-" ? escapeProjectHtml(text) : fallback;
+}
+
+function getPprGeneratedBy() {
+  return getCurrentAccountName() || localStorage.getItem("lemyu_user_email") || "FinSight User";
+}
+
+function getPprCompletionValue(project = {}) {
+  const candidates = [
+    project.completion_percentage,
+    project.progress_percentage,
+    project.progress,
+    project.percent_complete
+  ];
+  const raw = candidates.find(value => value !== null && value !== undefined && value !== "");
+  if (raw === null || raw === undefined || raw === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : null;
+}
+
+function getPprStatusClass(status = "") {
+  const normalized = String(status || "").toLowerCase();
+  if (/completed/.test(normalized)) return "success";
+  if (/delayed|hold/.test(normalized)) return "warning";
+  if (/cancel/.test(normalized)) return "critical";
+  if (/ongoing|approved/.test(normalized)) return "active";
+  return "neutral";
+}
+
+function getPprDaysRemaining(project = {}) {
+  if (!project.target_completion) return "Not Available";
+  const target = new Date(project.target_completion);
+  if (Number.isNaN(target.getTime())) return "Not Available";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const days = Math.ceil((target - today) / 86400000);
+  if (days < 0) return `${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} overdue`;
+  if (days === 0) return "Due today";
+  return `${days} day${days === 1 ? "" : "s"} remaining`;
+}
+
+function getPprFileDate(file = {}) {
+  return file.date_taken || file.uploaded_at || file.created_at || file.updated_at || "";
+}
+
+function getPprPhotoCategory(file = {}) {
+  const category = String(file.category || file.photo_category || file.stage || "other").trim().toLowerCase();
+  const allowed = ["before", "ongoing", "completed", "testing", "turnover", "other"];
+  return allowed.includes(category) ? category : "other";
+}
+
+function getPprPhotoSortValue(file = {}) {
+  const orderMap = { before: 1, ongoing: 2, testing: 3, completed: 4, turnover: 5, other: 6 };
+  const displayOrder = Number(file.display_order ?? 9999);
+  const dateValue = new Date(getPprFileDate(file) || 0).getTime() || 0;
+  return {
+    category: orderMap[getPprPhotoCategory(file)] || 6,
+    displayOrder: Number.isFinite(displayOrder) ? displayOrder : 9999,
+    dateValue
+  };
+}
+
+function getPprPhotoTitle(file = {}, index = 0) {
+  return file.photo_title || file.title || file.file_name || `Project Photograph ${index + 1}`;
+}
+
+function getPprPhotoDescription(file = {}) {
+  return file.description || file.caption || file.remarks || "Project accomplishment photograph recorded in Project Monitoring.";
+}
+
+function getPprPhotos(projectFiles = []) {
+  return projectFiles
+    .filter(file => isImageFile(file.file_name || "", file.file_url || ""))
+    .filter(file => file.is_visible_in_report !== false)
+    .sort((a, b) => {
+      const sortA = getPprPhotoSortValue(a);
+      const sortB = getPprPhotoSortValue(b);
+      return sortA.category - sortB.category
+        || sortA.displayOrder - sortB.displayOrder
+        || sortA.dateValue - sortB.dateValue;
+    });
+}
+
+function chunkPprPhotos(photos = [], size = 4) {
+  if (!photos.length) return [[]];
+  const chunks = [];
+  for (let index = 0; index < photos.length; index += size) {
+    chunks.push(photos.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function getPprQuotationItems(project = {}) {
+  const items = Array.isArray(project.quotation_items)
+    ? project.quotation_items
+    : getLocalQuotationItems(project.id);
+
+  return items.map(item => normalizeContractItem(item, project.project_title || "Project deliverable"));
+}
+
+function getPprScopeItems(project = {}) {
+  const quotationType = getProjectQuotationType(project);
+  const details = quotationType === "manpower"
+    ? getManpowerQuotationDetails(project)
+    : getCctvQuotationDetails(project);
+  const source = details.workDescription || details.scope || details.intro || project.remarks || project.project_title || "";
+  return String(source || "")
+    .split(/\r?\n|;|•/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function formatPprValue(value, formatter = value => value, fallback = "Not Available") {
+  if (value === null || value === undefined || value === "") return fallback;
+  return formatter(value);
+}
+
+function buildPprQrUrl(projectId) {
+  const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?project_id=${projectId}`;
+  return {
+    feedbackLink,
+    qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(feedbackLink)}`
+  };
+}
+
 function getQuotationItemsFromForm(bodyId = "quotationItemsBody") {
   const rows = [...document.querySelectorAll(`#${bodyId} tr`)];
 
@@ -3729,357 +3857,406 @@ window.printProject = async function(id) {
   }, 500);
 };
 
-// GENERATE PPR WITH LOGO
+// GENERATE ERP-STYLE PROJECT PROGRESS REPORT
 window.generatePPR = async function(id) {
   const project = await getProjectForAction(id, "PPR");
-
-  if (!project) {
-    return;
-  }
+  if (!project) return;
 
   let feedbacks = [];
   let projectFiles = [];
+  let expenses = [];
 
   if (!isLocalProjectId(id)) {
-    const feedbackResult = await supabase
-      .from("feedback")
-      .select("*")
-      .eq("project_id", id);
+    const [feedbackResult, filesResult, expenseResult] = await Promise.all([
+      supabase.from("feedback").select("*").eq("project_id", id),
+      supabase.from("project_files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+      supabase.from("expenses").select("*").eq("project_id", id)
+    ]);
+
+    if (feedbackResult.error) console.warn("PPR feedback records could not be loaded.", feedbackResult.error);
+    if (filesResult.error) console.warn("PPR project files could not be loaded.", filesResult.error);
+    if (expenseResult.error) console.warn("PPR expense records could not be loaded.", expenseResult.error);
 
     feedbacks = feedbackResult.data || [];
-
-    const filesResult = await supabase
-      .from("project_files")
-      .select("*")
-      .eq("project_id", id)
-      .order("uploaded_at", { ascending: false });
-
     projectFiles = filesResult.data || [];
+    expenses = expenseResult.data || [];
   }
 
-  const uploadedFiles = [];
-
-  if (project.contract_file_url) {
-    uploadedFiles.push({
-      file_name: project.contract_file_name || "Uploaded project file",
-      file_url: project.contract_file_url,
-      uploaded_at: null
-    });
-  }
-
-  projectFiles.forEach(file => {
-    uploadedFiles.push({
-      file_name: file.file_name || "Uploaded file",
-      file_url: file.file_url,
-      uploaded_at: file.uploaded_at || null
-    });
-  });
-
+  const isOperations = isOperationsScope();
+  const generatedDate = new Date();
+  const generatedBy = getPprGeneratedBy();
+  const reportPeriod = project.start_date || project.target_completion
+    ? `${formatDate(project.start_date, "Not Available")} to ${formatDate(project.target_completion, "Not Available")}`
+    : "Not Available";
+  const completionValue = getPprCompletionValue(project);
+  const completionText = completionValue === null ? "Not Available" : `${completionValue}%`;
+  const completionBar = completionValue === null ? 0 : completionValue;
+  const financials = getProjectFinancials(project, expenses);
+  const contractAmount = Number(project.contract_amount || 0);
+  const downPayment = getProjectDownPayment(project);
+  const remainingBalance = Math.max(contractAmount - downPayment, 0);
+  const estimatedProfit = contractAmount - financials.tax - financials.expenses;
+  const photos = getPprPhotos(projectFiles);
+  const photoPages = chunkPprPhotos(photos, 4);
+  const scopeItems = getPprScopeItems(project);
+  const quotationItems = getPprQuotationItems(project);
   const hasFeedback = feedbacks.length > 0;
-
   const avgRating = hasFeedback
-    ? (
-        feedbacks.reduce((sum, f) => {
-          return sum + Number(f.rating || f.overall_satisfaction || 0);
-        }, 0) / feedbacks.length
-      ).toFixed(1)
-    : "No feedback yet";
-
-  const feedbackRemarksHtml = feedbacks
+    ? (feedbacks.reduce((sum, f) => sum + Number(f.rating || f.overall_satisfaction || 0), 0) / feedbacks.length).toFixed(1)
+    : "Not Available";
+  const latestFeedback = feedbacks
     .slice()
-    .sort((a, b) => new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0))
-    .map((feedback, index) => {
-      const ratingValue = Number(feedback.rating || feedback.overall_satisfaction || 0);
-      const commentsText = feedback.comments || "";
-      const recommendationsText = feedback.recommendations || "";
-      const feedbackDate = feedback.date || feedback.feedback_date || feedback.created_at || "";
-
-      return `
-        <div class="feedback-entry">
-          <div class="feedback-entry-head">
-            <strong>${escapeProjectHtml(feedback.client_name || `Client ${index + 1}`)}</strong>
-            <span>${ratingValue ? `${ratingValue}/5` : "No rating"}${feedbackDate ? ` | ${escapeProjectHtml(formatDate(feedbackDate))}` : ""}</span>
-          </div>
-          ${
-            commentsText
-              ? `<p><b>Feedback / Remarks:</b> ${escapeProjectHtml(commentsText)}</p>`
-              : ""
-          }
-          ${
-            recommendationsText
-              ? `<p><b>Recommendations:</b> ${escapeProjectHtml(recommendationsText)}</p>`
-              : ""
-          }
-          ${
-            !commentsText && !recommendationsText
-              ? `<p class="muted">No written remarks submitted.</p>`
-              : ""
-          }
-        </div>
-      `;
-    })
-    .join("");
-
-  const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?project_id=${id}`;
-
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(feedbackLink)}`;
+    .sort((a, b) => new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0))[0];
+  const { feedbackLink, qrUrl } = buildPprQrUrl(id);
+  const pages = [];
+  const statusClass = getPprStatusClass(project.status);
+  const pprFileName = `PPR_${String(project.project_code || "PROJECT").replace(/[^\w-]+/g, "_")}_${generatedDate.toISOString().slice(0, 10)}.pdf`;
 
   const pprWindow = window.open("", "_blank");
-
   if (!pprWindow) {
     alert("Please allow pop-ups to generate PPR.");
     return;
   }
+
+  const infoRows = rows => rows
+    .filter(row => row.value !== null && row.value !== undefined && row.value !== "")
+    .map(row => `<div class="info-row"><span>${escapeProjectHtml(row.label)}</span><strong>${safePprText(row.value)}</strong></div>`)
+    .join("");
+
+  const progressBar = (value, label = "") => `
+    <div class="progress-wrap" role="img" aria-label="${escapeProjectHtml(label || `Progress ${value}%`)}">
+      <div class="progress-fill" style="width:${Math.min(Math.max(Number(value || 0), 0), 100)}%;"></div>
+    </div>`;
+
+  const statusBadge = value => `<span class="badge ${getPprStatusClass(value)}">${safePprText(value, "Not Available")}</span>`;
+
+  pages.push(`
+    <section class="ppr-page cover-page">
+      <div class="cover-top">
+        <div class="brand-lockup">
+          <img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'">
+          <div>
+            <strong>LEMYU</strong>
+            <span>Fiber Optic Installation and Services</span>
+          </div>
+        </div>
+        <div class="finsight-mark">FinSight</div>
+      </div>
+      <div class="cover-main">
+        <p class="eyebrow">CONFIDENTIAL PROJECT DOCUMENT</p>
+        <h1>PROJECT PROGRESS REPORT</h1>
+        <h2>${safePprText(project.project_title)}</h2>
+        <div class="cover-meta">
+          <div><span>Project Code</span><strong>${safePprText(project.project_code)}</strong></div>
+          <div><span>Client</span><strong>${safePprText(project.client_name || getProjectClientName(project))}</strong></div>
+          <div><span>Location</span><strong>${safePprText(project.location)}</strong></div>
+        </div>
+        <div class="cover-progress">
+          <strong>${completionText}</strong>
+          ${progressBar(completionBar, "Overall project completion")}
+          ${statusBadge(project.status)}
+        </div>
+      </div>
+      <div class="cover-footer-grid">
+        <div><span>Report Period</span><strong>${safePprText(reportPeriod)}</strong></div>
+        <div><span>Generated Date</span><strong>${escapeProjectHtml(generatedDate.toLocaleString("en-PH"))}</strong></div>
+        <div><span>Generated By</span><strong>${safePprText(generatedBy)}</strong></div>
+      </div>
+      <p class="cover-system">Generated by FinSight - Cloud-Based Financial Management System with Business Intelligence Dashboard</p>
+    </section>
+  `);
+
+  pages.push(`
+    <section class="ppr-page">
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <h2>Executive Project Dashboard</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card"><span>Overall Project Progress</span><strong>${completionText}</strong>${progressBar(completionBar)}</div>
+        ${isOperations ? "" : `<div class="kpi-card"><span>Contract Amount</span><strong>${contractAmount ? peso(contractAmount) : "Not Available"}</strong></div>`}
+        ${isOperations ? "" : `<div class="kpi-card"><span>Total Amount Paid</span><strong>${downPayment ? peso(downPayment) : "Not Available"}</strong></div>`}
+        ${isOperations ? "" : `<div class="kpi-card"><span>Remaining Balance</span><strong>${contractAmount ? peso(remainingBalance) : "Not Available"}</strong></div>`}
+        <div class="kpi-card"><span>Project Duration</span><strong>${safePprText(getProjectDurationText(project))}</strong></div>
+        <div class="kpi-card"><span>Days Remaining / Completion</span><strong>${project.completed_date ? formatDate(project.completed_date) : getPprDaysRemaining(project)}</strong></div>
+      </div>
+      <div class="section-card">
+        <h3>Overall Progress</h3>
+        <div class="progress-head"><strong>${completionText}</strong>${statusBadge(project.status)}</div>
+        ${progressBar(completionBar)}
+      </div>
+      <div class="section-card">
+        <h3>Project Timeline or Phase Summary</h3>
+        <p class="empty-text">No separate project phase records are stored for this project.</p>
+      </div>
+      <div class="section-card">
+        <h3>Executive Summary</h3>
+        <p>${project.remarks ? escapeProjectHtml(project.remarks) : "No executive summary was recorded for this project."}</p>
+      </div>
+    </section>
+  `);
+
+  pages.push(`
+    <section class="ppr-page">
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <h2>Project Information and Scope</h2>
+      <div class="two-col">
+        <div class="section-card">
+          <h3>Client Information</h3>
+          ${infoRows([
+            { label: "Client Name", value: getProjectClientName(project) || project.client_name },
+            { label: "Company Name", value: project.client_name },
+            { label: "Contact Number", value: project.contact_number },
+            { label: "Email Address", value: project.client_email },
+            { label: "Project Site Address", value: project.location }
+          ])}
+        </div>
+        <div class="section-card">
+          <h3>Project Information</h3>
+          ${infoRows([
+            { label: "Project Code", value: project.project_code },
+            { label: "Project Name", value: project.project_title },
+            { label: "Project Category", value: getProjectQuotationLabel(project) },
+            { label: "Project Manager", value: project.ppr_prepared_by },
+            { label: "Project Location", value: project.location },
+            { label: "Status", value: project.status },
+            { label: "Completion", value: completionText },
+            { label: "Quotation No.", value: getQuotationNumber(project) },
+            { label: "Contract No.", value: getContractNumber(project) }
+          ])}
+        </div>
+      </div>
+      <div class="section-card">
+        <h3>Scope of Work</h3>
+        ${scopeItems.length ? `<ul class="scope-list">${scopeItems.map(item => `<li>${escapeProjectHtml(item)}</li>`).join("")}</ul>` : `<p class="empty-text">No saved scope of work was recorded for this project.</p>`}
+      </div>
+      <div class="section-card">
+        <h3>Important Dates</h3>
+        ${infoRows([
+          { label: "Project Creation Date", value: formatDate(project.created_at, "") },
+          { label: "Start Date", value: formatDate(project.start_date, "") },
+          { label: "Target Completion Date", value: formatDate(project.target_completion, "") },
+          { label: "Actual Completion Date", value: formatDate(project.completed_date, "") },
+          { label: "Report Date", value: generatedDate.toLocaleDateString("en-PH") }
+        ]) || `<p class="empty-text">No project dates were recorded.</p>`}
+      </div>
+    </section>
+  `);
+
+  photoPages.forEach((photoChunk, pageIndex) => {
+    pages.push(`
+      <section class="ppr-page">
+        <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+        <h2>PROJECT ACCOMPLISHMENT PHOTOGRAPHS</h2>
+        <p class="section-subtitle">Photographic documentation of completed and ongoing project activities</p>
+        ${
+          photoChunk.length
+            ? `<div class="photo-grid ${photoChunk.length === 1 ? "single-photo" : ""}">
+                ${photoChunk.map((file, index) => {
+                  const photoNumber = pageIndex * 4 + index + 1;
+                  const category = getPprPhotoCategory(file);
+                  return `
+                    <article class="photo-card">
+                      <img src="${escapeProjectHtml(file.file_url)}" alt="${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}" onerror="console.warn('Skipped broken PPR image:', this.src); this.closest('.photo-card').style.display='none';">
+                      <div class="photo-caption">
+                        <div><strong>PHOTO ${String(photoNumber).padStart(2, "0")}</strong><span class="badge ${getPprStatusClass(category)}">${escapeProjectHtml(category.toUpperCase())}</span></div>
+                        <h3>${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}</h3>
+                        <p>${escapeProjectHtml(getPprPhotoDescription(file))}</p>
+                        <small>Location: ${safePprText(file.location || project.location)} | Date Taken: ${formatDate(getPprFileDate(file), "Not Available")} | Uploaded By: ${safePprText(file.uploaded_by || file.created_by || "Project Monitoring")}</small>
+                      </div>
+                    </article>
+                  `;
+                }).join("")}
+              </div>`
+            : `<div class="empty-state">No project accomplishment photographs have been uploaded for this reporting period.</div>`
+        }
+      </section>
+    `);
+  });
+
+  pages.push(`
+    <section class="ppr-page">
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <h2>Work Accomplishment</h2>
+      <table class="ppr-table">
+        <thead><tr><th>No.</th><th>Activity or Deliverable</th><th>Assigned Personnel</th><th>Start Date</th><th>Target Date</th><th>Status</th><th>Completion</th><th>Remarks</th></tr></thead>
+        <tbody>
+          ${
+            quotationItems.length
+              ? quotationItems.map((item, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${escapeProjectHtml(item.description)}</td>
+                  <td>${safePprText(project.ppr_prepared_by)}</td>
+                  <td>${formatDate(project.start_date, "Not Available")}</td>
+                  <td>${formatDate(project.target_completion, "Not Available")}</td>
+                  <td>${statusBadge(project.status)}</td>
+                  <td>${completionText}${progressBar(completionBar)}</td>
+                  <td>${project.remarks ? escapeProjectHtml(project.remarks) : "No remarks recorded."}</td>
+                </tr>
+              `).join("")
+              : `<tr><td colspan="8">No project activities were recorded for this reporting period.</td></tr>`
+          }
+        </tbody>
+      </table>
+      <div class="narrative-grid">
+        ${["Accomplishments During the Reporting Period", "Issues or Challenges Encountered", "Corrective Actions Taken", "Next Planned Activities", "Overall Project Remarks"].map((title, index) => `
+          <div class="section-card">
+            <h3>${title}</h3>
+            <p>${index === 4 && project.remarks ? escapeProjectHtml(project.remarks) : "No information was recorded for this section."}</p>
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `);
+
+  pages.push(`
+    <section class="ppr-page">
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <h2>Financial Summary, Feedback, and Approval</h2>
+      ${
+        isOperations
+          ? `<div class="empty-state">Financial summary is hidden for Project Manager / Operations Staff access.</div>`
+          : `<div class="kpi-grid financial-grid">
+              <div class="kpi-card"><span>Contract Amount</span><strong>${contractAmount ? peso(contractAmount) : "Not Available"}</strong></div>
+              <div class="kpi-card"><span>Approved Variation Amount</span><strong>Not Available</strong></div>
+              <div class="kpi-card"><span>Total Project Cost</span><strong>${financials.expenses ? peso(financials.expenses) : "Not Available"}</strong></div>
+              <div class="kpi-card"><span>Amount Paid</span><strong>${downPayment ? peso(downPayment) : "Not Available"}</strong></div>
+              <div class="kpi-card"><span>Remaining Receivable</span><strong>${contractAmount ? peso(remainingBalance) : "Not Available"}</strong></div>
+              <div class="kpi-card"><span>Estimated Profit / Margin</span><strong>${contractAmount ? peso(estimatedProfit) : "Not Available"}</strong></div>
+            </div>
+            <p class="disclaimer">Financial values shown in this report are based on records available in FinSight as of the report generation date.</p>`
+      }
+      <div class="feedback-qr-grid">
+        <div class="section-card">
+          <h3>Client Feedback</h3>
+          <div class="feedback-summary">
+            <div><span>Average Rating</span><strong>${avgRating}${hasFeedback ? "/5" : ""}</strong></div>
+            <div><span>Responses</span><strong>${feedbacks.length}</strong></div>
+            <div><span>Status</span><strong>${hasFeedback ? "Submitted" : "No Feedback"}</strong></div>
+          </div>
+          ${
+            hasFeedback
+              ? `<p><b>Latest Client Comment:</b> ${escapeProjectHtml(latestFeedback.comments || latestFeedback.recommendations || "No written remarks submitted.")}</p>`
+              : `<p>No client feedback has been submitted for this project.</p>`
+          }
+        </div>
+        <div class="qr-card">
+          <img src="${qrUrl}" alt="Client feedback QR code">
+          <strong>Scan the QR code to submit project feedback.</strong>
+          <small>${escapeProjectHtml(feedbackLink)}</small>
+        </div>
+      </div>
+      <div class="signature-grid">
+        <div class="signature-block"><span>Prepared By</span><div class="line"></div><strong>${safePprText(project.ppr_prepared_by, "&nbsp;")}</strong><small>Project Manager / Operations Staff</small><small>Date: ____________________</small></div>
+        <div class="signature-block"><span>Reviewed By</span><div class="line"></div><strong>${safePprText(project.ppr_noted_by, "&nbsp;")}</strong><small>Owner / Manager</small><small>Date: ____________________</small></div>
+        <div class="signature-block"><span>Approved By</span><div class="line"></div><strong>&nbsp;</strong><small>Authorized Client Representative</small><small>Date: ____________________</small></div>
+      </div>
+    </section>
+  `);
+
+  const totalPages = pages.length;
+  const numberedPages = pages.map((page, index) => page.replace("</section>", `
+      <footer class="ppr-footer"><span>Generated by FinSight</span><span>${escapeProjectHtml(generatedDate.toLocaleString("en-PH"))}</span><span>Confidential</span><span>Page ${index + 1} of ${totalPages}</span></footer>
+    </section>`)).join("");
 
   pprWindow.document.write(`
     <html>
     <head>
       <title>Project Progress Report</title>
       <style>
-        body{
-          font-family:Arial, sans-serif;
-          padding:35px;
-          color:#0b1f35;
-        }
-        .header{
-          text-align:center;
-          border-bottom:2px solid #1557a6;
-          padding-bottom:15px;
-          margin-bottom:25px;
-        }
-        .logo{
-          width:160px;
-          margin-bottom:10px;
-        }
-        h1{
-          color:#1557a6;
-        }
-        table{
-          width:100%;
-          border-collapse:collapse;
-          margin-top:20px;
-        }
-        td{
-          border:1px solid #ccc;
-          padding:10px;
-          font-size:14px;
-        }
-        td:first-child{
-          font-weight:bold;
-          background:#f1f7ff;
-          width:35%;
-        }
-        .qr-box{
-          margin-top:30px;
-          border:1px solid #dbe7f3;
-          padding:20px;
-          border-radius:12px;
-          display:flex;
-          align-items:center;
-          gap:20px;
-        }
-        .qr-box img{
-          width:140px;
-          height:140px;
-        }
-        .feedback-list{
-          margin-top:18px;
-          border:1px solid #dbe7f3;
-          border-radius:10px;
-          padding:14px;
-          break-inside:avoid;
-        }
-        .feedback-list h3{
-          margin:0 0 10px;
-          color:#1557a6;
-        }
-        .feedback-entry{
-          border-top:1px solid #e2ebf4;
-          padding:10px 0;
-          break-inside:avoid;
-        }
-        .feedback-entry:first-of-type{
-          border-top:0;
-          padding-top:0;
-        }
-        .feedback-entry-head{
-          display:flex;
-          justify-content:space-between;
-          gap:12px;
-          margin-bottom:6px;
-          font-size:14px;
-        }
-        .feedback-entry-head span,
-        .feedback-entry .muted{
-          color:#52616f;
-        }
-        .feedback-entry p{
-          margin:4px 0;
-          font-size:14px;
-          line-height:1.35;
-          white-space:pre-wrap;
-        }
-        .signatures{
-          display:flex;
-          justify-content:space-between;
-          margin-top:70px;
-        }
-        .sig{
-          width:40%;
-          text-align:center;
-          border-top:1px solid #000;
-          padding-top:8px;
-        }
-        .files-section{
-          margin-top:28px;
-        }
-        .file-list{
-          margin:12px 0 0;
-          padding-left:18px;
-        }
-        .file-list li{
-          margin-bottom:8px;
-          font-size:14px;
-        }
-        .file-list a{
-          color:#1557a6;
-          word-break:break-all;
-        }
-        .ppr-file-card{
-          break-inside:avoid;
-          margin:14px 0;
-          padding:12px;
-          border:1px solid #dbe7f3;
-          border-radius:8px;
-          background:#fbfdff;
-        }
-        .ppr-file-card img{
-          display:block;
-          width:100%;
-          max-width:680px;
-          max-height:520px;
-          object-fit:contain;
-          margin:8px 0;
-          border:1px solid #d7e2ee;
-          border-radius:6px;
-        }
-        .ppr-file-card a{
-          color:#1557a6;
-          word-break:break-all;
-        }
-        .file-date{
-          display:block;
-          color:#52616f;
-          font-size:12px;
-          margin-top:2px;
-        }
+        @page{size:A4;margin:0;}
+        *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+        body{margin:0;background:#e9eef3;color:#1F2937;font-family:Arial, Helvetica, sans-serif;}
+        .print-view-actions{position:sticky;top:0;z-index:10;display:flex;justify-content:flex-end;gap:8px;padding:10px 18px;background:#fff;border-bottom:1px solid #DCE4EA;}
+        .print-view-actions button{border:1px solid #12304A;border-radius:5px;background:#12304A;color:#fff;padding:8px 12px;font-weight:700;cursor:pointer;}
+        .print-view-actions .secondary-print-action{background:#fff;color:#12304A;}
+        .ppr-page{position:relative;width:210mm;min-height:297mm;margin:14px auto;padding:18mm 16mm 17mm;background:#fff;page-break-after:always;overflow:hidden;}
+        .cover-page{display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,#FFFFFF 0%,#F4F7F9 100%);}
+        .cover-top,.ppr-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #DCE4EA;padding-bottom:10px;}
+        .brand-lockup,.ppr-header>div{display:flex;align-items:center;gap:10px;}
+        .brand-lockup img,.ppr-header img{width:44px;height:44px;object-fit:contain;}
+        .brand-lockup strong,.ppr-header strong{display:block;color:#12304A;font-size:18px;letter-spacing:.04em;}
+        .brand-lockup span,.ppr-header span{display:block;color:#64748B;font-size:10px;text-transform:uppercase;}
+        .finsight-mark{color:#168C8C;font-weight:800;font-size:16px;}
+        .cover-main{text-align:center;padding:24mm 0 12mm;}
+        .eyebrow{color:#168C8C;font-size:10px;font-weight:800;letter-spacing:.16em;}
+        h1{margin:8px 0;color:#12304A;font-size:30px;letter-spacing:.04em;}
+        h2{margin:14px 0 12px;color:#12304A;font-size:19px;}
+        h3{margin:0 0 8px;color:#12304A;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+        p{font-size:10px;line-height:1.45;margin:6px 0;white-space:pre-wrap;}
+        .cover-meta,.cover-footer-grid,.kpi-grid,.two-col,.feedback-qr-grid,.signature-grid{display:grid;gap:10px;}
+        .cover-meta{grid-template-columns:repeat(3,1fr);margin:20px 0;text-align:left;}
+        .cover-meta div,.cover-footer-grid div,.kpi-card,.section-card,.qr-card,.empty-state{border:1px solid #DCE4EA;background:#F8FAFC;border-radius:7px;padding:12px;}
+        .cover-meta span,.cover-footer-grid span,.kpi-card span,.feedback-summary span{display:block;color:#64748B;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
+        .cover-meta strong,.cover-footer-grid strong,.kpi-card strong{display:block;margin-top:4px;color:#111827;font-size:13px;}
+        .cover-progress{max-width:420px;margin:0 auto;}
+        .cover-progress>strong{display:block;color:#12304A;font-size:44px;}
+        .cover-system{text-align:center;color:#64748B;font-size:9px;}
+        .ppr-header{margin-bottom:14px;}
+        .kpi-grid{grid-template-columns:repeat(3,1fr);margin-bottom:12px;}
+        .financial-grid{grid-template-columns:repeat(3,1fr);}
+        .kpi-card{break-inside:avoid;min-height:72px;}
+        .kpi-card strong{font-size:16px;}
+        .progress-wrap{height:8px;background:#E2E8F0;border-radius:999px;margin-top:8px;overflow:hidden;}
+        .progress-fill{height:100%;background:#168C8C;border-radius:999px;}
+        .progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+        .badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:8px;font-weight:800;text-transform:uppercase;}
+        .badge.success{background:#DCFCE7;color:#15803D;}.badge.warning{background:#FEF3C7;color:#D97706;}.badge.critical{background:#FEE2E2;color:#B91C1C;}.badge.active{background:#DDF7F5;color:#168C8C;}.badge.neutral{background:#E5E7EB;color:#4B5563;}
+        .two-col{grid-template-columns:1fr 1fr;}
+        .info-row{display:grid;grid-template-columns:42% 58%;gap:8px;border-top:1px solid #E5EDF4;padding:7px 0;font-size:9.5px;}
+        .info-row:first-of-type{border-top:0;}
+        .info-row span{color:#64748B;font-weight:700;}
+        .info-row strong{font-weight:700;word-break:break-word;}
+        .scope-list{margin:0;padding-left:18px;font-size:10px;line-height:1.5;}
+        .section-subtitle,.empty-text,.disclaimer{color:#64748B;}
+        .empty-state{text-align:center;color:#64748B;margin-top:20px;padding:24px;}
+        .photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        .photo-grid.single-photo{grid-template-columns:1fr;}
+        .photo-card{border:1px solid #DCE4EA;border-radius:7px;background:#fff;overflow:hidden;break-inside:avoid;}
+        .photo-card img{display:block;width:100%;height:122mm;object-fit:contain;background:#F4F7F9;border-bottom:1px solid #DCE4EA;}
+        .photo-grid:not(.single-photo) .photo-card img{height:65mm;object-fit:cover;}
+        .photo-caption{padding:9px;}
+        .photo-caption>div{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+        .photo-caption h3{margin-top:6px;font-size:10px;text-transform:none;letter-spacing:0;}
+        .photo-caption small{display:block;color:#64748B;font-size:8px;line-height:1.35;}
+        .ppr-table{width:100%;border-collapse:collapse;font-size:8px;table-layout:fixed;}
+        .ppr-table th{background:#12304A;color:#fff;padding:7px 5px;text-align:left;}
+        .ppr-table td{border:1px solid #DCE4EA;padding:6px 5px;vertical-align:top;word-break:break-word;}
+        .ppr-table thead{display:table-header-group;}
+        .ppr-table tr{break-inside:avoid;}
+        .narrative-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+        .feedback-qr-grid{grid-template-columns:2fr 1fr;margin-top:12px;}
+        .feedback-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+        .feedback-summary div{border:1px solid #DCE4EA;border-radius:6px;padding:8px;background:#fff;}
+        .feedback-summary strong{font-size:14px;}
+        .qr-card{text-align:center;}
+        .qr-card img{width:150px;height:150px;display:block;margin:0 auto 8px;}
+        .qr-card small{display:block;color:#64748B;font-size:7px;word-break:break-all;}
+        .signature-grid{grid-template-columns:repeat(3,1fr);margin-top:18px;}
+        .signature-block{break-inside:avoid;text-align:center;font-size:10px;}
+        .signature-block span{display:block;color:#64748B;font-weight:800;text-transform:uppercase;font-size:8px;margin-bottom:22px;}
+        .signature-block .line{border-top:1px solid #111827;margin:0 0 6px;}
+        .signature-block strong,.signature-block small{display:block;margin:4px 0;}
+        .ppr-footer{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;border-top:1px solid #DCE4EA;padding-top:5px;color:#64748B;font-size:8px;}
+        @media print{body{background:#fff;}.print-view-actions{display:none!important;}.ppr-page{margin:0;box-shadow:none;page-break-after:always;}}
       </style>
     </head>
-
     <body>
-
-      <div class="header">
-        <img src="assets/logo.jpg" class="logo">
-        <h1>PROJECT PROGRESS REPORT</h1>
-        <strong>LEMYU FIBER OPTIC INSTALLATION AND SERVICES</strong>
+      <div class="print-view-actions">
+        <button type="button" class="secondary-print-action" onclick="if (window.opener && !window.opener.closed) { window.opener.focus(); } window.close();">Back to Project List</button>
+        <button type="button" onclick="window.print()">Print / Save PDF</button>
       </div>
-
-      <table>
-        <tr><td>Project Code</td><td>${project.project_code || "-"}</td></tr>
-        <tr><td>Project Title</td><td>${project.project_title || "-"}</td></tr>
-        <tr><td>Company Name</td><td>${project.client_name || "-"}</td></tr>
-        <tr><td>Client Name</td><td>${getProjectClientName(project) || "-"}</td></tr>
-        <tr><td>Contact Number</td><td>${project.contact_number || "-"}</td></tr>
-        <tr><td>Location</td><td>${project.location || "-"}</td></tr>
-        <tr><td>Status</td><td>${project.status || "-"}</td></tr>
-        ${isOperationsScope() ? "" : `<tr><td>Down Payment</td><td>${peso(getProjectDownPayment(project))}</td></tr>`}
-        <tr><td>Remarks</td><td>${project.remarks || "-"}</td></tr>
-      </table>
-
-      <div class="files-section">
-        <h3>Uploaded Project Files</h3>
-        ${
-          uploadedFiles.length
-            ? `
-              <div class="file-list">
-                ${uploadedFiles.map(file => `
-                  <div class="ppr-file-card">
-                    <strong>${file.file_name}</strong>
-                    ${
-                      isImageFile(file.file_name, file.file_url)
-                        ? `<img src="${file.file_url}" alt="${file.file_name || "Uploaded project photo"}">`
-                        : `<div><a href="${file.file_url}" target="_blank">Open file</a></div>`
-                    }
-                    ${
-                      file.uploaded_at
-                        ? `<span class="file-date">Uploaded: ${new Date(file.uploaded_at).toLocaleString()}</span>`
-                        : ""
-                    }
-                  </div>
-                `).join("")}
-              </div>
-            `
-            : `<p>No uploaded files for this project.</p>`
-        }
-      </div>
-
-      ${
-        hasFeedback
-          ? `
-          <div class="qr-box">
-            <img src="${qrUrl}">
-            <div>
-              <h3>Client Feedback Included</h3>
-              <p><b>Total Feedback:</b> ${feedbacks.length}</p>
-              <p><b>Average Rating:</b> ${avgRating}/5</p>
-              <p>Scan the QR code to view or submit additional feedback.</p>
-            </div>
-          </div>
-          `
-          : `
-          <div class="qr-box">
-            <img src="${qrUrl}">
-            <div>
-              <h3>Client Feedback QR</h3>
-              <p>No feedback has been submitted yet.</p>
-              <p>Scan this QR code so the client can submit feedback for this project.</p>
-            </div>
-          </div>
-          `
-      }
-
-      ${
-        hasFeedback
-          ? `
-            <div class="feedback-list">
-              <h3>Client Feedback Remarks</h3>
-              ${feedbackRemarksHtml}
-            </div>
-          `
-          : ""
-      }
-
-      <div class="signatures">
-        <div class="sig">
-          ${escapeProjectHtml(project.ppr_prepared_by || "") || "&nbsp;"}<br>
-          Prepared By
-        </div>
-
-        <div class="sig">
-          &nbsp;<br>
-          Noted By
-        </div>
-      </div>
-
+      ${numberedPages}
+      <script>
+        document.title = ${JSON.stringify(pprFileName)};
+        window.addEventListener("load", function() {
+          setTimeout(function() { window.print(); }, 1000);
+        });
+      <\/script>
     </body>
     </html>
   `);
 
   pprWindow.document.close();
-
-  setTimeout(() => {
-    pprWindow.print();
-  }, 1200);
 };
 
 async function uploadProgressFiles(projectId) {

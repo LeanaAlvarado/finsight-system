@@ -181,13 +181,24 @@ create table if not exists public.feedback (
 create table if not exists public.project_files (
   id text primary key default gen_random_uuid()::text,
   project_id text,
+  report_id text,
   file_name text,
   file_url text,
   file_type text,
   bucket text,
   storage_path text,
+  photo_title text,
+  description text,
+  category text default 'other',
+  location text,
+  date_taken date,
+  uploaded_by text,
+  display_order integer default 0,
+  is_visible_in_report boolean default true,
+  uploaded_at timestamptz default now(),
   created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  updated_at timestamptz default now(),
+  constraint project_files_category_check check (category is null or category in ('before', 'ongoing', 'completed', 'testing', 'turnover', 'other'))
 );
 
 create table if not exists public.app_local_storage (
@@ -359,13 +370,37 @@ alter table public.feedback add column if not exists created_at timestamptz defa
 alter table public.feedback add column if not exists updated_at timestamptz default now();
 
 alter table public.project_files add column if not exists project_id text;
+alter table public.project_files add column if not exists report_id text;
 alter table public.project_files add column if not exists file_name text;
 alter table public.project_files add column if not exists file_url text;
 alter table public.project_files add column if not exists file_type text;
 alter table public.project_files add column if not exists bucket text;
 alter table public.project_files add column if not exists storage_path text;
+alter table public.project_files add column if not exists photo_title text;
+alter table public.project_files add column if not exists description text;
+alter table public.project_files add column if not exists category text default 'other';
+alter table public.project_files add column if not exists location text;
+alter table public.project_files add column if not exists date_taken date;
+alter table public.project_files add column if not exists uploaded_by text;
+alter table public.project_files add column if not exists display_order integer default 0;
+alter table public.project_files add column if not exists is_visible_in_report boolean default true;
+alter table public.project_files add column if not exists uploaded_at timestamptz default now();
 alter table public.project_files add column if not exists created_at timestamptz default now();
 alter table public.project_files add column if not exists updated_at timestamptz default now();
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'project_files_category_check'
+      and conrelid = 'public.project_files'::regclass
+  ) then
+    alter table public.project_files
+      add constraint project_files_category_check
+      check (category is null or category in ('before', 'ongoing', 'completed', 'testing', 'turnover', 'other'));
+  end if;
+end $$;
 
 alter table public.app_local_storage add column if not exists storage_value jsonb;
 alter table public.app_local_storage add column if not exists updated_at timestamptz default now();
@@ -394,6 +429,7 @@ create index if not exists expenses_project_id_idx on public.expenses (project_i
 create index if not exists payroll_project_id_idx on public.payroll (project_id);
 create index if not exists feedback_project_id_idx on public.feedback (project_id);
 create index if not exists project_files_project_id_idx on public.project_files (project_id);
+create index if not exists project_files_report_photo_idx on public.project_files (project_id, is_visible_in_report, category, display_order, date_taken, created_at);
 create index if not exists cost_overrun_alerts_project_id_idx on public.cost_overrun_alerts (project_id);
 create index if not exists cost_overrun_alerts_status_idx on public.cost_overrun_alerts (status);
 create index if not exists cost_overrun_alerts_severity_idx on public.cost_overrun_alerts (severity);
