@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-ppr-contract-paid-v66";
+const appVersion = "20260729-ppr-signature-v67";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

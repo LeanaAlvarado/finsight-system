@@ -4132,8 +4132,7 @@ window.generatePPR = async function(id) {
         </div>
       </div>
       <div class="signature-grid">
-        <div class="signature-block"><span>Prepared By</span><div class="line"></div><strong>${safePprText(project.ppr_prepared_by, "&nbsp;")}</strong><small>Project Manager / Operations Staff</small><small>Date: ____________________</small></div>
-        <div class="signature-block"><span>Reviewed By</span><div class="line"></div><strong>${safePprText(project.ppr_noted_by, "&nbsp;")}</strong><small>Owner / Manager</small><small>Date: ____________________</small></div>
+        <div class="signature-block"><span>Prepared By</span><div class="line"></div><strong>MARK LYNDON LAWAS</strong><small>Owner / Operational Manager</small><small>Date: ____________________</small></div>
         <div class="signature-block"><span>Approved By</span><div class="line"></div><strong>&nbsp;</strong><small>Authorized Client Representative</small><small>Date: ____________________</small></div>
       </div>
     </section>
@@ -4208,7 +4207,7 @@ window.generatePPR = async function(id) {
         .qr-card{text-align:center;}
         .qr-card img{width:150px;height:150px;display:block;margin:0 auto 8px;}
         .qr-card small{display:block;color:#64748B;font-size:7px;word-break:break-all;}
-        .signature-grid{grid-template-columns:repeat(3,1fr);margin-top:18px;}
+        .signature-grid{grid-template-columns:repeat(2,1fr);margin-top:18px;}
         .signature-block{break-inside:avoid;text-align:center;font-size:10px;}
         .signature-block span{display:block;color:#64748B;font-weight:800;text-transform:uppercase;font-size:8px;margin-bottom:22px;}
         .signature-block .line{border-top:1px solid #111827;margin:0 0 6px;}
