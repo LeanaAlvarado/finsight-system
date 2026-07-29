@@ -19,7 +19,6 @@ const projectListState = {
   search: "",
   status: "all",
   date: "all",
-  personnel: "",
   type: "all",
   sort: "newest"
 };
@@ -817,7 +816,6 @@ function isWithinProjectDateFilter(project = {}) {
 
 function getFilteredProjects() {
   const search = projectListState.search.trim().toLowerCase();
-  const personnel = projectListState.personnel.trim().toLowerCase();
 
   return allProjects
     .filter(project => {
@@ -829,15 +827,6 @@ function getFilteredProjects() {
       return String(project.status || "").toLowerCase() === projectListState.status.toLowerCase();
     })
     .filter(project => isWithinProjectDateFilter(project))
-    .filter(project => {
-      if (!personnel) return true;
-      return [
-        project.prepared_by,
-        project.ppr_prepared_by,
-        project.ppr_noted_by,
-        project.client_contact_name
-      ].join(" ").toLowerCase().includes(personnel);
-    })
     .filter(project => {
       if (projectListState.type === "all") return true;
       return getProjectQuotationLabel(project).toLowerCase().includes(projectListState.type);
@@ -865,7 +854,6 @@ function hasActiveProjectFilters() {
   return Boolean(projectListState.search.trim())
     || projectListState.status !== "all"
     || projectListState.date !== "all"
-    || Boolean(projectListState.personnel.trim())
     || projectListState.type !== "all";
 }
 
@@ -3934,7 +3922,6 @@ function bindProjectListFilters() {
     ["projectSearch", "search"],
     ["projectStatusFilter", "status"],
     ["projectDateFilter", "date"],
-    ["projectPersonnelFilter", "personnel"],
     ["projectTypeFilter", "type"],
     ["projectSort", "sort"]
   ];
@@ -3945,7 +3932,7 @@ function bindProjectListFilters() {
 
     const eventName = element.type === "search" ? "input" : "change";
     element.addEventListener(eventName, event => {
-      projectListState[stateKey] = event.target.value || (["search", "personnel"].includes(stateKey) ? "" : "all");
+      projectListState[stateKey] = event.target.value || (stateKey === "search" ? "" : "all");
       projectCurrentPage = 1;
       renderProjectList();
     });
