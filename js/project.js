@@ -4379,13 +4379,13 @@ if (pprEditorForm) {
     saveLocalPprConfig(projectId, config);
 
     if (!isLocalProjectId(projectId)) {
-      const { data, error } = await updateWithOptionalColumns(
+      const { error } = await updateWithOptionalColumns(
         "projects",
         { ppr_report_config: config },
         "id",
         projectId,
         ["ppr_report_config"],
-        { returnRecord: true }
+        { returnRecord: false }
       );
 
       if (error) {
@@ -4393,7 +4393,7 @@ if (pprEditorForm) {
         return;
       }
 
-      saveLocalProjectMirror({ ...(data || project), ppr_report_config: config });
+      saveLocalProjectMirror({ ...project, ppr_report_config: config, updated_at: new Date().toISOString() });
     } else {
       updateLocalProjectMirror(projectId, { ppr_report_config: config });
     }
