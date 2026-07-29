@@ -264,14 +264,6 @@ function chunkPprPhotos(photos = [], size = 4) {
   return chunks;
 }
 
-function getPprQuotationItems(project = {}) {
-  const items = Array.isArray(project.quotation_items)
-    ? project.quotation_items
-    : getLocalQuotationItems(project.id);
-
-  return items.map(item => normalizeContractItem(item, project.project_title || "Project deliverable"));
-}
-
 function getPprScopeItems(project = {}) {
   const quotationType = getProjectQuotationType(project);
   const details = quotationType === "manpower"
@@ -3957,7 +3949,6 @@ window.generatePPR = async function(id) {
   const photos = getPprPhotos(projectFiles);
   const photoPages = chunkPprPhotos(photos, 4);
   const scopeItems = getPprScopeItems(project);
-  const quotationItems = getPprQuotationItems(project);
   const hasFeedback = feedbacks.length > 0;
   const avgRating = hasFeedback
     ? (feedbacks.reduce((sum, f) => sum + Number(f.rating || f.overall_satisfaction || 0), 0) / feedbacks.length).toFixed(1)
@@ -4133,48 +4124,6 @@ window.generatePPR = async function(id) {
   pages.push(`
     <section class="ppr-page">
       <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
-      <h2>Work Accomplishment</h2>
-      <table class="ppr-table">
-        <thead><tr><th>No.</th><th>Activity or Deliverable</th><th>Assigned Personnel</th><th>Start Date</th><th>Target Date</th><th>Status</th><th>Completion</th><th>Remarks</th></tr></thead>
-        <tbody>
-          ${
-            quotationItems.length
-              ? quotationItems.map((item, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td>${escapeProjectHtml(item.description)}</td>
-                  <td>${safePprText(project.ppr_prepared_by)}</td>
-                  <td>${formatDate(project.start_date, "Not Available")}</td>
-                  <td>${formatDate(project.target_completion, "Not Available")}</td>
-                  <td>${statusBadge(project.status)}</td>
-                  <td>${completionText}${progressBar(completionBar)}</td>
-                  <td>${project.remarks ? escapeProjectHtml(project.remarks) : "No remarks recorded."}</td>
-                </tr>
-              `).join("")
-              : `<tr><td colspan="8">No project activities were recorded for this reporting period.</td></tr>`
-          }
-        </tbody>
-      </table>
-      <div class="narrative-grid">
-        ${[
-          ["Accomplishments During the Reporting Period", pprConfig.accomplishments],
-          ["Issues or Challenges Encountered", pprConfig.issues],
-          ["Corrective Actions Taken", pprConfig.correctiveActions],
-          ["Next Planned Activities", pprConfig.nextActivities],
-          ["Overall Project Remarks", pprConfig.overallRemarks || project.remarks]
-        ].map(([title, text]) => `
-          <div class="section-card">
-            <h3>${title}</h3>
-            <p>${getPprSectionText(text)}</p>
-          </div>
-        `).join("")}
-      </div>
-    </section>
-  `);
-
-  pages.push(`
-    <section class="ppr-page">
-      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
       <h2>Financial Summary, Feedback, and Approval</h2>
       ${
         !showFinancialSummary
@@ -4282,12 +4231,6 @@ window.generatePPR = async function(id) {
         .photo-caption>div{display:flex;justify-content:space-between;gap:8px;align-items:center;}
         .photo-caption h3{margin-top:6px;font-size:10px;text-transform:none;letter-spacing:0;}
         .photo-caption small{display:block;color:#64748B;font-size:8px;line-height:1.35;}
-        .ppr-table{width:100%;border-collapse:collapse;font-size:8px;table-layout:fixed;}
-        .ppr-table th{background:#12304A;color:#fff;padding:7px 5px;text-align:left;}
-        .ppr-table td{border:1px solid #DCE4EA;padding:6px 5px;vertical-align:top;word-break:break-word;}
-        .ppr-table thead{display:table-header-group;}
-        .ppr-table tr{break-inside:avoid;}
-        .narrative-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
         .feedback-qr-grid{grid-template-columns:2fr 1fr;margin-top:12px;}
         .feedback-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
         .feedback-summary div{border:1px solid #DCE4EA;border-radius:6px;padding:8px;background:#fff;}
