@@ -828,6 +828,12 @@ function getContractFileName(contract = {}) {
 }
 
 function getProjectDurationText(project = {}) {
+  const durationDaysMatch = String(project.remarks || "").match(/^project duration days:\s*(.*)$/im);
+  if (durationDaysMatch) {
+    const days = Math.max(0, Math.trunc(Number(String(durationDaysMatch[1]).replace(/[^0-9.]/g, "")) || 0));
+    if (days > 0) return `${days} day${days === 1 ? "" : "s"}`;
+  }
+
   if (getProjectQuotationType(project) === "manpower") {
     const manpower = getManpowerQuotationDetails(project);
     if (Number(manpower.durationDays || 0) > 0) {

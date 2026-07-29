@@ -12,6 +12,7 @@ const client_name = document.getElementById("client_name");
 const client_contact_name = document.getElementById("client_contact_name");
 const contact_number = document.getElementById("contact_number");
 const location = document.getElementById("location");
+const project_duration_days = document.getElementById("project_duration_days");
 const start_date = document.getElementById("start_date");
 const target_completion = document.getElementById("target_completion");
 const status = document.getElementById("status");
@@ -597,6 +598,7 @@ function buildProposalRemarks() {
   if (quotationTypeInput.value === "cctv") {
     const cctvLines = [
       "Quotation Type: CCTV",
+      project_duration_days?.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(project_duration_days.value)))}` : "",
       cctv_intro.value ? `CCTV Intro: ${cctv_intro.value}` : "",
       cctv_installation_charge.value ? `Installation Charge: ${cctv_installation_charge.value}` : "",
       cctv_summary_computation.value ? `Summary of Computation: ${cctv_summary_computation.value}` : "",
@@ -782,15 +784,15 @@ proposalForm.addEventListener("submit", async event => {
       contact_number: isManpower ? (contact_number.value || manpower_client_contact.value) : contact_number.value,
       client_email: isManpower ? manpower_client_email.value : "",
       location: isManpower ? (location.value || manpower_location.value) : location.value,
-      start_date: start_date.value || null,
-      target_completion: target_completion.value || null,
+      start_date: start_date?.value || null,
+      target_completion: target_completion?.value || null,
       status: status.value || "Pending",
       project_budget: isManpower ? (number(project_budget.value) || number(contract_amount.value)) : number(project_budget.value),
       contract_amount: number(contract_amount.value),
       down_payment: isManpower ? number(manpower_amount_paid?.value || down_payment.value) : number(down_payment.value),
       tax_amount: null,
       ppr_prepared_by: isManpower ? (ppr_prepared_by.value || manpower_prepared_by.value) : ppr_prepared_by.value,
-      ppr_noted_by: ppr_noted_by.value,
+      ppr_noted_by: ppr_noted_by?.value || "",
       remarks: buildProposalRemarks(),
       quotation_type: quotationTypeInput.value,
       quotation_items: quotationItems,
