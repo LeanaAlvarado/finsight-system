@@ -4026,7 +4026,6 @@ window.generatePPR = async function(id) {
         ${isOperations ? "" : `<div class="kpi-card"><span>Total Amount Paid</span><strong>${downPayment ? peso(downPayment) : "Not Available"}</strong></div>`}
         ${isOperations ? "" : `<div class="kpi-card"><span>Remaining Balance</span><strong>${contractAmount ? peso(remainingBalance) : "Not Available"}</strong></div>`}
         <div class="kpi-card"><span>Project Duration</span><strong>${safePprText(getProjectDurationText(project))}</strong></div>
-        <div class="kpi-card"><span>Days Remaining / Completion</span><strong>${project.completed_date ? formatDate(project.completed_date) : getPprDaysRemaining(project)}</strong></div>
       </div>
       <div class="section-card">
         <h3>Overall Progress</h3>

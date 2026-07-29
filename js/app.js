@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-remove-cover-progress-v63";
+const appVersion = "20260729-remove-days-kpi-v64";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",
