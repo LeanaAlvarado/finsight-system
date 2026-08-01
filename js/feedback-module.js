@@ -30,6 +30,7 @@ const manpower_client_email = document.getElementById("manpower_client_email");
 const manpower_location = document.getElementById("manpower_location");
 const manpower_duration_days = document.getElementById("manpower_duration_days");
 const manpower_amount_paid = document.getElementById("manpower_amount_paid");
+const manpower_contract_amount = document.getElementById("manpower_contract_amount");
 const manpower_project_budget = document.getElementById("manpower_project_budget");
 const manpower_progress_percentage = document.getElementById("manpower_progress_percentage");
 const manpower_prepared_by = document.getElementById("manpower_prepared_by");
@@ -593,6 +594,7 @@ function updateProposalComputedAmount() {
     if (manpowerQuotationTotal) manpowerQuotationTotal.textContent = peso(manpowerAmount);
     if (manpowerAmount > 0) {
       contract_amount.value = manpowerAmount;
+      if (manpower_contract_amount) manpower_contract_amount.value = manpowerAmount;
     }
     return;
   }
@@ -800,7 +802,7 @@ proposalForm.addEventListener("submit", async event => {
       status: status.value || "Pending",
       progress_percentage: getOverallProjectProgressValue(),
       project_budget: isManpower ? number(manpower_project_budget?.value || project_budget.value) : number(project_budget.value),
-      contract_amount: number(contract_amount.value),
+      contract_amount: isManpower ? number(manpower_contract_amount?.value || contract_amount.value) : number(contract_amount.value),
       down_payment: isManpower ? number(manpower_amount_paid?.value || down_payment.value) : number(down_payment.value),
       tax_amount: null,
       ppr_prepared_by: isManpower ? (ppr_prepared_by.value || manpower_prepared_by.value) : ppr_prepared_by.value,
