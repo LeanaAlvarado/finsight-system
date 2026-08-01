@@ -1731,7 +1731,7 @@ function updateEditManpowerAmount() {
   if (totalCell) totalCell.textContent = peso(total);
   edit_contract_amount.value = total;
   const editManpowerContractAmount = document.getElementById("edit_manpower_contract_amount");
-  if (editManpowerContractAmount && total > 0) editManpowerContractAmount.value = total;
+  if (editManpowerContractAmount) editManpowerContractAmount.value = total;
 }
 
 function resetEditManpowerQuotationItems(items = []) {
@@ -1881,6 +1881,9 @@ function updateEditCctvMaterialsTotal() {
 
   const totalCell = document.getElementById("editCctvMaterialsTotal");
   if (totalCell) totalCell.textContent = peso(total);
+  if (document.getElementById("edit_quotation_type")?.value === "cctv" && edit_contract_amount) {
+    edit_contract_amount.value = total;
+  }
 }
 
 function updateEditCctvMaterialRowTotal(row) {
