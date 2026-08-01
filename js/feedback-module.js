@@ -30,6 +30,7 @@ const manpower_client_email = document.getElementById("manpower_client_email");
 const manpower_location = document.getElementById("manpower_location");
 const manpower_duration_days = document.getElementById("manpower_duration_days");
 const manpower_amount_paid = document.getElementById("manpower_amount_paid");
+const manpower_project_budget = document.getElementById("manpower_project_budget");
 const manpower_progress_percentage = document.getElementById("manpower_progress_percentage");
 const manpower_prepared_by = document.getElementById("manpower_prepared_by");
 const manpower_prepared_position = document.getElementById("manpower_prepared_position");
@@ -798,7 +799,7 @@ proposalForm.addEventListener("submit", async event => {
       target_completion: target_completion?.value || null,
       status: status.value || "Pending",
       progress_percentage: getOverallProjectProgressValue(),
-      project_budget: isManpower ? (number(project_budget.value) || number(contract_amount.value)) : number(project_budget.value),
+      project_budget: isManpower ? number(manpower_project_budget?.value || project_budget.value) : number(project_budget.value),
       contract_amount: number(contract_amount.value),
       down_payment: isManpower ? number(manpower_amount_paid?.value || down_payment.value) : number(down_payment.value),
       tax_amount: null,
