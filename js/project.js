@@ -1730,7 +1730,6 @@ function updateEditManpowerAmount() {
 
   if (totalCell) totalCell.textContent = peso(total);
   edit_contract_amount.value = total;
-  edit_project_budget.value = total;
 }
 
 function resetEditManpowerQuotationItems(items = []) {
@@ -3707,6 +3706,8 @@ window.editProject = async function(id) {
   edit_manpower_location.value = project.location || "";
   edit_manpower_down_payment.value = getProjectDownPayment(project);
   edit_down_payment.value = edit_manpower_down_payment.value;
+  const editManpowerProjectBudget = document.getElementById("edit_manpower_project_budget");
+  if (editManpowerProjectBudget) editManpowerProjectBudget.value = Number(project.project_budget || 0);
   const editManpowerStatus = document.getElementById("edit_manpower_status");
   if (editManpowerStatus) editManpowerStatus.value = project.status || "Pending";
   edit_manpower_prepared_by.value = manpowerDetails.preparedBy || project.ppr_prepared_by || "";
@@ -3806,6 +3807,7 @@ if (editProjectForm) {
       : getLocalQuotationItems(editingId);
     const manpowerContractAmount = Number(manpowerAmount || currentProject.contract_amount || 0);
     const manpowerDownPaymentAmount = Math.max(Number(edit_manpower_down_payment.value || 0), 0);
+    const manpowerProjectBudgetAmount = Math.max(Number(document.getElementById("edit_manpower_project_budget")?.value || 0), 0);
 
     const record = {
       quotation_type: quotationType,
@@ -3827,7 +3829,7 @@ if (editProjectForm) {
       progress_percentage: getProjectProgressInputValue(isManpower
         ? document.getElementById("edit_manpower_progress_percentage")
         : edit_progress_percentage),
-      project_budget: isManpower ? Number(manpowerAmount || edit_project_budget.value || currentProject.project_budget || 0) : Number(edit_project_budget.value || currentProject.project_budget || 0),
+      project_budget: isManpower ? manpowerProjectBudgetAmount : Number(edit_project_budget.value || currentProject.project_budget || 0),
       contract_amount: isManpower ? manpowerContractAmount : Number(edit_contract_amount.value || currentProject.contract_amount || 0),
       down_payment: isManpower ? manpowerDownPaymentAmount : Number(edit_down_payment.value || currentProject.down_payment || 0),
       tax_amount: edit_tax_amount.value === "" ? null : Number(edit_tax_amount.value || 0),

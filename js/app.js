@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260729-visible-photo-comments-v77";
+const appVersion = "20260801-manpower-budget-v78";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",
