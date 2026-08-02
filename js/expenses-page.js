@@ -5,6 +5,14 @@ let expenseRecords = [];
 let payrollRecords = [];
 let editingPayrollId = null;
 let editingExpenseId = null;
+const expenseFilterState = {
+  search: "",
+  projectId: "",
+  category: "",
+  dateFrom: "",
+  dateTo: "",
+  sort: "newest"
+};
 const EXPENSE_PROOF_BUCKETS = ["expense-proofs", "expenses", "receipts", "proofs", "progress-files", "contracts"];
 const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
 
@@ -197,6 +205,7 @@ async function syncPayrollExpense(payrollRecord, previousPayroll = null) {
 function populateProjectSelects() {
   const payrollProjectSelect = document.getElementById("project_id");
   const expenseProjectSelect = document.getElementById("projectSelect");
+  const expenseProjectFilter = document.getElementById("expenseProjectFilter");
 
   if (payrollProjectSelect) {
     payrollProjectSelect.innerHTML = `<option value="">No related project</option>`;
@@ -204,6 +213,10 @@ function populateProjectSelects() {
 
   if (expenseProjectSelect) {
     expenseProjectSelect.innerHTML = `<option value="">Select Project</option>`;
+  }
+
+  if (expenseProjectFilter) {
+    expenseProjectFilter.innerHTML = `<option value="">All projects</option>`;
   }
 
   projectRecords.forEach(project => {
@@ -216,7 +229,112 @@ function populateProjectSelects() {
     if (expenseProjectSelect) {
       expenseProjectSelect.innerHTML += `<option value="${project.id}">${escapeHtml(projectName)}</option>`;
     }
+
+    if (expenseProjectFilter) {
+      expenseProjectFilter.innerHTML += `<option value="${project.id}">${escapeHtml(projectName)}</option>`;
+    }
   });
+}
+
+function populateExpenseCategoryFilter(expenses = []) {
+  const categoryFilter = document.getElementById("expenseCategoryFilter");
+  if (!categoryFilter) return;
+
+  const currentValue = categoryFilter.value;
+  const categories = [...new Set(expenses.map(item => String(item.category || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+
+  categoryFilter.innerHTML = `<option value="">All categories</option>`
+    + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("");
+  categoryFilter.value = categories.includes(currentValue) ? currentValue : "";
+}
+
+function getExpenseDateValue(expense = {}) {
+  return String(expense.date || expense.expense_date || "").slice(0, 10);
+}
+
+function getFilteredExpenses() {
+  const search = expenseFilterState.search.trim().toLowerCase();
+  let records = [...expenseRecords];
+
+  if (expenseFilterState.projectId) {
+    records = records.filter(item => String(item.project_id || "") === String(expenseFilterState.projectId));
+  }
+
+  if (expenseFilterState.category) {
+    records = records.filter(item => String(item.category || "") === expenseFilterState.category);
+  }
+
+  if (expenseFilterState.dateFrom) {
+    records = records.filter(item => !getExpenseDateValue(item) || getExpenseDateValue(item) >= expenseFilterState.dateFrom);
+  }
+
+  if (expenseFilterState.dateTo) {
+    records = records.filter(item => !getExpenseDateValue(item) || getExpenseDateValue(item) <= expenseFilterState.dateTo);
+  }
+
+  if (search) {
+    records = records.filter(item => {
+      const haystack = [
+        getProjectName(item.project_id, item),
+        item.category,
+        item.amount,
+        getExpenseDateValue(item),
+        item.description,
+        getProofName(item)
+      ].join(" ").toLowerCase();
+      return haystack.includes(search);
+    });
+  }
+
+  records.sort((a, b) => {
+    const dateA = new Date(getExpenseDateValue(a) || a.created_at || 0).getTime() || 0;
+    const dateB = new Date(getExpenseDateValue(b) || b.created_at || 0).getTime() || 0;
+    const amountA = number(a.amount);
+    const amountB = number(b.amount);
+
+    if (expenseFilterState.sort === "oldest") return dateA - dateB;
+    if (expenseFilterState.sort === "amount_desc") return amountB - amountA || dateB - dateA;
+    if (expenseFilterState.sort === "amount_asc") return amountA - amountB || dateB - dateA;
+    return dateB - dateA;
+  });
+
+  return records;
+}
+
+function updateExpenseFilterSummary(records = []) {
+  const summary = document.getElementById("expenseFilterSummary");
+  if (!summary) return;
+
+  const total = records.reduce((sum, item) => sum + number(item.amount), 0);
+  summary.textContent = `Showing ${records.length} of ${expenseRecords.length} expenses | Total ${peso(total)}`;
+}
+
+function renderExpenseTable() {
+  const expenseTableBody = document.getElementById("expenseTable");
+  if (!expenseTableBody) return;
+
+  const filteredExpenses = getFilteredExpenses();
+  updateExpenseFilterSummary(filteredExpenses);
+
+  expenseTableBody.innerHTML = filteredExpenses.length ? filteredExpenses.map(item => `
+    <tr>
+      <td>${escapeHtml(getProjectName(item.project_id, item))}</td>
+      <td>${escapeHtml(item.category || "-")}</td>
+      <td>${peso(item.amount)}</td>
+      <td>${formatDate(item.date || item.expense_date)}</td>
+      <td>${escapeHtml(item.description || "")}</td>
+      <td>${renderProofLink(item)}</td>
+      <td class="table-action-buttons">
+        <button type="button" onclick="editExpense('${item.id}')">Edit</button>
+        <button type="button" class="danger-btn" onclick="deleteExpense('${item.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join("") : `
+    <tr>
+      <td colspan="7" style="text-align:center;">No expenses match the selected filters.</td>
+    </tr>
+  `;
 }
 
 async function loadPayrollAndExpenses() {
@@ -238,6 +356,7 @@ async function loadPayrollAndExpenses() {
   payrollRecords = payroll;
   expenseRecords = expenses;
   populateProjectSelects();
+  populateExpenseCategoryFilter(expenses);
 
   const revenueTotal = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
@@ -249,59 +368,7 @@ async function loadPayrollAndExpenses() {
   setText("netPayroll", peso(payrollTotal - deductionTotal));
   setText("operatingBalance", peso(revenueTotal - expenseTotal));
 
-  const payrollTableBody = document.getElementById("payrollTable");
-  if (payrollTableBody) {
-    payrollTableBody.innerHTML = payroll.length ? payroll.map(item => {
-      const salary = number(item.salary_amount);
-      const deduction = number(item.deduction_amount);
-      const netPay = salary - deduction;
-
-      return `
-        <tr>
-          <td>${escapeHtml(item.employee_name || "-")}</td>
-          <td>${peso(salary)}</td>
-          <td>${escapeHtml(item.deduction_type || "No Deduction")}</td>
-          <td>${peso(deduction)}</td>
-          <td class="${netPay >= 0 ? "good" : "bad"}">${peso(netPay)}</td>
-          <td>${number(item.work_days)}</td>
-          <td>${escapeHtml(getProjectName(item.project_id, item))}</td>
-          <td><span class="badge ${escapeHtml(item.payment_status || "Paid")}">${escapeHtml(item.payment_status || "Paid")}</span></td>
-          <td>${formatDate(item.pay_date)}</td>
-          <td>${escapeHtml(item.description || "")}</td>
-          <td class="table-action-buttons">
-            <button type="button" onclick="editPayroll('${item.id}')">Edit</button>
-            <button type="button" class="danger-btn" onclick="deletePayroll('${item.id}')">Delete</button>
-          </td>
-        </tr>
-      `;
-    }).join("") : `
-      <tr>
-        <td colspan="11" style="text-align:center;">No payroll records yet.</td>
-      </tr>
-    `;
-  }
-
-  const expenseTableBody = document.getElementById("expenseTable");
-  if (expenseTableBody) {
-    expenseTableBody.innerHTML = expenses.length ? expenses.map(item => `
-      <tr>
-        <td>${escapeHtml(getProjectName(item.project_id, item))}</td>
-        <td>${escapeHtml(item.category || "-")}</td>
-        <td>${peso(item.amount)}</td>
-        <td>${formatDate(item.date || item.expense_date)}</td>
-        <td>${escapeHtml(item.description || "")}</td>
-        <td>${renderProofLink(item)}</td>
-        <td class="table-action-buttons">
-          <button type="button" onclick="editExpense('${item.id}')">Edit</button>
-          <button type="button" class="danger-btn" onclick="deleteExpense('${item.id}')">Delete</button>
-        </td>
-      </tr>
-    `).join("") : `
-      <tr>
-        <td colspan="7" style="text-align:center;">No expense records yet.</td>
-      </tr>
-    `;
-  }
+  renderExpenseTable();
 }
 
 window.editPayroll = function(id) {
@@ -363,6 +430,121 @@ window.deletePayroll = async function(id) {
   alert("Payroll deleted successfully.");
   resetPayrollForm();
   await loadPayrollAndExpenses();
+};
+
+function csvCell(value = "") {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+window.exportExpenseReport = function() {
+  const records = getFilteredExpenses();
+  const rows = [
+    ["Project", "Category", "Amount", "Date", "Description", "Proof"],
+    ...records.map(item => [
+      getProjectName(item.project_id, item),
+      item.category || "",
+      number(item.amount).toFixed(2),
+      getExpenseDateValue(item),
+      item.description || "",
+      getProofUrl(item)
+    ])
+  ];
+
+  const csv = rows.map(row => row.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `Expense_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
+window.printExpenseReport = function() {
+  const records = getFilteredExpenses();
+  const total = records.reduce((sum, item) => sum + number(item.amount), 0);
+  const filters = [
+    expenseFilterState.search ? `Search: ${expenseFilterState.search}` : "",
+    expenseFilterState.projectId ? `Project: ${getProjectName(expenseFilterState.projectId)}` : "",
+    expenseFilterState.category ? `Category: ${expenseFilterState.category}` : "",
+    expenseFilterState.dateFrom ? `From: ${formatDate(expenseFilterState.dateFrom)}` : "",
+    expenseFilterState.dateTo ? `To: ${formatDate(expenseFilterState.dateTo)}` : ""
+  ].filter(Boolean).join(" | ") || "All expenses";
+
+  const reportWindow = window.open("", "_blank");
+  if (!reportWindow) {
+    alert("Please allow pop-ups to print the expense report.");
+    return;
+  }
+
+  reportWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Expense Report</title>
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;margin:24px;color:#0f172a;}
+        h1{margin:0 0 6px;font-size:22px;}
+        p{margin:0 0 14px;color:#475569;font-size:12px;}
+        table{width:100%;border-collapse:collapse;margin-top:14px;font-size:11px;}
+        th,td{border:1px solid #d8e5f2;padding:8px;text-align:left;vertical-align:top;}
+        th{background:#eef4fa;text-transform:uppercase;font-size:10px;}
+        .total{margin-top:14px;font-weight:800;text-align:right;}
+        @media print{button{display:none;}}
+      </style>
+    </head>
+    <body>
+      <button onclick="window.print()">Print</button>
+      <h1>Expense Report</h1>
+      <p>LEMYU Fiber Optic Installation and Services</p>
+      <p>${escapeHtml(filters)}</p>
+      <table>
+        <thead><tr><th>Project</th><th>Category</th><th>Amount</th><th>Date</th><th>Description</th><th>Proof</th></tr></thead>
+        <tbody>
+          ${records.length ? records.map(item => `
+            <tr>
+              <td>${escapeHtml(getProjectName(item.project_id, item))}</td>
+              <td>${escapeHtml(item.category || "-")}</td>
+              <td>${peso(item.amount)}</td>
+              <td>${formatDate(item.date || item.expense_date)}</td>
+              <td>${escapeHtml(item.description || "")}</td>
+              <td>${getProofUrl(item) ? escapeHtml(getProofName(item)) : "-"}</td>
+            </tr>
+          `).join("") : `<tr><td colspan="6" style="text-align:center;">No expenses match the selected filters.</td></tr>`}
+        </tbody>
+      </table>
+      <div class="total">Total Expenses: ${peso(total)}</div>
+    </body>
+    </html>
+  `);
+  reportWindow.document.close();
+};
+
+window.resetExpenseFilters = function() {
+  expenseFilterState.search = "";
+  expenseFilterState.projectId = "";
+  expenseFilterState.category = "";
+  expenseFilterState.dateFrom = "";
+  expenseFilterState.dateTo = "";
+  expenseFilterState.sort = "newest";
+
+  const fields = {
+    expenseSearchFilter: "",
+    expenseProjectFilter: "",
+    expenseCategoryFilter: "",
+    expenseDateFromFilter: "",
+    expenseDateToFilter: "",
+    expenseSortFilter: "newest"
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const field = document.getElementById(id);
+    if (field) field.value = value;
+  });
+
+  renderExpenseTable();
 };
 
 window.editExpense = function(id) {
@@ -539,6 +721,21 @@ document.getElementById("expenseForm")?.addEventListener("submit", async event =
 
 document.getElementById("cancelExpenseEditBtn")?.addEventListener("click", resetExpenseForm);
 document.getElementById("cancelPayrollEditBtn")?.addEventListener("click", resetPayrollForm);
+
+[
+  ["expenseSearchFilter", "search"],
+  ["expenseProjectFilter", "projectId"],
+  ["expenseCategoryFilter", "category"],
+  ["expenseDateFromFilter", "dateFrom"],
+  ["expenseDateToFilter", "dateTo"],
+  ["expenseSortFilter", "sort"]
+].forEach(([id, key]) => {
+  const field = document.getElementById(id);
+  field?.addEventListener(id === "expenseSearchFilter" ? "input" : "change", event => {
+    expenseFilterState[key] = event.target.value;
+    renderExpenseTable();
+  });
+});
 
 document.querySelectorAll(".amount-input").forEach(input => {
   input.addEventListener("keydown", event => {

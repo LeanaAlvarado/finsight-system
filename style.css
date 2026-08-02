@@ -669,6 +669,37 @@ button:hover,
   border-radius:6px;
 }
 
+.expense-filter-toolbar{
+  margin-top:14px;
+}
+
+.expense-report-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:12px;
+}
+
+.expense-report-actions span{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+
+.expense-report-actions div{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.expense-report-actions button{
+  width:auto;
+  min-height:34px;
+  padding:8px 11px;
+}
+
 .table-wrap{
   width:100%;
   overflow-x:auto;
