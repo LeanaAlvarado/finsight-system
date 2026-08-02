@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260803-payroll-edit-delete-v83";
+const appVersion = "20260803-payroll-action-css-v84";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

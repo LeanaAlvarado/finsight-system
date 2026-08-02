@@ -268,7 +268,7 @@ async function loadPayrollAndExpenses() {
           <td><span class="badge ${escapeHtml(item.payment_status || "Paid")}">${escapeHtml(item.payment_status || "Paid")}</span></td>
           <td>${formatDate(item.pay_date)}</td>
           <td>${escapeHtml(item.description || "")}</td>
-          <td>
+          <td class="table-action-buttons">
             <button type="button" onclick="editPayroll('${item.id}')">Edit</button>
             <button type="button" class="danger-btn" onclick="deletePayroll('${item.id}')">Delete</button>
           </td>
@@ -291,7 +291,7 @@ async function loadPayrollAndExpenses() {
         <td>${formatDate(item.date || item.expense_date)}</td>
         <td>${escapeHtml(item.description || "")}</td>
         <td>${renderProofLink(item)}</td>
-        <td>
+        <td class="table-action-buttons">
           <button type="button" onclick="editExpense('${item.id}')">Edit</button>
           <button type="button" class="danger-btn" onclick="deleteExpense('${item.id}')">Delete</button>
         </td>
