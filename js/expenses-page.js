@@ -183,6 +183,32 @@ function findLinkedPayrollExpense(payroll = {}) {
   });
 }
 
+function isPayrollExpense(expense = {}) {
+  return String(expense.category || "").trim().toLowerCase() === "payroll";
+}
+
+function findLinkedPayrollForExpense(expense = {}) {
+  if (!isPayrollExpense(expense)) return null;
+
+  const expenseDate = getExpenseDateValue(expense);
+  const description = String(expense.description || "").trim();
+  const employeeFromDescription = description.replace(/^Payroll for\s+/i, "").trim();
+  const matchesCoreFields = payroll => {
+    return String(payroll.project_id || "") === String(expense.project_id || "")
+      && String(payroll.pay_date || "").slice(0, 10) === expenseDate
+      && number(payroll.salary_amount) === number(expense.amount);
+  };
+
+  return payrollRecords.find(payroll => {
+    const employeeName = String(payroll.employee_name || "").trim();
+    return matchesCoreFields(payroll)
+      && (
+        description === `Payroll for ${employeeName}`
+        || (employeeFromDescription && employeeName.toLowerCase() === employeeFromDescription.toLowerCase())
+      );
+  }) || payrollRecords.find(matchesCoreFields) || null;
+}
+
 async function syncPayrollExpense(payrollRecord, previousPayroll = null) {
   const projectSnapshot = getProjectSnapshot(payrollRecord.project_id);
   const expenseRecord = {
@@ -318,6 +344,10 @@ function renderExpenseTable() {
   updateExpenseFilterSummary(filteredExpenses);
 
   expenseTableBody.innerHTML = filteredExpenses.length ? filteredExpenses.map(item => `
+    ${(() => {
+      const editAction = isPayrollExpense(item) ? `editPayrollFromExpense('${item.id}')` : `editExpense('${item.id}')`;
+      const deleteAction = isPayrollExpense(item) ? `deletePayrollFromExpense('${item.id}')` : `deleteExpense('${item.id}')`;
+      return `
     <tr>
       <td>${escapeHtml(getProjectName(item.project_id, item))}</td>
       <td>${escapeHtml(item.category || "-")}</td>
@@ -326,10 +356,12 @@ function renderExpenseTable() {
       <td>${escapeHtml(item.description || "")}</td>
       <td>${renderProofLink(item)}</td>
       <td class="table-action-buttons">
-        <button type="button" onclick="editExpense('${item.id}')">Edit</button>
-        <button type="button" class="danger-btn" onclick="deleteExpense('${item.id}')">Delete</button>
+        <button type="button" onclick="${editAction}">Edit</button>
+        <button type="button" class="danger-btn" onclick="${deleteAction}">Delete</button>
       </td>
     </tr>
+      `;
+    })()}
   `).join("") : `
     <tr>
       <td colspan="7" style="text-align:center;">No expenses match the selected filters.</td>
@@ -573,6 +605,18 @@ window.editExpense = function(id) {
   document.getElementById("expenseForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
+window.editPayrollFromExpense = function(id) {
+  const expense = expenseRecords.find(item => String(item.id || "") === String(id || ""));
+  const payroll = findLinkedPayrollForExpense(expense || {});
+
+  if (!payroll?.id) {
+    alert("Linked payroll record was not found. Please refresh the page and try again.");
+    return;
+  }
+
+  window.editPayroll(payroll.id);
+};
+
 window.deleteExpense = async function(id) {
   if (!confirm("Delete this expense record?")) return;
 
@@ -589,6 +633,18 @@ window.deleteExpense = async function(id) {
   alert("Expense deleted successfully.");
   resetExpenseForm();
   await loadPayrollAndExpenses();
+};
+
+window.deletePayrollFromExpense = async function(id) {
+  const expense = expenseRecords.find(item => String(item.id || "") === String(id || ""));
+  const payroll = findLinkedPayrollForExpense(expense || {});
+
+  if (payroll?.id) {
+    await window.deletePayroll(payroll.id);
+    return;
+  }
+
+  await window.deleteExpense(id);
 };
 
 document.getElementById("payrollForm")?.addEventListener("submit", async event => {
