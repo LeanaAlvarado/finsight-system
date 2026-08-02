@@ -136,7 +136,8 @@
         <textarea id="payroll_description" placeholder="Payroll notes or description"></textarea>
 
         <div class="form-actions">
-          <button type="submit">Save Payroll</button>
+          <button type="submit" id="payrollSubmitBtn">Save Payroll</button>
+          <button type="button" id="cancelPayrollEditBtn" style="display:none;margin-left:10px;background:#6b7a90;">Cancel Edit</button>
         </div>
       </form>
     </section>
@@ -212,6 +213,7 @@
             <th>Status</th>
             <th>Date</th>
             <th>Description</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="payrollTable"></tbody>
@@ -243,7 +245,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260801-blank-project-budget-v82"></script>
+<script type="module" src="js/app.js?v=20260803-payroll-edit-delete-v83"></script>
 
 
 </body>

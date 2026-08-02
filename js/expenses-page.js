@@ -2,6 +2,8 @@ import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, numb
 
 let projectRecords = [];
 let expenseRecords = [];
+let payrollRecords = [];
+let editingPayrollId = null;
 let editingExpenseId = null;
 const EXPENSE_PROOF_BUCKETS = ["expense-proofs", "expenses", "receipts", "proofs", "progress-files", "contracts"];
 const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
@@ -129,6 +131,19 @@ function resetExpenseForm() {
   if (cancelBtn) cancelBtn.style.display = "none";
 }
 
+function resetPayrollForm() {
+  const form = document.getElementById("payrollForm");
+  const submitBtn = document.getElementById("payrollSubmitBtn");
+  const cancelBtn = document.getElementById("cancelPayrollEditBtn");
+
+  editingPayrollId = null;
+  form?.reset();
+  if (deduction_amount) deduction_amount.value = "0";
+  if (work_days) work_days.value = "0";
+  if (submitBtn) submitBtn.textContent = "Save Payroll";
+  if (cancelBtn) cancelBtn.style.display = "none";
+}
+
 function getProjectName(projectId, record = {}) {
   const project = projectRecords.find(item => item.id == projectId);
   return project
@@ -138,6 +153,45 @@ function getProjectName(projectId, record = {}) {
 
 function getSelectedExpenseProject() {
   return projectRecords.find(project => String(project.id || "") === String(projectSelect.value || ""));
+}
+
+function getProjectSnapshot(projectId) {
+  const project = projectRecords.find(item => String(item.id || "") === String(projectId || ""));
+  return {
+    project_code: project?.project_code || "",
+    project_title: project?.project_title || "",
+    client_name: project?.client_name || ""
+  };
+}
+
+function findLinkedPayrollExpense(payroll = {}) {
+  const oldDescription = `Payroll for ${payroll.employee_name || ""}`;
+  return expenseRecords.find(expense => {
+    return String(expense.category || "").toLowerCase() === "payroll"
+      && String(expense.project_id || "") === String(payroll.project_id || "")
+      && String(expense.date || expense.expense_date || "").slice(0, 10) === String(payroll.pay_date || "").slice(0, 10)
+      && number(expense.amount) === number(payroll.salary_amount)
+      && String(expense.description || "") === oldDescription;
+  });
+}
+
+async function syncPayrollExpense(payrollRecord, previousPayroll = null) {
+  const projectSnapshot = getProjectSnapshot(payrollRecord.project_id);
+  const expenseRecord = {
+    ...projectSnapshot,
+    project_id: payrollRecord.project_id || null,
+    category: "Payroll",
+    amount: payrollRecord.salary_amount,
+    date: payrollRecord.pay_date || null,
+    expense_date: payrollRecord.pay_date || null,
+    description: "Payroll for " + payrollRecord.employee_name
+  };
+
+  const optionalColumns = ["date", "expense_date", "project_code", "project_title", "client_name"];
+  const linkedExpense = previousPayroll ? findLinkedPayrollExpense(previousPayroll) : null;
+  return linkedExpense
+    ? updateWithOptionalColumns("expenses", expenseRecord, "id", linkedExpense.id, optionalColumns)
+    : insertWithOptionalColumns("expenses", expenseRecord, optionalColumns);
 }
 
 function populateProjectSelects() {
@@ -181,6 +235,7 @@ async function loadPayrollAndExpenses() {
   const payroll = payrollResult.data;
   const expenses = expenseResult.data;
   projectRecords = projects;
+  payrollRecords = payroll;
   expenseRecords = expenses;
   populateProjectSelects();
 
@@ -213,11 +268,15 @@ async function loadPayrollAndExpenses() {
           <td><span class="badge ${escapeHtml(item.payment_status || "Paid")}">${escapeHtml(item.payment_status || "Paid")}</span></td>
           <td>${formatDate(item.pay_date)}</td>
           <td>${escapeHtml(item.description || "")}</td>
+          <td>
+            <button type="button" onclick="editPayroll('${item.id}')">Edit</button>
+            <button type="button" class="danger-btn" onclick="deletePayroll('${item.id}')">Delete</button>
+          </td>
         </tr>
       `;
     }).join("") : `
       <tr>
-        <td colspan="10" style="text-align:center;">No payroll records yet.</td>
+        <td colspan="11" style="text-align:center;">No payroll records yet.</td>
       </tr>
     `;
   }
@@ -244,6 +303,67 @@ async function loadPayrollAndExpenses() {
     `;
   }
 }
+
+window.editPayroll = function(id) {
+  const payroll = payrollRecords.find(item => String(item.id || "") === String(id || ""));
+
+  if (!payroll) {
+    alert("Payroll record was not found. Please refresh the page and try again.");
+    return;
+  }
+
+  editingPayrollId = id;
+  employee_name.value = payroll.employee_name || "";
+  project_id.value = payroll.project_id || "";
+  pay_date.value = (payroll.pay_date || "").slice(0, 10);
+  salary_amount.value = number(payroll.salary_amount);
+  deduction_type.value = payroll.deduction_type === "No Deduction" ? "" : (payroll.deduction_type || "");
+  deduction_amount.value = number(payroll.deduction_amount);
+  work_days.value = number(payroll.work_days);
+  payment_status.value = payroll.payment_status || "Paid";
+  payroll_description.value = payroll.description || "";
+
+  const submitBtn = document.getElementById("payrollSubmitBtn");
+  const cancelBtn = document.getElementById("cancelPayrollEditBtn");
+  if (submitBtn) submitBtn.textContent = "Update Payroll";
+  if (cancelBtn) cancelBtn.style.display = "inline-block";
+
+  document.getElementById("payrollForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+window.deletePayroll = async function(id) {
+  if (!confirm("Delete this payroll record?")) return;
+
+  const payroll = payrollRecords.find(item => String(item.id || "") === String(id || ""));
+  const linkedExpense = payroll ? findLinkedPayrollExpense(payroll) : null;
+
+  const { error } = await supabase
+    .from("payroll")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("Error deleting payroll: " + error.message);
+    return;
+  }
+
+  if (linkedExpense?.id) {
+    const { error: expenseError } = await supabase
+      .from("expenses")
+      .delete()
+      .eq("id", linkedExpense.id);
+
+    if (expenseError) {
+      alert("Payroll deleted, but linked payroll expense was not deleted: " + expenseError.message);
+      await loadPayrollAndExpenses();
+      return;
+    }
+  }
+
+  alert("Payroll deleted successfully.");
+  resetPayrollForm();
+  await loadPayrollAndExpenses();
+};
 
 window.editExpense = function(id) {
   const expense = expenseRecords.find(item => String(item.id || "") === String(id || ""));
@@ -297,8 +417,14 @@ document.getElementById("payrollForm")?.addEventListener("submit", async event =
 
   const deduction = parseAmountInput(deduction_amount, { required: false });
   if (deduction === null) return;
+  const projectSnapshot = getProjectSnapshot(project_id.value);
+  const payrollProjectSnapshot = {
+    project_code: projectSnapshot.project_code,
+    project_title: projectSnapshot.project_title
+  };
 
   const payrollRecord = {
+    ...payrollProjectSnapshot,
     employee_name: employee_name.value,
     project_id: project_id.value || null,
     pay_date: pay_date.value || null,
@@ -310,34 +436,38 @@ document.getElementById("payrollForm")?.addEventListener("submit", async event =
     description: payroll_description.value
   };
 
-  const payrollResult = await insertWithOptionalColumns("payroll", payrollRecord, [
+  const optionalPayrollColumns = [
+    "project_code",
+    "project_title",
     "deduction_type",
     "deduction_amount",
     "work_days",
     "payment_status"
-  ]);
+  ];
+
+  const previousPayroll = editingPayrollId
+    ? payrollRecords.find(item => String(item.id || "") === String(editingPayrollId || ""))
+    : null;
+
+  const payrollResult = editingPayrollId
+    ? await updateWithOptionalColumns("payroll", payrollRecord, "id", editingPayrollId, optionalPayrollColumns)
+    : await insertWithOptionalColumns("payroll", payrollRecord, optionalPayrollColumns);
 
   if (payrollResult.error) {
     alert("Error saving payroll: " + payrollResult.error.message);
     return;
   }
 
-  const payrollExpenseResult = await insertWithOptionalColumns("expenses", {
-    project_id: project_id.value || null,
-    category: "Payroll",
-    amount: salary,
-    date: pay_date.value || null,
-    expense_date: pay_date.value || null,
-    description: "Payroll for " + employee_name.value
-  }, ["date", "expense_date"]);
+  const payrollExpenseResult = await syncPayrollExpense(payrollRecord, previousPayroll);
 
   if (payrollExpenseResult.error) {
     alert("Payroll was saved, but the linked expense failed: " + payrollExpenseResult.error.message);
     return;
   }
 
-  alert("Payroll saved successfully.");
-  location.reload();
+  alert(editingPayrollId ? "Payroll updated successfully." : "Payroll saved successfully.");
+  resetPayrollForm();
+  await loadPayrollAndExpenses();
 });
 
 document.getElementById("expenseForm")?.addEventListener("submit", async event => {
@@ -408,6 +538,7 @@ document.getElementById("expenseForm")?.addEventListener("submit", async event =
 });
 
 document.getElementById("cancelExpenseEditBtn")?.addEventListener("click", resetExpenseForm);
+document.getElementById("cancelPayrollEditBtn")?.addEventListener("click", resetPayrollForm);
 
 document.querySelectorAll(".amount-input").forEach(input => {
   input.addEventListener("keydown", event => {
