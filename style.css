@@ -2063,6 +2063,12 @@ tbody tr:hover{
   font-size:12px;
 }
 
+.inventory-report-btn{
+  width:100%;
+  min-height:38px;
+  justify-content:center;
+}
+
 .table-card .table-wrap{
   margin-top:0;
 }

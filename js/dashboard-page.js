@@ -7,6 +7,8 @@ let dashboardReloadQueued = false;
 let dashboardRefreshTimer = null;
 let latestCostAlerts = [];
 let showingAllCostAlerts = false;
+let latestDashboardProjects = [];
+let latestProjectMaterials = [];
 
 const ALERT_WARNING_THRESHOLD = 80;
 const ALERT_CRITICAL_THRESHOLD = 100;
@@ -428,6 +430,145 @@ function renderInventoryProjectList(projects, inventory) {
     </div>
   `).join("");
 }
+
+function getProjectMaterialsGroupedReport(projects = latestDashboardProjects, materials = latestProjectMaterials) {
+  const groups = new Map();
+
+  materials.forEach(material => {
+    const projectCode = String(material.project_code || "").trim();
+    const project = projects.find(item => recordBelongsToProject(material, item))
+      || projects.find(item => normalizeMatchValue(item.project_code) === normalizeMatchValue(projectCode))
+      || {};
+    const key = project.id || project.project_code || projectCode || "unassigned";
+    const current = groups.get(key) || {
+      project,
+      projectCode: project.project_code || projectCode || "-",
+      projectTitle: getProjectLabel(project) || material.project_title || "Untitled CCTV Project",
+      clientName: project.client_name || "-",
+      status: project.status || "-",
+      items: [],
+      total: 0
+    };
+    const itemTotal = getInventoryMaterialCost(material);
+
+    current.items.push({
+      ...material,
+      total: itemTotal
+    });
+    current.total += itemTotal;
+    groups.set(key, current);
+  });
+
+  return [...groups.values()].sort((a, b) => b.total - a.total);
+}
+
+window.generateProjectMaterialsReport = function() {
+  const groups = getProjectMaterialsGroupedReport();
+  const totalRecords = latestProjectMaterials.length;
+  const totalCost = latestProjectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
+  const generatedDate = new Date();
+  const reportWindow = window.open("", "_blank");
+
+  if (!reportWindow) {
+    alert("Please allow pop-ups to generate the Project Materials report.");
+    return;
+  }
+
+  const projectSections = groups.length
+    ? groups.map(group => `
+      <section class="report-project">
+        <div class="project-head">
+          <div>
+            <small>${escapeHtml(group.projectCode)}</small>
+            <h2>${escapeHtml(group.projectTitle)}</h2>
+            <p>Client: ${escapeHtml(group.clientName)} | Status: ${escapeHtml(group.status)}</p>
+          </div>
+          <strong>${peso(group.total)}</strong>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Description</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Unit Price</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${group.items.map(item => `
+              <tr>
+                <td>${escapeHtml(item.name || "CCTV Material")}</td>
+                <td>${escapeHtml(item.description || "-")}</td>
+                <td>${number(item.qty)}</td>
+                <td>${escapeHtml(item.unit || "-")}</td>
+                <td>${peso(item.price)}</td>
+                <td>${peso(item.total)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </section>
+    `).join("")
+    : `<div class="empty-report">No approved/completed CCTV project materials available.</div>`;
+
+  reportWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Project_Materials_Report_${generatedDate.toISOString().slice(0, 10)}</title>
+      <style>
+        body{font-family:Arial,sans-serif;color:#071f3d;margin:0;background:#f4f7fb;}
+        .report-page{max-width:960px;margin:0 auto;padding:28px;background:#fff;min-height:100vh;}
+        .report-top{display:flex;justify-content:space-between;gap:18px;border-bottom:2px solid #0f5f66;padding-bottom:16px;margin-bottom:18px;}
+        .report-top small,.metric small,.project-head small{display:block;color:#51657d;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
+        h1{margin:4px 0 6px;font-size:24px;}
+        h2{margin:4px 0 6px;font-size:16px;}
+        p{margin:0;color:#42566f;font-size:12px;line-height:1.45;}
+        .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0;}
+        .metric{border:1px solid #c9d7e6;border-radius:6px;padding:12px;background:#f8fbff;}
+        .metric strong{display:block;margin-top:6px;font-size:18px;}
+        .report-project{border:1px solid #c9d7e6;border-radius:8px;margin-top:14px;overflow:hidden;}
+        .project-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;background:#eef4fa;padding:12px 14px;}
+        .project-head strong{font-size:15px;white-space:nowrap;}
+        table{width:100%;border-collapse:collapse;font-size:11px;}
+        th,td{border-top:1px solid #d9e3ee;padding:8px;text-align:left;vertical-align:top;}
+        th{background:#0f5f66;color:#fff;text-transform:uppercase;font-size:10px;letter-spacing:.04em;}
+        td:nth-child(3),td:nth-child(5),td:nth-child(6){text-align:right;white-space:nowrap;}
+        .empty-report{border:1px solid #c9d7e6;border-radius:8px;padding:18px;text-align:center;color:#51657d;}
+        .actions{position:sticky;top:0;display:flex;justify-content:flex-end;gap:8px;background:#fff;padding:10px 0;margin-bottom:8px;}
+        button{border:0;border-radius:5px;background:#1f4e79;color:#fff;font-weight:800;padding:9px 14px;cursor:pointer;}
+        .secondary{background:#eef4fa;color:#1f4e79;border:1px solid #c9d7e6;}
+        @media print{body{background:#fff}.actions{display:none}.report-page{max-width:none;padding:18mm}.report-project{break-inside:avoid;page-break-inside:avoid;}}
+      </style>
+    </head>
+    <body>
+      <main class="report-page">
+        <div class="actions">
+          <button type="button" class="secondary" onclick="window.close()">Back</button>
+          <button type="button" onclick="window.print()">Print / Save PDF</button>
+        </div>
+        <header class="report-top">
+          <div>
+            <small>LEMYU Fiber Optic Installation and Services</small>
+            <h1>Project Materials Report</h1>
+            <p>Approved and completed CCTV quotation material usage from the FinSight dashboard.</p>
+          </div>
+          <p>Generated: ${escapeHtml(generatedDate.toLocaleString("en-PH"))}</p>
+        </header>
+        <section class="metrics">
+          <div class="metric"><small>CCTV Projects</small><strong>${groups.length}</strong></div>
+          <div class="metric"><small>Material Records</small><strong>${totalRecords}</strong></div>
+          <div class="metric"><small>Total Material Cost</small><strong>${peso(totalCost)}</strong></div>
+        </section>
+        ${projectSections}
+      </main>
+    </body>
+    </html>
+  `);
+  reportWindow.document.close();
+};
 
 function getProjectActualExpenses(project, expenses = []) {
   const linkedExpenses = expenses
@@ -978,6 +1119,8 @@ async function loadDashboard(){
   const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
   const projectMaterials = getApprovedCompletedCctvQuotationMaterials(projects, inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
+  latestDashboardProjects = projects;
+  latestProjectMaterials = projectMaterials;
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
