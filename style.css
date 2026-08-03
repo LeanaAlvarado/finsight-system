@@ -1988,7 +1988,14 @@ tbody tr:hover{
   align-content:start;
 }
 
-.inventory-panel-stats div{
+.inventory-panel,
+.inventory-panel-stats,
+.inventory-project-block,
+.inventory-project-list{
+  min-width:0;
+}
+
+.inventory-panel-stats > div{
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -2025,6 +2032,7 @@ tbody tr:hover{
 .inventory-project-list{
   display:grid;
   gap:7px;
+  width:100%;
 }
 
 .inventory-project-row{
@@ -2032,6 +2040,7 @@ tbody tr:hover{
   grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
   gap:10px;
+  min-width:0;
 }
 
 .inventory-project-row span{
@@ -2039,9 +2048,7 @@ tbody tr:hover{
   color:var(--text);
   font-size:12px;
   font-weight:700;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  overflow-wrap:anywhere;
 }
 
 .inventory-project-row strong{

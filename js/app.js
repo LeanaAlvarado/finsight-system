@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260803-cctv-material-dashboard-v89";
+const appVersion = "20260803-dashboard-material-css-v90";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",
