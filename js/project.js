@@ -13,6 +13,7 @@ const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_PPR_CONFIGS_KEY = "lemyu_ppr_report_configs";
+const LOCAL_PROJECT_FILE_COMMENTS_KEY = "lemyu_project_file_comments";
 const MATERIAL_CATALOG_KEY = "lemyu_material_catalog";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
 const MATERIAL_UNIT_OPTIONS = ["PCS", "MTR", "SET", "ROLL", "BOX", "PACK", "UNIT", "LOT"];
@@ -263,6 +264,45 @@ function getPprPhotoTitle(file = {}, index = 0) {
 
 function getPprPhotoDescription(file = {}) {
   return file.description || file.caption || file.comment || "";
+}
+
+function getProjectFileCommentStore() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_PROJECT_FILE_COMMENTS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProjectFileCommentStore(records = {}) {
+  localStorage.setItem(LOCAL_PROJECT_FILE_COMMENTS_KEY, JSON.stringify(records));
+}
+
+function getProjectFileCommentKey(file = {}) {
+  return String(file.id || file.storage_path || file.file_url || file.file_name || "").trim();
+}
+
+function getStoredProjectFileComment(file = {}) {
+  const key = getProjectFileCommentKey(file);
+  if (!key) return "";
+  return getProjectFileCommentStore()[key] || "";
+}
+
+function saveStoredProjectFileComment(file = {}, comment = "") {
+  const key = getProjectFileCommentKey(file);
+  if (!key) return;
+  const records = getProjectFileCommentStore();
+  records[key] = comment;
+  saveProjectFileCommentStore(records);
+}
+
+function applyStoredProjectFileComments(files = []) {
+  return files.map(file => {
+    const storedComment = getStoredProjectFileComment(file);
+    return storedComment && !file.description
+      ? { ...file, description: storedComment }
+      : file;
+  });
 }
 
 function getPprPhotos(projectFiles = []) {
@@ -4037,7 +4077,7 @@ window.generatePPR = async function(id) {
     if (filesResult.error) console.warn("PPR project files could not be loaded.", filesResult.error);
 
     feedbacks = feedbackResult.data || [];
-    projectFiles = filesResult.data || [];
+    projectFiles = applyStoredProjectFileComments(filesResult.data || []);
   }
 
   const generatedDate = new Date();
@@ -4362,16 +4402,42 @@ async function uploadProgressFiles(projectId) {
       return false;
     }
 
-    const { error } = await supabase.from("project_files").insert([{
+    let { data: savedFile, error } = await supabase.from("project_files").insert([{
       project_id: projectId,
       file_name: file.name,
       file_url: uploadedFile.publicUrl,
       description: comment
-    }]);
+    }]).select("*").single();
+
+    if (error && /description/i.test(error.message || "")) {
+      const retryResult = await supabase.from("project_files").insert([{
+        project_id: projectId,
+        file_name: file.name,
+        file_url: uploadedFile.publicUrl
+      }]).select("*").single();
+      savedFile = retryResult.data;
+      error = retryResult.error;
+
+      if (!error && comment) {
+        saveStoredProjectFileComment(savedFile || {
+          project_id: projectId,
+          file_name: file.name,
+          file_url: uploadedFile.publicUrl
+        }, comment);
+      }
+    }
 
     if (error) {
       console.warn("Progress file record was not saved:", error.message || error);
       return false;
+    }
+
+    if (comment) {
+      saveStoredProjectFileComment(savedFile || {
+        project_id: projectId,
+        file_name: file.name,
+        file_url: uploadedFile.publicUrl
+      }, comment);
     }
   }
 
@@ -4434,9 +4500,10 @@ async function loadProgressFiles(projectId) {
     .select("*")
     .eq("project_id", projectId)
     .order("uploaded_at", { ascending: false });
+  const filesWithComments = applyStoredProjectFileComments(files || []);
 
-  uploadedProgressFiles.innerHTML = files.length
-    ? files.map(file => `
+  uploadedProgressFiles.innerHTML = filesWithComments.length
+    ? filesWithComments.map(file => `
         <div class="file-row">
           <div class="file-preview">
             ${
@@ -4467,16 +4534,30 @@ async function loadProgressFiles(projectId) {
 window.updateProgressFileComment = async function(fileId) {
   const input = document.getElementById(`progress_file_comment_${fileId}`);
   const description = input?.value || "";
-  const { error } = await supabase
+  const file = {
+    id: fileId,
+    description
+  };
+
+  let { error } = await supabase
     .from("project_files")
     .update({ description, updated_at: new Date().toISOString() })
     .eq("id", fileId);
+
+  if (error && /description/i.test(error.message || "")) {
+    const retryResult = await supabase
+      .from("project_files")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", fileId);
+    error = retryResult.error;
+  }
 
   if (error) {
     alert("Photo comment was not saved: " + error.message);
     return;
   }
 
+  saveStoredProjectFileComment(file, description);
   alert("Photo comment saved.");
   if (editingId) await loadProgressFiles(editingId);
 };
