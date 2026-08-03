@@ -12,6 +12,7 @@ const ALERT_WARNING_THRESHOLD = 80;
 const ALERT_CRITICAL_THRESHOLD = 100;
 const ALERT_PREVIEW_LIMIT = 5;
 const ACTIVE_ALERT_STATUSES = new Set(["Active", "Viewed"]);
+const MATERIAL_PROJECT_STATUSES = new Set(["approved", "completed", "complete"]);
 
 function getCurrentRole() {
   return String(
@@ -105,6 +106,14 @@ function addCategoryTotal(categoryTotals, category, amount) {
 
 function getProjectLabel(project) {
   return project.project_title || project.project_code || project.client_name || "Untitled Project";
+}
+
+function getProjectRecordStatus(project = {}) {
+  return normalizeMatchValue(project.status || project.project_status || project.approval_status);
+}
+
+function isMaterialCountedProject(project = {}) {
+  return MATERIAL_PROJECT_STATUSES.has(getProjectRecordStatus(project));
 }
 
 function getTaxAmount(project) {
@@ -323,6 +332,19 @@ function getProjectLinkedMaterials(inventory = []) {
   return inventory.filter(item => String(item.project_code || "").trim());
 }
 
+function getInventoryMaterialCost(item = {}) {
+  const savedTotal = number(item.total_amount || item.line_total);
+  if (savedTotal > 0) return savedTotal;
+  return number(item.qty ?? item.quantity) * number(item.price ?? item.unit_price ?? item.amount);
+}
+
+function getApprovedCompletedProjectMaterials(projects = [], inventory = []) {
+  const countedProjects = projects.filter(isMaterialCountedProject);
+  return getProjectLinkedMaterials(inventory).filter(material => {
+    return countedProjects.some(project => recordBelongsToProject(material, project));
+  });
+}
+
 function renderInventoryProjectList(projects, inventory) {
   const list = document.getElementById("inventoryProjectList");
   if (!list) return;
@@ -331,7 +353,7 @@ function renderInventoryProjectList(projects, inventory) {
 
   getProjectLinkedMaterials(inventory).forEach(item => {
     const projectCode = String(item.project_code || "").trim();
-    totals.set(projectCode, (totals.get(projectCode) || 0) + (number(item.qty) * number(item.price)));
+    totals.set(projectCode, (totals.get(projectCode) || 0) + getInventoryMaterialCost(item));
   });
 
   const rankedProjects = [...totals.entries()]
@@ -344,7 +366,7 @@ function renderInventoryProjectList(projects, inventory) {
     .slice(0, 3);
 
   if (!rankedProjects.length) {
-    list.innerHTML = `<span class="inventory-project-empty">No project-linked materials.</span>`;
+    list.innerHTML = `<span class="inventory-project-empty">No approved/completed project materials.</span>`;
     return;
   }
 
@@ -820,7 +842,7 @@ function renderCategoryBreakdownList(categoryTotals) {
 function renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue, costAlerts = []) {
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectMaterials = getProjectLinkedMaterials(inventory);
-  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
   const categoryTotals = new Map();
 
@@ -904,8 +926,8 @@ async function loadDashboard(){
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
-  const projectMaterials = getProjectLinkedMaterials(inventory);
-  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+  const projectMaterials = getApprovedCompletedProjectMaterials(projects, inventory);
+  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
@@ -918,7 +940,7 @@ async function loadDashboard(){
   setText("projectCount", projects.length);
   setText("inventoryValue", projectMaterials.length);
   setText("inventoryCount", projectMaterials.length);
-  setText("inventoryPanelValue", peso(0));
+  setText("inventoryPanelValue", peso(projectMaterialCost));
   setText("inventoryPanelCount", projectMaterials.length);
   setText("projectMini", projects.length);
   setText("revenueSmall", peso(revenue));
