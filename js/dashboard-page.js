@@ -13,6 +13,7 @@ const ALERT_CRITICAL_THRESHOLD = 100;
 const ALERT_PREVIEW_LIMIT = 5;
 const ACTIVE_ALERT_STATUSES = new Set(["Active", "Viewed"]);
 const MATERIAL_PROJECT_STATUSES = new Set(["approved", "completed", "complete"]);
+const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
 
 function getCurrentRole() {
   return String(
@@ -114,6 +115,25 @@ function getProjectRecordStatus(project = {}) {
 
 function isMaterialCountedProject(project = {}) {
   return MATERIAL_PROJECT_STATUSES.has(getProjectRecordStatus(project));
+}
+
+function getProjectQuotationType(project = {}) {
+  const type = normalizeMatchValue(project.quotation_type);
+  if (type === "cctv") return "cctv";
+  if (type === "manpower") return "manpower";
+  if (/cctv|camera|dvr|supply/.test(normalizeMatchValue(`${project.remarks || ""} ${project.project_title || ""}`))) return "cctv";
+  return "manpower";
+}
+
+function getLocalQuotationItems(project = {}) {
+  const records = readLocalJson(LOCAL_QUOTATION_ITEMS_KEY, {});
+  return records[project.id] || records[project.project_code] || [];
+}
+
+function getProjectQuotationItems(project = {}) {
+  return Array.isArray(project.quotation_items)
+    ? project.quotation_items
+    : getLocalQuotationItems(project);
 }
 
 function getTaxAmount(project) {
@@ -338,11 +358,42 @@ function getInventoryMaterialCost(item = {}) {
   return number(item.qty ?? item.quantity) * number(item.price ?? item.unit_price ?? item.amount);
 }
 
-function getApprovedCompletedProjectMaterials(projects = [], inventory = []) {
-  const countedProjects = projects.filter(isMaterialCountedProject);
-  return getProjectLinkedMaterials(inventory).filter(material => {
-    return countedProjects.some(project => recordBelongsToProject(material, project));
-  });
+function normalizeQuotationMaterial(project = {}, item = {}, index = 0) {
+  const qty = number(item.qty ?? item.quantity ?? 1);
+  const savedTotal = number(item.total_amount || item.line_total);
+  const price = savedTotal && qty
+    ? savedTotal / qty
+    : number(item.price ?? item.unit_price ?? item.unitPrice ?? item.amount);
+
+  return {
+    id: item.id || `${project.id || project.project_code || "project"}-material-${index}`,
+    project_id: project.id || "",
+    project_code: project.project_code || "",
+    project_title: project.project_title || "",
+    name: item.name || item.material_name || item.description || "CCTV Material",
+    description: item.details || item.description || "",
+    qty,
+    unit: item.unit || "",
+    price,
+    total_amount: savedTotal || (qty * price),
+    is_project_material: true
+  };
+}
+
+function getApprovedCompletedCctvQuotationMaterials(projects = [], inventory = []) {
+  return projects
+    .filter(project => isMaterialCountedProject(project) && getProjectQuotationType(project) === "cctv")
+    .flatMap(project => {
+      const quotationItems = getProjectQuotationItems(project)
+        .map((item, index) => normalizeQuotationMaterial(project, item, index))
+        .filter(item => item.name || item.description || item.total_amount || item.qty);
+
+      if (quotationItems.length) return quotationItems;
+
+      return getProjectLinkedMaterials(inventory)
+        .filter(material => recordBelongsToProject(material, project))
+        .map((item, index) => normalizeQuotationMaterial(project, item, index));
+    });
 }
 
 function renderInventoryProjectList(projects, inventory) {
@@ -839,9 +890,8 @@ function renderCategoryBreakdownList(categoryTotals) {
   }).join("");
 }
 
-function renderBusinessIntelligence(projects, expenses, payroll, inventory, revenue, costAlerts = []) {
+function renderBusinessIntelligence(projects, expenses, payroll, projectMaterials, revenue, costAlerts = []) {
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
-  const projectMaterials = getProjectLinkedMaterials(inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
   const categoryTotals = new Map();
@@ -926,7 +976,7 @@ async function loadDashboard(){
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
-  const projectMaterials = getApprovedCompletedProjectMaterials(projects, inventory);
+  const projectMaterials = getApprovedCompletedCctvQuotationMaterials(projects, inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
