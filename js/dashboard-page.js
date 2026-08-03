@@ -107,6 +107,14 @@ function addCategoryTotal(categoryTotals, category, amount) {
   categoryTotals.set(label, (categoryTotals.get(label) || 0) + number(amount));
 }
 
+function compactPeso(value = 0) {
+  const amount = number(value);
+  const abs = Math.abs(amount);
+  if (abs >= 1000000) return `PHP ${(amount / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `PHP ${(amount / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`;
+  return peso(amount);
+}
+
 function getProjectLabel(project) {
   return project.project_title || project.project_code || project.client_name || "Untitled Project";
 }
@@ -223,8 +231,19 @@ function getMonthlyTrend(projects, expenses) {
 
   return {
     labels: months.map(month => month.label),
-    revenue: months.map(month => revenueByMonth.get(month.key) / 1000),
-    expenses: months.map(month => expensesByMonth.get(month.key) / 1000)
+    revenue: months.map(month => revenueByMonth.get(month.key)),
+    expenses: months.map(month => expensesByMonth.get(month.key))
+  };
+}
+
+function getTrendTotals(trend) {
+  const revenue = trend.revenue.reduce((sum, value) => sum + number(value), 0);
+  const expenses = trend.expenses.reduce((sum, value) => sum + number(value), 0);
+  return {
+    revenue,
+    expenses,
+    net: revenue - expenses,
+    netByPeriod: trend.revenue.map((value, index) => number(value) - number(trend.expenses[index]))
   };
 }
 
@@ -1145,9 +1164,13 @@ async function loadDashboard(){
   }
 
   const trend = getMonthlyTrend(projects, expenses);
+  const trendTotals = getTrendTotals(trend);
+  setText("chartRevenueTotal", peso(trendTotals.revenue));
+  setText("chartExpenseTotal", peso(trendTotals.expenses));
+  setText("chartNetTotal", peso(trendTotals.net));
 
   dashboardChart = new Chart(document.getElementById("salesChart"), {
-    type: "line",
+    type: "bar",
     data: {
       labels: trend.labels,
       datasets: [
@@ -1155,45 +1178,89 @@ async function loadDashboard(){
           label: "Revenue",
           data: trend.revenue,
           borderColor: "#1f4e79",
-          backgroundColor: "rgba(31,78,121,.08)",
-          fill: true,
-          tension: .38,
-          pointRadius: 3,
-          pointHoverRadius: 4,
-          borderWidth: 2
+          backgroundColor: "rgba(31,78,121,.72)",
+          borderRadius: 5,
+          borderWidth: 1,
+          maxBarThickness: 34
         },
         {
           label: "Expenses",
           data: trend.expenses,
           borderColor: "#9f3a35",
-          backgroundColor: "rgba(159,58,53,.06)",
-          fill: true,
+          backgroundColor: "rgba(159,58,53,.68)",
+          borderRadius: 5,
+          borderWidth: 1,
+          maxBarThickness: 34
+        },
+        {
+          type: "line",
+          label: "Net Result",
+          data: trendTotals.netByPeriod,
+          borderColor: "#0f766e",
+          backgroundColor: "#0f766e",
+          fill: false,
           tension: .38,
-          pointRadius: 3,
-          pointHoverRadius: 4,
-          borderWidth: 2
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          borderWidth: 3
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
       plugins: {
         legend: {
           position: "top",
           labels: {
-            usePointStyle: true
+            usePointStyle: true,
+            boxWidth: 9,
+            color: "#24364b",
+            font: {
+              size: 11,
+              weight: "700"
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              return `${context.dataset.label}: ${peso(context.parsed.y || 0)}`;
+            },
+            afterBody(items) {
+              const revenueItem = items.find(item => item.dataset.label === "Revenue");
+              const expenseItem = items.find(item => item.dataset.label === "Expenses");
+              if (!revenueItem || !expenseItem) return "";
+              const net = number(revenueItem.parsed.y) - number(expenseItem.parsed.y);
+              return `Net explanation: ${peso(net)}`;
+            }
           }
         }
       },
       scales: {
         y: {
           beginAtZero: true,
+          title: {
+            display: true,
+            text: "Amount in Philippine Peso",
+            color: "#51657d",
+            font: {
+              size: 11,
+              weight: "700"
+            }
+          },
           grid: {
             color: "rgba(101,115,134,.16)"
           },
           ticks: {
-            color: "#657386"
+            color: "#657386",
+            callback(value) {
+              return compactPeso(value);
+            }
           }
         },
         x: {
@@ -1201,7 +1268,10 @@ async function loadDashboard(){
             display: false
           },
           ticks: {
-            color: "#657386"
+            color: "#657386",
+            font: {
+              weight: "700"
+            }
           }
         }
       }
