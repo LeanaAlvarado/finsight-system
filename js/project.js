@@ -18,6 +18,8 @@ const MATERIAL_CATALOG_KEY = "lemyu_material_catalog";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
 const MATERIAL_UNIT_OPTIONS = ["PCS", "MTR", "SET", "ROLL", "BOX", "PACK", "UNIT", "LOT"];
 const PROJECT_PAGE_SIZE = 10;
+const STANDARD_CONTRACT_DISCOUNT_PERCENT = 20;
+const STANDARD_CONTRACT_BALANCE_DAYS = 30;
 const projectListState = {
   search: "",
   status: "all",
@@ -895,6 +897,10 @@ function getContractFileName(contract = {}) {
   return `Contract_${contractNumber}_${clientName || "CLIENT"}.pdf`;
 }
 
+function getDiscountAmount(amount = 0, percent = STANDARD_CONTRACT_DISCOUNT_PERCENT) {
+  return Math.max(Number(amount || 0), 0) * (Number(percent || 0) / 100);
+}
+
 function getProjectDurationText(project = {}) {
   const durationDaysMatch = String(project.remarks || "").match(/^project duration days:\s*(.*)$/im);
   if (durationDaysMatch) {
@@ -990,12 +996,16 @@ async function buildApprovedQuotationSnapshot(project = {}) {
   const cctv = quotationType === "cctv" ? getCctvQuotationDetails(project) : null;
   const items = await getContractQuotationItems(project);
   const lineTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const totalContractPrice = Number(project.contract_amount || 0) || lineTotal;
+  const grossContractPrice = Number(project.contract_amount || 0) || lineTotal;
+  const discountPercent = STANDARD_CONTRACT_DISCOUNT_PERCENT;
+  const discountAmount = getDiscountAmount(grossContractPrice, discountPercent);
+  const totalContractPrice = Math.max(grossContractPrice - discountAmount, 0);
   const downPaymentAmount = getProjectDownPayment(project);
   const downPaymentPercent = getPercentFromAmount(downPaymentAmount, totalContractPrice);
   const balanceDue = Math.max(totalContractPrice - downPaymentAmount, 0);
   const scope = manpower?.workDescription || manpower?.scope || cctv?.intro || project.remarks || project.project_title || "Project services as stated in the approved quotation.";
-  const terms = manpower?.terms || cctv?.terms || "Payment and implementation terms shall follow the approved quotation and mutually confirmed billing schedule.";
+  const baseTerms = manpower?.terms || cctv?.terms || "Payment and implementation terms shall follow the approved quotation and mutually confirmed billing schedule.";
+  const terms = `${baseTerms}\n\nA standard ${discountPercent}% discount shall be deducted from the original contract amount. The remaining payable balance after discount and any amount paid shall be settled within ${STANDARD_CONTRACT_BALANCE_DAYS} days upon starting the project.`;
 
   return {
     quotation_type: quotationType,
@@ -1013,6 +1023,9 @@ async function buildApprovedQuotationSnapshot(project = {}) {
     start_date: project.start_date || "",
     target_completion: project.target_completion || "",
     items,
+    gross_contract_price: grossContractPrice,
+    discount_percent: discountPercent,
+    discount_amount: discountAmount,
     total_contract_price: totalContractPrice,
     down_payment_percent: downPaymentPercent,
     down_payment_amount: downPaymentAmount,
@@ -1126,8 +1139,13 @@ async function buildProjectContractRecord(project, existingRecord = null) {
     quotation_type: snapshot.quotation_type,
     quotation_snapshot: snapshot,
     contract_amount: snapshot.total_contract_price,
+    gross_contract_amount: snapshot.gross_contract_price,
+    discount_percent: snapshot.discount_percent,
+    discount_amount: snapshot.discount_amount,
     down_payment: snapshot.down_payment_amount,
     balance_due: snapshot.remaining_balance,
+    gross_contract_display: peso(snapshot.gross_contract_price),
+    discount_display: peso(snapshot.discount_amount),
     contract_price_display: peso(snapshot.total_contract_price),
     down_payment_display: peso(snapshot.down_payment_amount),
     balance_due_display: peso(snapshot.remaining_balance),
@@ -1280,13 +1298,15 @@ function buildFormalContractHtml(contract = {}, options = {}) {
           <thead><tr><th>Description</th><th>Quantity</th><th>Unit</th><th>Unit Price</th><th>Amount</th></tr></thead>
           <tbody>${getContractItemsRows(snapshot)}</tbody>
           <tfoot>
-            <tr><td colspan="4">TOTAL CONTRACT PRICE</td><td>${peso(snapshot.total_contract_price || contract.contract_amount || 0)}</td></tr>
+            <tr><td colspan="4">ORIGINAL CONTRACT AMOUNT</td><td>${peso(snapshot.gross_contract_price || snapshot.total_contract_price || contract.gross_contract_amount || contract.contract_amount || 0)}</td></tr>
+            <tr><td colspan="4">LESS: STANDARD CONTRACT DISCOUNT (${Number(snapshot.discount_percent ?? STANDARD_CONTRACT_DISCOUNT_PERCENT).toFixed(2)}%)</td><td>${peso(snapshot.discount_amount || contract.discount_amount || 0)}</td></tr>
+            <tr><td colspan="4">NET CONTRACT PRICE AFTER DISCOUNT</td><td>${peso(snapshot.total_contract_price || contract.contract_amount || 0)}</td></tr>
           </tfoot>
         </table>
-        <p>The total contract price is ${peso(snapshot.total_contract_price || contract.contract_amount || 0)}, exclusive of additional work not covered by the approved scope, unless otherwise expressly stated in writing.</p>
+        <p>The original contract amount is ${peso(snapshot.gross_contract_price || snapshot.total_contract_price || contract.gross_contract_amount || contract.contract_amount || 0)}. A standard ${Number(snapshot.discount_percent ?? STANDARD_CONTRACT_DISCOUNT_PERCENT).toFixed(2)}% discount equivalent to ${peso(snapshot.discount_amount || contract.discount_amount || 0)} shall be deducted from the original contract amount. The net contract price after discount is ${peso(snapshot.total_contract_price || contract.contract_amount || 0)}, exclusive of additional work not covered by the approved scope, unless otherwise expressly stated in writing.</p>
       </section>
 
-      ${contractClause("4. PAYMENT TERMS", `<p>4.1 The Client shall pay a down payment of ${Number(snapshot.down_payment_percent || 0).toFixed(2)}% amounting to ${peso(snapshot.down_payment_amount || 0)} upon signing of this Agreement and before mobilization.</p><p>4.2 The remaining balance of ${peso(snapshot.remaining_balance || 0)} shall be paid according to the billing schedule mutually confirmed by the Parties or upon completion of the agreed services.</p><p>4.3 ${quotationText(snapshot.payment_terms || "Payments shall follow the approved quotation terms.")}</p><p>4.4 Delayed payments may result in suspension of services after written notice, without prejudice to the Service Provider's right to collect amounts already due.</p>`)}
+      ${contractClause("4. PAYMENT TERMS", `<p>4.1 The Client acknowledges that a standard ${Number(snapshot.discount_percent ?? STANDARD_CONTRACT_DISCOUNT_PERCENT).toFixed(2)}% discount has been applied to the original contract amount, resulting in a net contract price of ${peso(snapshot.total_contract_price || contract.contract_amount || 0)}.</p><p>4.2 Any amount already paid or down payment amounting to ${peso(snapshot.down_payment_amount || 0)} shall be deducted from the net contract price.</p><p>4.3 The remaining balance of ${peso(snapshot.remaining_balance || 0)} shall be paid within ${STANDARD_CONTRACT_BALANCE_DAYS} days upon starting the project.</p><p>4.4 Other approved quotation payment terms shall apply only when they are not inconsistent with the standard 20% discount and 30-day balance payment requirement stated in this Agreement.</p><p>4.5 ${quotationText(snapshot.payment_terms || "Payments shall follow the approved quotation terms.")}</p><p>4.6 Delayed payments may result in suspension of services after written notice, without prejudice to the Service Provider's right to collect amounts already due.</p>`)}
 
       ${contractClause("5. RESPONSIBILITIES OF THE SERVICE PROVIDER", `<p>5.1 Deploy qualified and properly instructed personnel, materials, tools, or technical resources required by the approved quotation.</p><p>5.2 Perform the services with reasonable skill, care, diligence, and professionalism.</p><p>5.3 Comply with applicable occupational health and safety requirements.</p><p>5.4 Maintain project records and promptly report material issues affecting the work.</p><p>5.5 Protect confidential information obtained during the engagement.</p>`)}
 
