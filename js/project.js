@@ -224,6 +224,22 @@ function getPprStatusClass(status = "") {
   return "neutral";
 }
 
+function isPostAccomplishmentProject(project = {}) {
+  const status = String(project.status || project.project_status || "").trim().toLowerCase();
+  return ["completed", "complete", "finished", "finish", "done", "closed", "turnover"].includes(status);
+}
+
+function getProjectReportMeta(project = {}) {
+  const isPar = isPostAccomplishmentProject(project);
+  return {
+    code: isPar ? "PAR" : "PPR",
+    actionLabel: isPar ? "Generate PAR" : "Generate PPR",
+    documentTitle: isPar ? "Post Accomplishment Report" : "Project Progress Report",
+    coverTitle: isPar ? "POST ACCOMPLISHMENT REPORT" : "PROJECT PROGRESS REPORT",
+    filePrefix: isPar ? "PAR" : "PPR"
+  };
+}
+
 function getPprDaysRemaining(project = {}) {
   if (!project.target_completion) return "Not Available";
   const target = new Date(project.target_completion);
@@ -3302,8 +3318,9 @@ function renderProjectList() {
   projectTableBody.innerHTML = pageProjects.map(project => {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
+    const reportMeta = getProjectReportMeta(project);
     const actionLinks = isOperations
-      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>`
+      ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>`
       : isFinanceScope()
       ? `<a href="#" onclick="viewProject('${project.id}'); return false;">View Costing</a>`
       : `
@@ -3311,7 +3328,7 @@ function renderProjectList() {
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
-          <a href="#" onclick="generatePPR('${project.id}'); return false;">Generate PPR</a>
+          <a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
         `;
 
@@ -3953,7 +3970,7 @@ if (editProjectForm) {
 // PRINT REPORT WITH LOGO
 window.printProject = async function(id) {
   if (isOperationsScope()) {
-    alert("Project Manager / Operations Staff can generate PPR only.");
+    alert("Project Manager / Operations Staff can generate project reports only.");
     return;
   }
 
@@ -4059,10 +4076,11 @@ window.printProject = async function(id) {
   }, 500);
 };
 
-// GENERATE ERP-STYLE PROJECT PROGRESS REPORT
+// GENERATE ERP-STYLE PROJECT PROGRESS / POST ACCOMPLISHMENT REPORT
 window.generatePPR = async function(id) {
-  const project = await getProjectForAction(id, "PPR");
+  const project = await getProjectForAction(id, "project report");
   if (!project) return;
+  const reportMeta = getProjectReportMeta(project);
 
   let feedbacks = [];
   let projectFiles = [];
@@ -4073,8 +4091,8 @@ window.generatePPR = async function(id) {
       supabase.from("project_files").select("*").eq("project_id", id).order("created_at", { ascending: false })
     ]);
 
-    if (feedbackResult.error) console.warn("PPR feedback records could not be loaded.", feedbackResult.error);
-    if (filesResult.error) console.warn("PPR project files could not be loaded.", filesResult.error);
+    if (feedbackResult.error) console.warn(`${reportMeta.code} feedback records could not be loaded.`, feedbackResult.error);
+    if (filesResult.error) console.warn(`${reportMeta.code} project files could not be loaded.`, filesResult.error);
 
     feedbacks = feedbackResult.data || [];
     projectFiles = applyStoredProjectFileComments(filesResult.data || []);
@@ -4101,11 +4119,11 @@ window.generatePPR = async function(id) {
     .sort((a, b) => new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0))[0];
   const { feedbackLink, qrUrl } = buildPprQrUrl(id);
   const pages = [];
-  const pprFileName = `PPR_${String(project.project_code || "PROJECT").replace(/[^\w-]+/g, "_")}_${generatedDate.toISOString().slice(0, 10)}.pdf`;
+  const pprFileName = `${reportMeta.filePrefix}_${String(project.project_code || "PROJECT").replace(/[^\w-]+/g, "_")}_${generatedDate.toISOString().slice(0, 10)}.pdf`;
 
   const pprWindow = window.open("", "_blank");
   if (!pprWindow) {
-    alert("Please allow pop-ups to generate PPR.");
+    alert(`Please allow pop-ups to generate ${reportMeta.code}.`);
     return;
   }
 
@@ -4135,7 +4153,7 @@ window.generatePPR = async function(id) {
       </div>
       <div class="cover-main">
         <p class="eyebrow">CONFIDENTIAL PROJECT DOCUMENT</p>
-        <h1>PROJECT PROGRESS REPORT</h1>
+        <h1>${reportMeta.coverTitle}</h1>
         <h2>${safePprText(project.project_title)}</h2>
         <div class="cover-meta">
           <div><span>Project Code</span><strong>${safePprText(project.project_code)}</strong></div>
@@ -4154,7 +4172,7 @@ window.generatePPR = async function(id) {
 
   pages.push(`
     <section class="ppr-page">
-      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>${reportMeta.documentTitle} - ${safePprText(project.project_code)}</span></div></header>
       <h2>Executive Project Dashboard</h2>
       <div class="kpi-grid">
         <div class="kpi-card"><span>Overall Project Progress</span><strong>${completionText}</strong>${progressBar(completionBar)}</div>
@@ -4176,7 +4194,7 @@ window.generatePPR = async function(id) {
 
   pages.push(`
     <section class="ppr-page">
-      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>${reportMeta.documentTitle} - ${safePprText(project.project_code)}</span></div></header>
       <h2>Project Information and Scope</h2>
       <div class="two-col">
         <div class="section-card">
@@ -4224,7 +4242,7 @@ window.generatePPR = async function(id) {
   photoPages.forEach((photoChunk, pageIndex) => {
     pages.push(`
       <section class="ppr-page">
-        <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+        <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>${reportMeta.documentTitle} - ${safePprText(project.project_code)}</span></div></header>
         <h2>PROJECT ACCOMPLISHMENT PHOTOGRAPHS</h2>
         ${
           photoChunk.length
@@ -4251,7 +4269,7 @@ window.generatePPR = async function(id) {
 
   pages.push(`
     <section class="ppr-page">
-      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>Project Progress Report - ${safePprText(project.project_code)}</span></div></header>
+      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>${reportMeta.documentTitle} - ${safePprText(project.project_code)}</span></div></header>
       <h2>Client Feedback and Approval</h2>
       <div class="feedback-qr-grid">
         <div class="section-card">
@@ -4288,7 +4306,7 @@ window.generatePPR = async function(id) {
   pprWindow.document.write(`
     <html>
     <head>
-      <title>Project Progress Report</title>
+      <title>${reportMeta.documentTitle}</title>
       <style>
         @page{size:A4;margin:0;}
         *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -4468,7 +4486,7 @@ function renderPendingProgressFiles() {
             <span>${file.type || "File"}${file.size ? ` - ${(file.size / 1024).toFixed(1)} KB` : ""}</span>
             <label class="inline-upload-comment">
               Photo Comment
-              <textarea rows="2" placeholder="Comment shown in PPR for this photo" oninput="updatePendingProgressComment(${index}, this.value)">${escapeProjectHtml(entry.comment || "")}</textarea>
+              <textarea rows="2" placeholder="Comment shown in the project report for this photo" oninput="updatePendingProgressComment(${index}, this.value)">${escapeProjectHtml(entry.comment || "")}</textarea>
             </label>
           </div>
           <button type="button" class="danger-btn" onclick="removePendingProgressFile(${index})">Remove</button>
@@ -4521,7 +4539,7 @@ async function loadProgressFiles(projectId) {
             <span>${file.uploaded_at ? new Date(file.uploaded_at).toLocaleString() : ""}</span>
             <label class="inline-upload-comment">
               Photo Comment
-              <textarea id="progress_file_comment_${file.id}" rows="2" placeholder="Comment shown in PPR for this photo">${escapeProjectHtml(file.description || "")}</textarea>
+              <textarea id="progress_file_comment_${file.id}" rows="2" placeholder="Comment shown in the project report for this photo">${escapeProjectHtml(file.description || "")}</textarea>
             </label>
             <button type="button" onclick="updateProgressFileComment('${file.id}')">Save Comment</button>
           </div>
