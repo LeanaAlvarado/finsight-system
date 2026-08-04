@@ -232,11 +232,11 @@ function isPostAccomplishmentProject(project = {}) {
 function getProjectReportMeta(project = {}) {
   const isPar = isPostAccomplishmentProject(project);
   return {
-    code: isPar ? "PAR" : "PPR",
-    actionLabel: isPar ? "Generate PAR" : "Generate PPR",
-    documentTitle: isPar ? "Post Accomplishment Report" : "Project Progress Report",
-    coverTitle: isPar ? "POST ACCOMPLISHMENT REPORT" : "PROJECT PROGRESS REPORT",
-    filePrefix: isPar ? "PAR" : "PPR"
+    code: isPar ? "PAR" : "PR",
+    actionLabel: isPar ? "Generate PAR" : "Generate PR",
+    documentTitle: isPar ? "Post Accomplishment Report" : "Project Report",
+    coverTitle: isPar ? "POST ACCOMPLISHMENT REPORT" : "PROJECT REPORT",
+    filePrefix: isPar ? "PAR" : "PR"
   };
 }
 
@@ -4060,8 +4060,8 @@ window.printProject = async function(id) {
         <tr><td>Location</td><td>${project.location || "-"}</td></tr>
         <tr><td>Status</td><td>${project.status || "-"}</td></tr>
         ${financialRows}
-        <tr><td>PPR Prepared By</td><td>${project.ppr_prepared_by || "-"}</td></tr>
-        <tr><td>PPR Noted By</td><td>${project.ppr_noted_by || "-"}</td></tr>
+        <tr><td>Report Prepared By</td><td>${project.ppr_prepared_by || "-"}</td></tr>
+        <tr><td>Report Noted By</td><td>${project.ppr_noted_by || "-"}</td></tr>
         <tr><td>Remarks</td><td>${project.remarks || "-"}</td></tr>
       </table>
 
@@ -4252,7 +4252,7 @@ window.generatePPR = async function(id) {
                   const photoComment = getPprPhotoDescription(file);
                   return `
                     <article class="photo-card">
-                      <img src="${escapeProjectHtml(file.file_url)}" alt="${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}" onerror="console.warn('Skipped broken PPR image:', this.src); this.closest('.photo-card').style.display='none';">
+                      <img src="${escapeProjectHtml(file.file_url)}" alt="${escapeProjectHtml(getPprPhotoTitle(file, photoNumber - 1))}" onerror="console.warn('Skipped broken project report image:', this.src); this.closest('.photo-card').style.display='none';">
                       <div class="photo-caption">
                         <div><strong>PHOTO ${String(photoNumber).padStart(2, "0")}</strong></div>
                         <p><b>Comment:</b> ${escapeProjectHtml(photoComment || "No comment saved")}</p>
