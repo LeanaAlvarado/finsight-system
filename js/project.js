@@ -230,13 +230,12 @@ function isPostAccomplishmentProject(project = {}) {
 }
 
 function getProjectReportMeta(project = {}) {
-  const isPar = isPostAccomplishmentProject(project);
   return {
-    code: isPar ? "PAR" : "PR",
-    actionLabel: isPar ? "Generate PAR" : "Generate PR",
-    documentTitle: isPar ? "Post Accomplishment Report" : "Project Report",
-    coverTitle: isPar ? "POST ACCOMPLISHMENT REPORT" : "PROJECT REPORT",
-    filePrefix: isPar ? "PAR" : "PR"
+    code: "PAR",
+    actionLabel: "Generate PAR",
+    documentTitle: "Post Accomplishment Report",
+    coverTitle: "POST ACCOMPLISHMENT REPORT",
+    filePrefix: "PAR"
   };
 }
 
