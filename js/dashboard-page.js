@@ -314,7 +314,8 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const materialTotal = inventory
       .filter(item => recordBelongsToProject(item, project))
       .reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
-    const totalCost = budget + tax + expenseTotal + payrollTotal + materialTotal;
+    const appliedMaterialCost = budget > 0 ? 0 : materialTotal;
+    const totalCost = budget + tax + expenseTotal + payrollTotal + appliedMaterialCost;
     const profit = revenue - totalCost;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     const costRatio = revenue > 0 ? (totalCost / revenue) * 100 : 0;
@@ -328,6 +329,7 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
       expenseTotal,
       payrollTotal,
       materialTotal,
+      appliedMaterialCost,
       totalCost,
       profit,
       margin,
@@ -1180,11 +1182,13 @@ async function loadDashboard(){
   const expenseTotal = expensePieces.operatingExpenseTotal;
   const projectMaterials = getApprovedCompletedCctvQuotationMaterials(projects, inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
+  const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
   latestDashboardProjects = projects;
   latestProjectMaterials = projectMaterials;
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
-  const totalCost = expenseTotal + projectMaterialCost + projectBudgetTotal + taxTotal;
+  const appliedProjectMaterialCost = projectAnalytics.reduce((sum, item) => sum + number(item.appliedMaterialCost), 0);
+  const totalCost = expenseTotal + projectBudgetTotal + taxTotal + appliedProjectMaterialCost;
   const profit = revenue - totalCost;
 
   setText("totalRevenue", peso(revenue));
