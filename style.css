@@ -442,11 +442,7 @@ body{
 }
 
 .revenue-kpi-grid{
-  grid-template-columns:repeat(4,minmax(0,1fr));
-}
-
-.revenue-kpi-grid .kpi:last-child{
-  grid-column:1 / -1;
+  grid-template-columns:repeat(5,minmax(0,1fr));
 }
 
 .grid2{
@@ -2977,7 +2973,7 @@ tbody tr:hover{
   }
 
   .revenue-kpi-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
   }
 
   .dashboard-kpi-grid{
