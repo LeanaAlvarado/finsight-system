@@ -392,12 +392,14 @@ async function loadPayrollAndExpenses() {
 
   const revenueTotal = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
-  const deductionTotal = payroll.reduce((sum, item) => sum + number(item.deduction_amount), 0);
-  const expenseTotal = expenses.reduce((sum, item) => sum + number(item.amount), 0);
+  const otherExpenseTotal = expenses
+    .filter(item => !isPayrollExpense(item))
+    .reduce((sum, item) => sum + number(item.amount), 0);
+  const expenseTotal = payrollTotal + otherExpenseTotal;
 
   setText("totalPayroll", peso(payrollTotal));
   setText("totalExpenses", peso(expenseTotal));
-  setText("netPayroll", peso(payrollTotal - deductionTotal));
+  setText("otherExpenses", peso(otherExpenseTotal));
   setText("operatingBalance", peso(revenueTotal - expenseTotal));
 
   renderExpenseTable();
