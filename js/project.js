@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, updateWithOptionalColumns } from "./supabase.js";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -10,6 +10,7 @@ let activeSmartContract = null;
 let projectCurrentPage = 1;
 let pendingProgressFiles = [];
 const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
+const EXPENSE_PROOF_BUCKETS = ["expense-proofs", "expenses", "receipts", "proofs", "progress-files", "contracts"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_PPR_CONFIGS_KEY = "lemyu_ppr_report_configs";
@@ -110,6 +111,11 @@ function applyOperationsProjectScope() {
   const editSection = document.getElementById("editProjectSection");
   if (editSection) editSection.style.display = "none";
 
+  const operationsExpenseSection = document.getElementById("operationsExpenseSection");
+  if (operationsExpenseSection) operationsExpenseSection.style.display = "block";
+
+  const listHeading = document.querySelector("#projectListSection h3");
+  if (listHeading) listHeading.innerHTML = `<span class="num">02</span> Project Monitoring List`;
 }
 
 function assetUrl(path) {
@@ -641,6 +647,25 @@ function createContractId() {
 
 function getProjectById(id) {
   return allProjects.find(project => project.id == id);
+}
+
+function getProjectDisplayName(project = {}) {
+  return project.project_title || project.project_code || project.client_name || "Untitled Project";
+}
+
+function renderOperationsExpenseProjectOptions() {
+  const select = document.getElementById("operationsExpenseProject");
+  if (!select) return;
+
+  const currentValue = select.value;
+  select.innerHTML = `<option value="">Select Project</option>`;
+  allProjects.forEach(project => {
+    select.innerHTML += `<option value="${escapeProjectHtml(project.id)}">${escapeProjectHtml(getProjectDisplayName(project))}</option>`;
+  });
+
+  if (allProjects.some(project => String(project.id || "") === String(currentValue || ""))) {
+    select.value = currentValue;
+  }
 }
 
 function isLocalProjectId(id = "") {
@@ -3395,6 +3420,7 @@ async function loadProjects() {
   const projects = mergeProjects(error ? [] : (supabaseProjects || []));
   allProjects = projects;
   setNextProjectCode(allProjects);
+  renderOperationsExpenseProjectOptions();
 
   const { data: expenseData = [], error: expenseError } = await supabase
     .from("expenses")
@@ -3430,6 +3456,110 @@ window.addEventListener("popstate", () => {
   } else {
     window.backToProjectList();
   }
+});
+
+document.getElementById("operationsExpenseForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const projectId = document.getElementById("operationsExpenseProject")?.value || "";
+  const category = document.getElementById("operationsExpenseCategory")?.value || "";
+  const amountField = document.getElementById("operationsExpenseAmount");
+  const dateField = document.getElementById("operationsExpenseDate");
+  const descriptionField = document.getElementById("operationsExpenseDescription");
+  const proofInput = document.getElementById("operationsExpenseProof");
+  const submitBtn = document.getElementById("operationsExpenseSubmitBtn");
+  const project = getProjectById(projectId);
+  const amount = Number(amountField?.value || 0);
+
+  if (!project) {
+    alert("Please select a project.");
+    return;
+  }
+
+  if (isLocalProjectId(projectId)) {
+    alert("This project must be synced to the cloud before adding expenses.");
+    return;
+  }
+
+  if (!category) {
+    alert("Please select an expense category.");
+    return;
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    alert("Please enter a valid expense amount.");
+    return;
+  }
+
+  if (!dateField?.value) {
+    alert("Please select the expense date.");
+    return;
+  }
+
+  const expenseRecord = {
+    project_id: project.id,
+    project_code: project.project_code || "",
+    project_title: project.project_title || "",
+    client_name: project.client_name || "",
+    category,
+    amount,
+    date: dateField.value,
+    expense_date: dateField.value,
+    description: descriptionField?.value || "",
+    uploaded_by: getCurrentAccountName() || localStorage.getItem("lemyu_user_email") || "Project Monitoring",
+    source_module: "Project Monitoring"
+  };
+
+  const proofFile = proofInput?.files?.[0] || null;
+  if (proofFile) {
+    try {
+      const uploadedFile = await uploadProjectFile(proofFile, "expense-proofs", EXPENSE_PROOF_BUCKETS);
+      expenseRecord.proof_url = uploadedFile.publicUrl;
+      expenseRecord.proof_name = proofFile.name;
+      expenseRecord.receipt_url = uploadedFile.publicUrl;
+      expenseRecord.receipt_name = proofFile.name;
+    } catch (uploadError) {
+      alert("Proof upload error: " + uploadError.message);
+      return;
+    }
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
+  }
+
+  const result = await insertWithOptionalColumns(
+    "expenses",
+    expenseRecord,
+    [
+      "date",
+      "expense_date",
+      "project_code",
+      "project_title",
+      "client_name",
+      "proof_url",
+      "proof_name",
+      "receipt_url",
+      "receipt_name",
+      "uploaded_by",
+      "source_module"
+    ]
+  );
+
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Save Expense";
+  }
+
+  if (result.error) {
+    alert("Error saving project expense: " + result.error.message);
+    return;
+  }
+
+  event.target.reset();
+  renderOperationsExpenseProjectOptions();
+  alert("Project expense saved successfully.");
 });
 
 // SAVE OR UPDATE PROJECT

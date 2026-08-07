@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260807-revenue-five-kpi-v102">
+<link rel="stylesheet" href="style.css?v=20260807-operations-expense-v103">
 </head>
 
 <body>
@@ -57,6 +57,60 @@
       <strong>Project Records</strong>
       <span>Contracts, status, progress files, project documents, and PAR generation.</span>
     </a>
+  </section>
+
+  <!-- OPERATIONS EXPENSE ENTRY -->
+  <section id="operationsExpenseSection" class="card" style="display:none;">
+    <h3><span class="num">01</span> Add Project Expense</h3>
+    <p class="muted">Record project expenses spent during operations for Finance review.</p>
+
+    <form id="operationsExpenseForm">
+      <div class="form-grid">
+        <div>
+          <label>Select Project</label>
+          <select id="operationsExpenseProject" required>
+            <option value="">Select Project</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Expense Category</label>
+          <select id="operationsExpenseCategory" required>
+            <option value="">Select Category</option>
+            <option>Gas</option>
+            <option>Materials</option>
+            <option>Transportation</option>
+            <option>Tools and Equipment</option>
+            <option>Office Supplies</option>
+            <option>Others</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Amount</label>
+          <input id="operationsExpenseAmount" class="amount-input" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required>
+        </div>
+
+        <div>
+          <label>Date</label>
+          <input id="operationsExpenseDate" type="date" required>
+        </div>
+
+        <div>
+          <label>Proof of Expense</label>
+          <input id="operationsExpenseProof" type="file" accept="image/*,.pdf">
+        </div>
+      </div>
+
+      <br>
+
+      <label>Description</label>
+      <textarea id="operationsExpenseDescription" placeholder="Expense details or remarks"></textarea>
+
+      <div class="form-actions">
+        <button type="submit" id="operationsExpenseSubmitBtn">Save Expense</button>
+      </div>
+    </form>
   </section>
 
   <!-- PROJECT MONITORING LIST -->
@@ -446,7 +500,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260807-revenue-five-kpi-v102"></script>
+<script type="module" src="js/app.js?v=20260807-operations-expense-v103"></script>
 
 </body>
 </html>
