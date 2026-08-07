@@ -390,17 +390,24 @@ async function loadPayrollAndExpenses() {
   populateProjectSelects();
   populateExpenseCategoryFilter(expenses);
 
-  const revenueTotal = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
+  const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
+  const projectPayrollTotal = payroll
+    .filter(item => item.project_id)
+    .reduce((sum, item) => sum + number(item.salary_amount), 0);
   const otherExpenseTotal = expenses
     .filter(item => !isPayrollExpense(item))
     .reduce((sum, item) => sum + number(item.amount), 0);
+  const projectOtherExpenseTotal = expenses
+    .filter(item => item.project_id && !isPayrollExpense(item))
+    .reduce((sum, item) => sum + number(item.amount), 0);
   const expenseTotal = payrollTotal + otherExpenseTotal;
+  const projectBudgetBalance = projectBudgetTotal - projectPayrollTotal - projectOtherExpenseTotal;
 
   setText("totalPayroll", peso(payrollTotal));
   setText("totalExpenses", peso(expenseTotal));
   setText("otherExpenses", peso(otherExpenseTotal));
-  setText("operatingBalance", peso(revenueTotal - expenseTotal));
+  setText("operatingBalance", peso(projectBudgetBalance));
 
   renderExpenseTable();
 }

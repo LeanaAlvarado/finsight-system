@@ -314,8 +314,12 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const materialTotal = inventory
       .filter(item => recordBelongsToProject(item, project))
       .reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
+    const actualBudgetSpend = expenseTotal + payrollTotal;
+    const budgetOverrun = budget > 0 ? Math.max(actualBudgetSpend - budget, 0) : actualBudgetSpend;
+    const budgetRemaining = budget > 0 ? Math.max(budget - actualBudgetSpend, 0) : 0;
+    const budgetUtilization = budget > 0 ? (actualBudgetSpend / budget) * 100 : 0;
     const appliedMaterialCost = budget > 0 ? 0 : materialTotal;
-    const totalCost = budget + tax + expenseTotal + payrollTotal + appliedMaterialCost;
+    const totalCost = budget + tax + appliedMaterialCost + budgetOverrun;
     const profit = revenue - totalCost;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     const costRatio = revenue > 0 ? (totalCost / revenue) * 100 : 0;
@@ -329,6 +333,10 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
       expenseTotal,
       payrollTotal,
       materialTotal,
+      actualBudgetSpend,
+      budgetOverrun,
+      budgetRemaining,
+      budgetUtilization,
       appliedMaterialCost,
       totalCost,
       profit,
@@ -339,8 +347,8 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
 }
 
 function getProjectStatus(analysis) {
-  if (analysis.profit < 0 || analysis.costRatio >= 90) return "Critical";
-  if (analysis.costRatio >= 70 || analysis.margin < 15) return "Watch";
+  if (analysis.profit < 0 || analysis.budgetOverrun > 0) return "Critical";
+  if (analysis.budgetUtilization >= ALERT_WARNING_THRESHOLD || analysis.costRatio >= 90 || analysis.margin < 15) return "Watch";
   return "Healthy";
 }
 
@@ -631,15 +639,26 @@ window.generateProjectMaterialsReport = function() {
   reportWindow.document.close();
 };
 
-function getProjectActualExpenses(project, expenses = []) {
+function getProjectActualExpenses(project, expenses = [], payroll = []) {
   const linkedExpenses = expenses
     .filter(expense => recordBelongsToProject(expense, project))
-    .filter(expense => normalizeMatchValue(expense.category) !== "payroll")
+    .filter(expense => payroll.length === 0 || normalizeMatchValue(expense.category) !== "payroll")
     .filter(isValidatedProjectExpense);
+  const linkedPayroll = payroll
+    .filter(item => recordBelongsToProject(item, project))
+    .map(item => ({
+      id: item.id,
+      project_id: item.project_id,
+      project_code: item.project_code,
+      category: "Payroll",
+      amount: item.salary_amount,
+      date: item.pay_date,
+      description: item.description || item.payroll_description || item.employee_name
+    }));
 
   const uniqueExpenses = new Map();
 
-  linkedExpenses.forEach((expense, index) => {
+  [...linkedExpenses, ...linkedPayroll].forEach((expense, index) => {
     const key = expense.id
       || [
         expense.project_id,
@@ -672,7 +691,7 @@ function getCostAlertSortRank(alert) {
   return 2;
 }
 
-function buildCostOverrunAlerts(projects, expenses, savedAlerts = []) {
+function buildCostOverrunAlerts(projects, expenses, savedAlerts = [], payroll = []) {
   const savedByProjectSeverity = new Map(
     savedAlerts.map(alert => [`${alert.project_id}|${alert.severity}`, alert])
   );
@@ -685,7 +704,7 @@ function buildCostOverrunAlerts(projects, expenses, savedAlerts = []) {
       const projectIdentifier = String(project.id || project.project_code || getProjectLabel(project)).trim();
       if (!projectIdentifier) return null;
 
-      const actualExpenses = getProjectActualExpenses(project, expenses);
+      const actualExpenses = getProjectActualExpenses(project, expenses, payroll);
       const utilization = (actualExpenses / budget) * 100;
       const severity = getAlertSeverity(utilization);
       if (!severity) return null;
@@ -1174,7 +1193,7 @@ async function loadDashboard(){
 
   const savedCostAlerts = canViewCostOverrunAlerts() ? await loadSavedCostAlerts() : [];
   latestCostAlerts = canViewCostOverrunAlerts()
-    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(projects, expenses, savedCostAlerts), savedCostAlerts)
+    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(projects, expenses, savedCostAlerts, payroll), savedCostAlerts)
     : [];
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
@@ -1188,7 +1207,7 @@ async function loadDashboard(){
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
   const appliedProjectMaterialCost = projectAnalytics.reduce((sum, item) => sum + number(item.appliedMaterialCost), 0);
-  const totalCost = expenseTotal + projectBudgetTotal + taxTotal + appliedProjectMaterialCost;
+  const totalCost = projectAnalytics.reduce((sum, item) => sum + number(item.totalCost), 0);
   const profit = revenue - totalCost;
 
   setText("totalRevenue", peso(revenue));
