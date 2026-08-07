@@ -107,6 +107,27 @@ function addCategoryTotal(categoryTotals, category, amount) {
   categoryTotals.set(label, (categoryTotals.get(label) || 0) + number(amount));
 }
 
+function isPayrollExpense(expense = {}) {
+  return normalizeMatchValue(expense.category) === "payroll";
+}
+
+function getDashboardExpensePieces(expenses = [], payroll = []) {
+  const nonPayrollExpenses = expenses.filter(expense => !isPayrollExpense(expense));
+  const payrollExpenseFallback = payroll.length ? [] : expenses.filter(isPayrollExpense);
+  const nonPayrollExpenseTotal = nonPayrollExpenses.reduce((sum, expense) => sum + number(expense.amount), 0);
+  const payrollTotal = payroll.length
+    ? payroll.reduce((sum, item) => sum + number(item.salary_amount), 0)
+    : payrollExpenseFallback.reduce((sum, expense) => sum + number(expense.amount), 0);
+
+  return {
+    nonPayrollExpenses,
+    payrollExpenseFallback,
+    nonPayrollExpenseTotal,
+    payrollTotal,
+    operatingExpenseTotal: nonPayrollExpenseTotal + payrollTotal
+  };
+}
+
 function compactPeso(value = 0) {
   const amount = number(value);
   const abs = Math.abs(amount);
@@ -186,9 +207,14 @@ function getMonthLabel(date) {
   });
 }
 
-function getTrendMonths(projects, expenses) {
-  const allDates = [...projects, ...expenses]
-    .map(record => new Date(getRecordDate(record)))
+function getTrendMonths(projects, expenses, payroll = []) {
+  const payrollDates = payroll.map(record => record.pay_date || record.date || record.created_at);
+  const allDates = [
+    ...projects.map(record => getRecordDate(record)),
+    ...expenses.map(record => getRecordDate(record)),
+    ...payrollDates
+  ]
+    .map(value => new Date(value))
     .filter(date => !Number.isNaN(date.getTime()));
   const endDate = allDates.length
     ? new Date(Math.max(...allDates.map(date => date.getTime())))
@@ -208,10 +234,11 @@ function getTrendMonths(projects, expenses) {
   return months;
 }
 
-function getMonthlyTrend(projects, expenses) {
-  const months = getTrendMonths(projects, expenses);
+function getMonthlyTrend(projects, expenses, payroll = []) {
+  const months = getTrendMonths(projects, expenses, payroll);
   const revenueByMonth = new Map(months.map(month => [month.key, 0]));
   const expensesByMonth = new Map(months.map(month => [month.key, 0]));
+  const expensePieces = getDashboardExpensePieces(expenses, payroll);
 
   projects.forEach(project => {
     const date = new Date(getRecordDate(project));
@@ -221,11 +248,19 @@ function getMonthlyTrend(projects, expenses) {
     }
   });
 
-  expenses.forEach(expense => {
+  [...expensePieces.nonPayrollExpenses, ...expensePieces.payrollExpenseFallback].forEach(expense => {
     const date = new Date(getRecordDate(expense));
     const key = getMonthKey(date);
     if (expensesByMonth.has(key)) {
       expensesByMonth.set(key, expensesByMonth.get(key) + number(expense.amount));
+    }
+  });
+
+  payroll.forEach(item => {
+    const date = new Date(item.pay_date || item.date || item.created_at || new Date());
+    const key = getMonthKey(date);
+    if (expensesByMonth.has(key)) {
+      expensesByMonth.set(key, expensesByMonth.get(key) + number(item.salary_amount));
     }
   });
 
@@ -261,16 +296,21 @@ function showDashboardUser() {
 }
 
 function getProjectAnalytics(projects, expenses, payroll, inventory) {
+  const hasPayrollRecords = payroll.length > 0;
   return projects.map(project => {
     const revenue = number(project.contract_amount);
     const budget = number(project.project_budget);
     const tax = getTaxAmount(project);
     const expenseTotal = expenses
-      .filter(expense => recordBelongsToProject(expense, project) && expense.category !== "Payroll")
+      .filter(expense => recordBelongsToProject(expense, project) && !isPayrollExpense(expense))
       .reduce((sum, expense) => sum + number(expense.amount), 0);
-    const payrollTotal = payroll
-      .filter(item => recordBelongsToProject(item, project))
-      .reduce((sum, item) => sum + number(item.salary_amount), 0);
+    const payrollTotal = hasPayrollRecords
+      ? payroll
+        .filter(item => recordBelongsToProject(item, project))
+        .reduce((sum, item) => sum + number(item.salary_amount), 0)
+      : expenses
+        .filter(expense => recordBelongsToProject(expense, project) && isPayrollExpense(expense))
+        .reduce((sum, expense) => sum + number(expense.amount), 0);
     const materialTotal = inventory
       .filter(item => recordBelongsToProject(item, project))
       .reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
@@ -1051,12 +1091,13 @@ function renderCategoryBreakdownList(categoryTotals) {
 }
 
 function renderBusinessIntelligence(projects, expenses, payroll, projectMaterials, revenue, costAlerts = []) {
-  const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
+  const expensePieces = getDashboardExpensePieces(expenses, payroll);
+  const payrollTotal = expensePieces.payrollTotal;
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
   const categoryTotals = new Map();
 
-  expenses.forEach(expense => addCategoryTotal(categoryTotals, expense.category, expense.amount));
+  expensePieces.nonPayrollExpenses.forEach(expense => addCategoryTotal(categoryTotals, expense.category, expense.amount));
   if (payrollTotal > 0) addCategoryTotal(categoryTotals, "Payroll", payrollTotal);
   if (projectMaterialCost > 0) addCategoryTotal(categoryTotals, "Project Materials", projectMaterialCost);
 
@@ -1135,15 +1176,15 @@ async function loadDashboard(){
     : [];
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
-  const expenseTotal = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
+  const expensePieces = getDashboardExpensePieces(expenses, payroll);
+  const expenseTotal = expensePieces.operatingExpenseTotal;
   const projectMaterials = getApprovedCompletedCctvQuotationMaterials(projects, inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   latestDashboardProjects = projects;
   latestProjectMaterials = projectMaterials;
-  const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
-  const totalCost = expenseTotal + payrollTotal + projectMaterialCost + projectBudgetTotal + taxTotal;
+  const totalCost = expenseTotal + projectMaterialCost + projectBudgetTotal + taxTotal;
   const profit = revenue - totalCost;
 
   setText("totalRevenue", peso(revenue));
@@ -1163,7 +1204,7 @@ async function loadDashboard(){
     dashboardChart.destroy();
   }
 
-  const trend = getMonthlyTrend(projects, expenses);
+  const trend = getMonthlyTrend(projects, expenses, payroll);
   const trendTotals = getTrendTotals(trend);
   setText("chartRevenueTotal", peso(trendTotals.revenue));
   setText("chartExpenseTotal", peso(trendTotals.expenses));
