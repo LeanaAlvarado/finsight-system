@@ -1197,21 +1197,16 @@ async function loadDashboard(){
     : [];
 
   const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
-  const expensePieces = getDashboardExpensePieces(expenses, payroll);
-  const expenseTotal = expensePieces.operatingExpenseTotal;
   const projectMaterials = getApprovedCompletedCctvQuotationMaterials(projects, inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
   const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
   latestDashboardProjects = projects;
   latestProjectMaterials = projectMaterials;
-  const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
-  const taxTotal = projects.reduce((sum, project) => sum + getTaxAmount(project), 0);
-  const appliedProjectMaterialCost = projectAnalytics.reduce((sum, item) => sum + number(item.appliedMaterialCost), 0);
   const totalCost = projectAnalytics.reduce((sum, item) => sum + number(item.totalCost), 0);
   const profit = revenue - totalCost;
 
   setText("totalRevenue", peso(revenue));
-  setText("totalExpenses", peso(expenseTotal));
+  setText("totalExpenses", peso(totalCost));
   setText("netProfit", peso(profit));
   setText("projectCount", projects.length);
   setText("inventoryValue", projectMaterials.length);
@@ -1220,7 +1215,7 @@ async function loadDashboard(){
   setText("inventoryPanelCount", projectMaterials.length);
   setText("projectMini", projects.length);
   setText("revenueSmall", peso(revenue));
-  setText("expenseSmall", peso(expenseTotal));
+  setText("expenseSmall", peso(totalCost));
   setText("profitSmall", peso(profit));
 
   if (dashboardChart) {
