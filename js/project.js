@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-as-quotation-v120";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-dropdown-v121";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -981,27 +981,6 @@ function getBillingFormValues(project = {}) {
   };
 }
 
-function updateBillingSummary() {
-  const project = getBillingProjectFromEdit() || {};
-  const values = getBillingFormValues(project);
-  const math = getProjectBillingMath({ ...project, contract_amount: values.purchase_order_amount, ...values });
-  const summary = document.getElementById("billingSummary");
-
-  if (!summary) return;
-
-  if (!math.poAmount) {
-    summary.textContent = "Enter PO amount and billing values.";
-    return;
-  }
-
-  summary.innerHTML = `
-    <strong>Contract / PO Amount:</strong> ${peso(math.poAmount)}<br>
-    <strong>First Billing:</strong> ${peso(math.downAmount)} (${math.downPercent.toFixed(2)}%)<br>
-    <strong>Progress Billing:</strong> ${math.progressCumulativePercent.toFixed(2)}% cumulative, ${peso(math.progressCurrentAmount)} current progress billing<br>
-    <strong>Last Billing:</strong> ${peso(math.finalBillingAmount)} remaining unpaid balance
-  `;
-}
-
 function fillBillingFields(project = {}) {
   const billing = getProjectBillingData(project);
   const fieldMap = {
@@ -1020,8 +999,6 @@ function fillBillingFields(project = {}) {
       ? `Current PO file: <a href="${escapeProjectHtml(billing.purchase_order_file_url)}" target="_blank" rel="noopener">${escapeProjectHtml(billing.purchase_order_file_name || "View uploaded PO")}</a>`
       : "No purchase order file uploaded yet.";
   }
-
-  updateBillingSummary();
 }
 
 function getBillingDocumentLabel(type = "") {
@@ -1098,12 +1075,14 @@ function getBillingPrintStyles() {
   `;
 }
 
-window.generateBillingDocument = function(type = "downpayment") {
+window.generateBillingDocument = function(type = "") {
   const project = getBillingProjectFromEdit();
   if (!project) {
     alert("Open a project first before generating billing.");
     return;
   }
+
+  const billingType = type || document.getElementById("billing_report_type")?.value || "first";
 
   const values = getBillingFormValues(project);
   const math = getProjectBillingMath({ ...project, contract_amount: values.purchase_order_amount, ...values });
@@ -1116,14 +1095,15 @@ window.generateBillingDocument = function(type = "downpayment") {
     return;
   }
 
-  const amount = getBillingDocumentAmount(type, math);
-  const percent = getBillingDocumentPercent(type, math);
-  const previousBilledAmount = type === "progress"
+  const title = getBillingDocumentLabel(billingType);
+  const amount = getBillingDocumentAmount(billingType, math);
+  const percent = getBillingDocumentPercent(billingType, math);
+  const previousBilledAmount = billingType === "progress"
     ? math.downAmount
-    : (type === "last" || type === "final")
+    : (billingType === "last" || billingType === "final")
     ? math.progressCumulativeAmount
     : 0;
-  const remainingAfterBilling = (type === "last" || type === "final")
+  const remainingAfterBilling = (billingType === "last" || billingType === "final")
     ? 0
     : Math.max(math.poAmount - previousBilledAmount - amount, 0);
 
@@ -1132,7 +1112,7 @@ window.generateBillingDocument = function(type = "downpayment") {
       <header class="letterhead">
         <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
         <div class="quote-meta">
-          <h1>Billing</h1>
+          <h1>${escapeProjectHtml(title)}</h1>
           <div><b>PO No:</b> ${escapeProjectHtml(values.purchase_order_number)}</div>
           <div><b>Date:</b> ${escapeProjectHtml(getReadableDate(new Date()))}</div>
         </div>
@@ -1188,7 +1168,7 @@ window.generateBillingDocument = function(type = "downpayment") {
     </main>
   `;
 
-  openGeneratedDocument(`Billing - ${project.project_code || ""}`, html, getBillingPrintStyles());
+  openGeneratedDocument(`${title} - ${project.project_code || ""}`, html, getBillingPrintStyles());
 };
 
 window.generateDeliveryReceipt = function() {
@@ -4342,17 +4322,6 @@ const editProjectForm = document.getElementById("editProjectForm");
 document.getElementById("edit_quotation_type")?.addEventListener("change", toggleEditQuotationTypeView);
 document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
   if (edit_down_payment) edit_down_payment.value = event.target.value;
-  updateBillingSummary();
-});
-[
-  "edit_purchase_order_number",
-  "edit_contract_amount",
-  "edit_manpower_contract_amount",
-  "edit_down_payment",
-  "edit_manpower_down_payment",
-  "edit_billing_progress_percent"
-].forEach(id => {
-  document.getElementById(id)?.addEventListener("input", updateBillingSummary);
 });
 document.getElementById("progress_files")?.addEventListener("change", event => {
   const selectedFiles = Array.from(event.target.files || []);
