@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-print-gap-v134";
+import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260808-cctv-dr-action-v135";
 
 const INVENTORY_UPLOAD_BUCKETS = ["contracts", "progress-files", "inventory", "materials"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";

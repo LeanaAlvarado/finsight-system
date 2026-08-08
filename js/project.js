@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-print-gap-v134";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-cctv-dr-action-v135";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1332,6 +1332,10 @@ window.generateBillingDocument = function(type = "") {
 
 window.generateDeliveryReceipt = function() {
   const project = getBillingProjectFromEdit();
+  generateDeliveryReceiptFromProject(project);
+};
+
+function generateDeliveryReceiptFromProject(project = null) {
   if (!project) {
     alert("Open a project first before generating DR.");
     return;
@@ -1434,6 +1438,11 @@ window.generateDeliveryReceipt = function() {
   `;
 
   openGeneratedDocument(`Delivery Receipt - ${project.project_code || ""}`, html, getDeliveryReceiptPrintStyles());
+}
+
+window.generateDeliveryReceiptForProject = function(id = "") {
+  const project = getProjectById(id);
+  generateDeliveryReceiptFromProject(project);
 };
 
 function getContractDateStamp(dateValue = new Date()) {
@@ -3950,6 +3959,9 @@ function renderProjectList() {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
     const reportMeta = getProjectReportMeta(project);
+    const drAction = getProjectQuotationType(project) === "cctv"
+      ? `<a href="#" onclick="generateDeliveryReceiptForProject('${project.id}'); return false;">Generate DR</a>`
+      : "";
     const actionLinks = isOperations
       ? `<a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>`
       : isFinanceScope()
@@ -3959,6 +3971,7 @@ function renderProjectList() {
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
+          ${drAction}
           <a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
         `;

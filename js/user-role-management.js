@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260808-dr-print-gap-v134";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260808-cctv-dr-action-v135";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

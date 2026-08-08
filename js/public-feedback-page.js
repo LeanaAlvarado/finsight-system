@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-dr-print-gap-v134";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-cctv-dr-action-v135";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
