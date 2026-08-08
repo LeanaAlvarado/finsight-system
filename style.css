@@ -648,6 +648,14 @@ textarea:focus{
   border:1px solid var(--line);
   border-radius:8px;
   background:#f8fbfe;
+  scroll-margin-top:16px;
+  transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.billing-panel.billing-panel-focus{
+  border-color:#1f5f93;
+  background:#f1f8ff;
+  box-shadow:0 0 0 3px rgba(31, 95, 147, .14);
 }
 
 .billing-panel h4{

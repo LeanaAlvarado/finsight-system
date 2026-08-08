@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-save-helper-v116";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-link-v117";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -3725,7 +3725,7 @@ function renderProjectList() {
       : `
           <a href="#" onclick="viewProject('${project.id}'); return false;">View</a>
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
-          <a href="#" onclick="editProject('${project.id}'); return false;">Billing / DR</a>
+          <a href="#" onclick="editProject('${project.id}', { focusBilling: true }); return false;">Billing / DR</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
           <a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>
@@ -4201,8 +4201,22 @@ window.deleteProject = async function(projectId) {
     : "Project deleted successfully.");
 };
 
+function focusBillingPanel() {
+  const billingPanel = document.getElementById("billingPanel");
+  if (!billingPanel) return;
+
+  billingPanel.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+  billingPanel.classList.add("billing-panel-focus");
+  window.setTimeout(() => {
+    billingPanel.classList.remove("billing-panel-focus");
+  }, 2200);
+}
+
 // EDIT PROJECT
-window.editProject = async function(id) {
+window.editProject = async function(id, options = {}) {
   if (isFinanceScope()) {
     alert("Finance Officer / Accountant can review project cost and budget only.");
     return;
@@ -4308,9 +4322,13 @@ window.editProject = async function(id) {
 
   await loadProgressFiles(id);
 
-  document.getElementById("editProjectSection").scrollIntoView({
-    behavior: "smooth"
-  });
+  if (options.focusBilling) {
+    window.setTimeout(focusBillingPanel, 150);
+  } else {
+    document.getElementById("editProjectSection").scrollIntoView({
+      behavior: "smooth"
+    });
+  }
 };
 
 const editProjectForm = document.getElementById("editProjectForm");
