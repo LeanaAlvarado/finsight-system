@@ -1,4 +1,4 @@
-﻿import { insertWithOptionalColumns, number } from "./supabase.js";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-save-helper-v116";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

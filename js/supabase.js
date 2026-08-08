@@ -85,46 +85,42 @@ function updateQuery(tableName, record, matchColumn, matchValue, returnRecord) {
   return returnRecord ? query.select("*").single() : query;
 }
 
-export async function insertWithOptionalColumns(tableName, record, optionalColumns = [], options = {}) {
+function getMissingColumnFromError(error) {
+  const message = error?.message || "";
+  return message.match(/'([^']+)'\s+column/i)?.[1]
+    || message.match(/column\s+"?([a-zA-Z0-9_]+)"?\s+of/i)?.[1]
+    || "";
+}
+
+async function runWithOptionalColumnFallback(record, optionalColumns, runQuery) {
+  const optionalSet = new Set(optionalColumns);
+  const strippedColumns = new Set();
   let currentRecord = { ...record };
-  let result = await insertQuery(tableName, currentRecord, options.returnRecord);
+  let result = await runQuery(currentRecord);
 
-  for (const column of optionalColumns) {
-    if (!result.error) {
-      return result;
+  while (result.error) {
+    const missingColumn = getMissingColumnFromError(result.error);
+
+    if (!missingColumn || !optionalSet.has(missingColumn) || strippedColumns.has(missingColumn)) {
+      break;
     }
 
-    const message = result.error?.message || "";
-
-    if (!message.includes(column)) {
-      continue;
-    }
-
-    delete currentRecord[column];
-    result = await insertQuery(tableName, currentRecord, options.returnRecord);
+    strippedColumns.add(missingColumn);
+    delete currentRecord[missingColumn];
+    result = await runQuery(currentRecord);
   }
 
   return result;
 }
 
+export async function insertWithOptionalColumns(tableName, record, optionalColumns = [], options = {}) {
+  return runWithOptionalColumnFallback(record, optionalColumns, currentRecord => {
+    return insertQuery(tableName, currentRecord, options.returnRecord);
+  });
+}
+
 export async function updateWithOptionalColumns(tableName, record, matchColumn, matchValue, optionalColumns = [], options = {}) {
-  let currentRecord = { ...record };
-  let result = await updateQuery(tableName, currentRecord, matchColumn, matchValue, options.returnRecord);
-
-  for (const column of optionalColumns) {
-    if (!result.error) {
-      return result;
-    }
-
-    const message = result.error?.message || "";
-
-    if (!message.includes(column)) {
-      continue;
-    }
-
-    delete currentRecord[column];
-    result = await updateQuery(tableName, currentRecord, matchColumn, matchValue, options.returnRecord);
-  }
-
-  return result;
+  return runWithOptionalColumnFallback(record, optionalColumns, currentRecord => {
+    return updateQuery(tableName, currentRecord, matchColumn, matchValue, options.returnRecord);
+  });
 }

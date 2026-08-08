@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-save-helper-v116";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

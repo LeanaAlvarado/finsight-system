@@ -1,1 +1,1 @@
-﻿window.location.replace("expenses.html");
+window.location.replace("expenses.html");
