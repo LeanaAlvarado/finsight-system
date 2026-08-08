@@ -12,7 +12,6 @@ const client_name = document.getElementById("client_name");
 const client_contact_name = document.getElementById("client_contact_name");
 const contact_number = document.getElementById("contact_number");
 const location = document.getElementById("location");
-const project_duration_days = document.getElementById("project_duration_days");
 const start_date = document.getElementById("start_date");
 const target_completion = document.getElementById("target_completion");
 const status = document.getElementById("status");
@@ -49,6 +48,7 @@ const cctv_terms = document.getElementById("cctv_terms");
 const cctv_purchase_order_number = document.getElementById("cctv_purchase_order_number");
 const cctv_purchase_order_file = document.getElementById("cctv_purchase_order_file");
 const cctv_down_payment_percent = document.getElementById("cctv_down_payment_percent");
+const cctv_duration_days = document.getElementById("cctv_duration_days");
 const feedbackTable = document.getElementById("feedbackTable");
 const PROPOSAL_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
@@ -616,7 +616,7 @@ function buildProposalRemarks() {
   if (quotationTypeInput.value === "cctv") {
     const cctvLines = [
       "Quotation Type: CCTV",
-      project_duration_days?.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(project_duration_days.value)))}` : "",
+      cctv_duration_days?.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(cctv_duration_days.value)))}` : "",
       cctv_purchase_order_number?.value ? `Purchase Order Number: ${cctv_purchase_order_number.value}` : "",
       cctv_down_payment_percent?.value ? `Downpayment Percent: ${cctv_down_payment_percent.value}` : "",
       cctv_intro.value ? `CCTV Intro: ${cctv_intro.value}` : "",
