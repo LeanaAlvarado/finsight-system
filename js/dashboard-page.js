@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-project-files-ui-v126";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-second-row-v127";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

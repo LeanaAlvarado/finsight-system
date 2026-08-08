@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-project-files-ui-v126";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-second-row-v127";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1155,15 +1155,12 @@ window.generateBillingDocument = function(type = "") {
     {
       label: `Less 1st Downpayment (${math.downPercent.toFixed(2)}%)`,
       amount: downAmount
+    },
+    {
+      label: `Less 2nd Downpayment / Progress Billing (${(billingType === "first" || billingType === "downpayment" ? 0 : math.progressAdditionalPercent).toFixed(2)}%)`,
+      amount: billingType === "first" || billingType === "downpayment" ? 0 : progressAdditionalAmount
     }
   ];
-
-  if (billingType === "progress" || billingType === "last" || billingType === "final") {
-    billingRows.push({
-      label: `Less 2nd Downpayment / Progress Billing (${math.progressAdditionalPercent.toFixed(2)}%)`,
-      amount: progressAdditionalAmount
-    });
-  }
 
   const manpower = getManpowerQuotationDetails(project);
   const fallbackManpowerQty = Number(manpower.workers || 1) || 1;
