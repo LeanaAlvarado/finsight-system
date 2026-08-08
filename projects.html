@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260808-billing-downpayment-labels-v125">
+<link rel="stylesheet" href="style.css?v=20260808-project-files-ui-v126">
 </head>
 
 <body>
@@ -271,19 +271,13 @@
         </div>
 
         <div>
-          <label>Purchase Order Number</label>
-          <input id="edit_purchase_order_number" placeholder="PO number from client">
-        </div>
-
-        <div>
-          <label>Upload Purchase Order</label>
-          <input id="edit_purchase_order_file" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
-          <p id="purchaseOrderFileName" class="muted"></p>
-        </div>
-
-        <div>
           <label>2nd Downpayment / Progress Billing (%)</label>
           <input id="edit_billing_progress_percent" type="number" min="0" max="100" step="0.01" placeholder="0">
+        </div>
+
+        <div>
+          <label>Purchase Order Number</label>
+          <input id="edit_purchase_order_number" placeholder="PO number from client">
         </div>
 
         <div>
@@ -469,20 +463,23 @@
       <label>Remarks</label>
       <textarea id="edit_remarks"></textarea>
 
-      <label>Upload Progress Files</label>
-      <input id="progress_files" type="file" multiple>
+      <section class="project-files-panel">
+        <h4>Project Files</h4>
+        <p class="muted">Upload purchase order documents and progress files in one organized area.</p>
+        <div class="form-grid">
+          <div>
+            <label>Upload Purchase Order</label>
+            <input id="edit_purchase_order_file" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+            <p id="purchaseOrderFileName" class="muted"></p>
+          </div>
 
-      <p class="muted">Upload photos or documents for the latest project progress update.</p>
-      <div id="progressPendingFiles" class="pending-upload-list"></div>
-
-      <section id="billingPanel" class="billing-panel">
-        <h4>Generated Reports</h4>
-        <p class="muted">Generate billing and delivery receipt documents from the saved project details.</p>
-
-        <div class="billing-actions">
-          <button type="button" onclick="generateBillingDocument()">Generate Billing</button>
-          <button type="button" onclick="generateDeliveryReceipt()">Generate DR</button>
+          <div>
+            <label>Upload Progress Files</label>
+            <input id="progress_files" type="file" multiple>
+            <p class="muted">Upload photos or documents for the latest project progress update.</p>
+          </div>
         </div>
+        <div id="progressPendingFiles" class="pending-upload-list"></div>
       </section>
 
       <div class="uploaded-box">
@@ -490,7 +487,9 @@
         <div id="uploadedProgressFiles"></div>
       </div>
 
-      <div class="form-actions">
+      <div class="form-actions project-final-actions">
+        <button type="button" onclick="generateBillingDocument()">Generate Billing</button>
+        <button type="button" onclick="generateDeliveryReceipt()">Generate DR</button>
         <button type="submit">Update Project</button>
       </div>
 
@@ -535,7 +534,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260808-billing-downpayment-labels-v125"></script>
+<script type="module" src="js/app.js?v=20260808-project-files-ui-v126"></script>
 
 </body>
 </html>

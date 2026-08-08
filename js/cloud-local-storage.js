@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-billing-downpayment-labels-v125";
+import { supabase } from "./supabase.js?v=20260808-project-files-ui-v126";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

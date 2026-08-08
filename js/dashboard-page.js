@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-downpayment-labels-v125";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-project-files-ui-v126";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
