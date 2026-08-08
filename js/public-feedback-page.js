@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-fields-order-v128";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-no-downpayment-comment-v129";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-fields-order-v128";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-no-downpayment-comment-v129";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2050,6 +2050,11 @@ function getManpowerQuotationDetails(project) {
   };
 
   const noteLines = [];
+  const cleanGeneratedComment = value => String(value || "")
+    .split(/\r?\n/)
+    .filter(line => !/^downpayment percent:\s*/i.test(line.trim()))
+    .join("\n")
+    .trim();
   let activeMultilineField = "";
   const appendMultiline = line => {
     if (!activeMultilineField) return false;
@@ -2066,6 +2071,10 @@ function getManpowerQuotationDetails(project) {
     }
 
     if (/^quotation type:\s*manpower/i.test(trimmed)) return;
+    if (/^downpayment percent:\s*/i.test(trimmed)) {
+      activeMultilineField = "";
+      return;
+    }
 
     const emailMatch = trimmed.match(/^client email:\s*(.*)$/i);
     if (emailMatch) {
@@ -2090,7 +2099,7 @@ function getManpowerQuotationDetails(project) {
 
     const commentsMatch = trimmed.match(/^additional comments:\s*(.*)$/i);
     if (commentsMatch) {
-      details.additionalComments = commentsMatch[1] || "";
+      details.additionalComments = cleanGeneratedComment(commentsMatch[1] || "");
       activeMultilineField = "additionalComments";
       return;
     }
@@ -2157,6 +2166,8 @@ function getManpowerQuotationDetails(project) {
 
     noteLines.push(line);
   });
+
+  details.additionalComments = cleanGeneratedComment(details.additionalComments);
 
   details.notes = noteLines.join("\n").trim();
   return details;
@@ -2759,7 +2770,6 @@ function buildEditManpowerRemarks() {
   const lines = [
     "Quotation Type: Manpower",
     edit_manpower_client_email.value ? `Client Email: ${edit_manpower_client_email.value}` : "",
-    edit_manpower_down_payment.value ? `Downpayment Percent: ${edit_manpower_down_payment.value}` : "",
     edit_project_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(Number(edit_project_duration_days.value || 0)))}` : "",
     edit_manpower_prepared_by.value ? `Prepared By: ${edit_manpower_prepared_by.value}` : "",
     edit_manpower_prepared_position.value ? `Position: ${edit_manpower_prepared_position.value}` : "",

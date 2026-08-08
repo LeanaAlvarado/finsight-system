@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260808-billing-fields-order-v128";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260808-no-downpayment-comment-v129";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");
@@ -618,7 +618,6 @@ function buildProposalRemarks() {
       "Quotation Type: CCTV",
       cctv_duration_days?.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(cctv_duration_days.value)))}` : "",
       cctv_purchase_order_number?.value ? `Purchase Order Number: ${cctv_purchase_order_number.value}` : "",
-      cctv_down_payment_percent?.value ? `Downpayment Percent: ${cctv_down_payment_percent.value}` : "",
       cctv_intro.value ? `CCTV Intro: ${cctv_intro.value}` : "",
       cctv_installation_charge.value ? `Installation Charge: ${cctv_installation_charge.value}` : "",
       cctv_summary_computation.value ? `Summary of Computation: ${cctv_summary_computation.value}` : "",
@@ -638,7 +637,6 @@ function buildProposalRemarks() {
     manpower_client_email.value ? `Client Email: ${manpower_client_email.value}` : "",
     manpower_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(manpower_duration_days.value)))}` : "",
     manpower_purchase_order_number?.value ? `Purchase Order Number: ${manpower_purchase_order_number.value}` : "",
-    manpower_amount_paid.value ? `Downpayment Percent: ${manpower_amount_paid.value}` : "",
     manpower_prepared_by.value ? `Prepared By: ${manpower_prepared_by.value}` : "",
     manpower_prepared_position.value ? `Position: ${manpower_prepared_position.value}` : "",
     manpower_terms.value ? `Terms of Service: ${manpower_terms.value}` : "",
