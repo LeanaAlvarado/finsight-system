@@ -86,10 +86,6 @@ function updateQuery(tableName, record, matchColumn, matchValue, returnRecord) {
 }
 
 export async function insertWithOptionalColumns(tableName, record, optionalColumns = [], options = {}) {
-  if (window.LEMYU_CLOUD_ONLY === true) {
-    return insertQuery(tableName, record, options.returnRecord);
-  }
-
   let currentRecord = { ...record };
   let result = await insertQuery(tableName, currentRecord, options.returnRecord);
 
@@ -112,10 +108,6 @@ export async function insertWithOptionalColumns(tableName, record, optionalColum
 }
 
 export async function updateWithOptionalColumns(tableName, record, matchColumn, matchValue, optionalColumns = [], options = {}) {
-  if (window.LEMYU_CLOUD_ONLY === true) {
-    return updateQuery(tableName, record, matchColumn, matchValue, options.returnRecord);
-  }
-
   let currentRecord = { ...record };
   let result = await updateQuery(tableName, currentRecord, matchColumn, matchValue, options.returnRecord);
 
