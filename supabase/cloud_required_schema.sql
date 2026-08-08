@@ -43,6 +43,12 @@ create table if not exists public.projects (
   remarks text,
   quotation_type text default 'manpower',
   quotation_items jsonb default '[]'::jsonb,
+  purchase_order_number text,
+  purchase_order_amount numeric default 0,
+  purchase_order_file_name text,
+  purchase_order_file_url text,
+  billing_down_payment_amount numeric default 0,
+  billing_progress_percent numeric default 0,
   contract_file_name text,
   contract_file_url text,
   created_at timestamptz default now(),
@@ -256,6 +262,12 @@ alter table public.projects add column if not exists ppr_report_config jsonb def
 alter table public.projects add column if not exists remarks text;
 alter table public.projects add column if not exists quotation_type text default 'manpower';
 alter table public.projects add column if not exists quotation_items jsonb default '[]'::jsonb;
+alter table public.projects add column if not exists purchase_order_number text;
+alter table public.projects add column if not exists purchase_order_amount numeric default 0;
+alter table public.projects add column if not exists purchase_order_file_name text;
+alter table public.projects add column if not exists purchase_order_file_url text;
+alter table public.projects add column if not exists billing_down_payment_amount numeric default 0;
+alter table public.projects add column if not exists billing_progress_percent numeric default 0;
 alter table public.projects add column if not exists contract_file_name text;
 alter table public.projects add column if not exists contract_file_url text;
 alter table public.projects add column if not exists created_at timestamptz default now();
@@ -274,6 +286,36 @@ begin
     alter table public.projects
       add constraint projects_progress_percentage_check
       check (progress_percentage >= 0 and progress_percentage <= 100);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'projects_purchase_order_amount_check'
+  ) then
+    alter table public.projects
+      add constraint projects_purchase_order_amount_check
+      check (purchase_order_amount >= 0);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'projects_billing_down_payment_amount_check'
+  ) then
+    alter table public.projects
+      add constraint projects_billing_down_payment_amount_check
+      check (billing_down_payment_amount >= 0);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'projects_billing_progress_percent_check'
+  ) then
+    alter table public.projects
+      add constraint projects_billing_progress_percent_check
+      check (billing_progress_percent >= 0 and billing_progress_percent <= 100);
   end if;
 end $$;
 

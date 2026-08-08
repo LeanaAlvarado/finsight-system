@@ -23,6 +23,7 @@ const OBJECT_KEYS = new Set([
   "lemyu_quotation_items",
   "lemyu_client_names",
   "lemyu_down_payments",
+  "lemyu_project_billing",
   "lemyu_inventory_project_codes",
   "lemyu_inventory_units",
   "lemyu_inventory_pictures",

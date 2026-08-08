@@ -114,6 +114,12 @@ async function upsertProject(localProject = {}) {
     remarks: localProject.remarks || "",
     quotation_type: localProject.quotation_type || "manpower",
     quotation_items: Array.isArray(localProject.quotation_items) ? localProject.quotation_items : [],
+    purchase_order_number: localProject.purchase_order_number || "",
+    purchase_order_amount: Number(localProject.purchase_order_amount || 0),
+    purchase_order_file_name: localProject.purchase_order_file_name || "",
+    purchase_order_file_url: localProject.purchase_order_file_url || "",
+    billing_down_payment_amount: Number(localProject.billing_down_payment_amount || 0),
+    billing_progress_percent: Number(localProject.billing_progress_percent || 0),
     contract_file_name: localProject.contract_file_name || "",
     contract_file_url: localProject.contract_file_url || ""
   });

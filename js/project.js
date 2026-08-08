@@ -15,6 +15,7 @@ const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_PPR_CONFIGS_KEY = "lemyu_ppr_report_configs";
 const LOCAL_PROJECT_FILE_COMMENTS_KEY = "lemyu_project_file_comments";
+const LOCAL_PROJECT_BILLING_KEY = "lemyu_project_billing";
 const MATERIAL_CATALOG_KEY = "lemyu_material_catalog";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
 const MATERIAL_UNIT_OPTIONS = ["PCS", "MTR", "SET", "ROLL", "BOX", "PACK", "UNIT", "LOT"];
@@ -591,6 +592,61 @@ function getProjectDownPayment(project) {
   return Number(project?.down_payment ?? getDownPaymentsMap()[project?.id] ?? 0);
 }
 
+function getProjectBillingMap() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_PROJECT_BILLING_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProjectBillingMap(records) {
+  localStorage.setItem(LOCAL_PROJECT_BILLING_KEY, JSON.stringify(records));
+}
+
+function saveLocalProjectBilling(projectId, billing = {}) {
+  if (!projectId) return;
+  const records = getProjectBillingMap();
+  records[projectId] = { ...(records[projectId] || {}), ...billing };
+  saveProjectBillingMap(records);
+}
+
+function getProjectBillingData(project = {}) {
+  const localBilling = getProjectBillingMap()[project?.id] || {};
+  return {
+    purchase_order_number: project.purchase_order_number ?? localBilling.purchase_order_number ?? "",
+    purchase_order_amount: Number(project.purchase_order_amount ?? localBilling.purchase_order_amount ?? project.contract_amount ?? 0),
+    purchase_order_file_name: project.purchase_order_file_name ?? localBilling.purchase_order_file_name ?? "",
+    purchase_order_file_url: project.purchase_order_file_url ?? localBilling.purchase_order_file_url ?? "",
+    billing_down_payment_amount: Number(project.billing_down_payment_amount ?? localBilling.billing_down_payment_amount ?? 0),
+    billing_progress_percent: Number(project.billing_progress_percent ?? localBilling.billing_progress_percent ?? 0)
+  };
+}
+
+function getProjectBillingMath(project = {}) {
+  const billing = getProjectBillingData(project);
+  const poAmount = Math.max(Number(billing.purchase_order_amount || 0), 0);
+  const downAmount = Math.min(Math.max(Number(billing.billing_down_payment_amount || 0), 0), poAmount);
+  const downPercent = getPercentFromAmount(downAmount, poAmount);
+  const progressAdditionalPercent = Math.min(Math.max(Number(billing.billing_progress_percent || 0), 0), 100);
+  const progressCumulativePercent = Math.min(downPercent + progressAdditionalPercent, 100);
+  const progressCumulativeAmount = poAmount * (progressCumulativePercent / 100);
+  const progressCurrentAmount = Math.max(progressCumulativeAmount - downAmount, 0);
+  const finalBillingAmount = Math.max(poAmount - progressCumulativeAmount, 0);
+
+  return {
+    ...billing,
+    poAmount,
+    downAmount,
+    downPercent,
+    progressAdditionalPercent,
+    progressCumulativePercent,
+    progressCumulativeAmount,
+    progressCurrentAmount,
+    finalBillingAmount
+  };
+}
+
 function getPercentFromAmount(amount, total) {
   const totalValue = Number(total || 0);
   if (totalValue <= 0) return 0;
@@ -886,6 +942,270 @@ function getPrintableViewControls() {
         <button type="button" onclick="window.print()">Print</button>
       </div>`;
 }
+
+function getBillingProjectFromEdit() {
+  return editingId ? getProjectById(editingId) || { id: editingId } : null;
+}
+
+function getBillingFormValues(project = {}) {
+  const saved = getProjectBillingData(project);
+  return {
+    purchase_order_number: document.getElementById("edit_purchase_order_number")?.value.trim() || saved.purchase_order_number || "",
+    purchase_order_amount: Number(document.getElementById("edit_purchase_order_amount")?.value || saved.purchase_order_amount || project.contract_amount || 0),
+    purchase_order_file_name: saved.purchase_order_file_name || "",
+    purchase_order_file_url: saved.purchase_order_file_url || "",
+    billing_down_payment_amount: Number(document.getElementById("edit_billing_down_payment_amount")?.value || saved.billing_down_payment_amount || 0),
+    billing_progress_percent: Number(document.getElementById("edit_billing_progress_percent")?.value || saved.billing_progress_percent || 0)
+  };
+}
+
+function updateBillingSummary() {
+  const project = getBillingProjectFromEdit() || {};
+  const values = getBillingFormValues(project);
+  const math = getProjectBillingMath({ ...project, ...values });
+  const summary = document.getElementById("billingSummary");
+
+  if (!summary) return;
+
+  if (!math.poAmount) {
+    summary.textContent = "Enter PO amount and billing values.";
+    return;
+  }
+
+  summary.innerHTML = `
+    <strong>PO Amount:</strong> ${peso(math.poAmount)}<br>
+    <strong>Downpayment Billing:</strong> ${peso(math.downAmount)} (${math.downPercent.toFixed(2)}%)<br>
+    <strong>Progress Billing:</strong> ${math.progressCumulativePercent.toFixed(2)}% cumulative, ${peso(math.progressCurrentAmount)} current progress billing<br>
+    <strong>Final Billing:</strong> ${peso(math.finalBillingAmount)} remaining unpaid balance
+  `;
+}
+
+function fillBillingFields(project = {}) {
+  const billing = getProjectBillingData(project);
+  const fieldMap = {
+    edit_purchase_order_number: billing.purchase_order_number,
+    edit_purchase_order_amount: billing.purchase_order_amount || "",
+    edit_billing_down_payment_amount: billing.billing_down_payment_amount || "",
+    edit_billing_progress_percent: billing.billing_progress_percent || ""
+  };
+
+  Object.entries(fieldMap).forEach(([id, value]) => {
+    const field = document.getElementById(id);
+    if (field) field.value = value;
+  });
+
+  const fileLabel = document.getElementById("purchaseOrderFileName");
+  if (fileLabel) {
+    fileLabel.innerHTML = billing.purchase_order_file_url
+      ? `Current PO file: <a href="${escapeProjectHtml(billing.purchase_order_file_url)}" target="_blank" rel="noopener">${escapeProjectHtml(billing.purchase_order_file_name || "View uploaded PO")}</a>`
+      : "No purchase order file uploaded yet.";
+  }
+
+  updateBillingSummary();
+}
+
+function getBillingDocumentLabel(type = "") {
+  if (type === "downpayment") return "Downpayment Billing";
+  if (type === "progress") return "Progress Billing";
+  if (type === "final") return "Final Billing";
+  return "Billing";
+}
+
+function getBillingDocumentAmount(type = "", math = {}) {
+  if (type === "downpayment") return math.downAmount;
+  if (type === "progress") return math.progressCurrentAmount;
+  if (type === "final") return math.finalBillingAmount;
+  return 0;
+}
+
+function getBillingDocumentPercent(type = "", math = {}) {
+  if (type === "downpayment") return math.downPercent;
+  if (type === "progress") return math.progressCumulativePercent;
+  if (type === "final") return 100;
+  return 0;
+}
+
+function getBillingDocumentNumber(project = {}, type = "") {
+  const prefix = type === "downpayment" ? "BILL-DP" : type === "progress" ? "BILL-PB" : "BILL-FB";
+  const code = String(project.project_code || project.id || "PROJECT").replace(/[^\w-]/g, "");
+  return `${prefix}-${getContractDateStamp(new Date())}-${code || "PROJECT"}`;
+}
+
+function openGeneratedDocument(title = "", html = "", styles = "") {
+  const docWindow = window.open("", "_blank");
+  if (!docWindow) {
+    alert("Please allow pop-ups to generate this document.");
+    return;
+  }
+
+  docWindow.document.write(`
+    <html>
+      <head>
+        <title>${escapeProjectHtml(title)}</title>
+        <style>${getPrintableViewControlsStyle()}${styles}</style>
+      </head>
+      <body>${getPrintableViewControls()}${html}</body>
+    </html>
+  `);
+  docWindow.document.close();
+}
+
+function getBillingPrintStyles() {
+  return `
+    @page{size:A4;margin:16mm;}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{margin:0;background:#eef2f6;color:#0b1f35;font-family:Arial, Helvetica, sans-serif;font-size:12px;}
+    .billing-document{width:185mm;min-height:265mm;margin:0 auto;background:#fff;padding:18mm 15mm;}
+    .doc-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0b315f;padding-bottom:12px;margin-bottom:18px;}
+    .doc-brand{font-weight:800;color:#0b315f;text-transform:uppercase;letter-spacing:.05em;}
+    .doc-title{text-align:right;font-size:22px;font-weight:800;text-transform:uppercase;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+    .info-box{border:1px solid #cbd8e6;padding:9px 10px;border-radius:4px;}
+    .info-box small{display:block;color:#52677f;font-weight:800;text-transform:uppercase;font-size:10px;margin-bottom:3px;}
+    table{width:100%;border-collapse:collapse;margin:14px 0;}
+    th,td{border:1px solid #1f2937;padding:8px;vertical-align:top;}
+    th{background:#e8f0f8;text-transform:uppercase;font-size:11px;text-align:left;}
+    .amount{text-align:right;white-space:nowrap;font-weight:800;}
+    .total-row td{font-weight:800;background:#f5f8fb;}
+    .signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:48px;}
+    .signature-line{border-top:1px solid #111827;padding-top:6px;text-align:center;}
+    @media print{body{background:#fff;}.billing-document{width:auto;min-height:auto;margin:0;padding:0;}}
+  `;
+}
+
+window.generateBillingDocument = function(type = "downpayment") {
+  const project = getBillingProjectFromEdit();
+  if (!project) {
+    alert("Open a project first before generating billing.");
+    return;
+  }
+
+  const values = getBillingFormValues(project);
+  const math = getProjectBillingMath({ ...project, ...values });
+  if (!values.purchase_order_number) {
+    alert("Please enter the Purchase Order Number before generating billing.");
+    return;
+  }
+  if (!math.poAmount) {
+    alert("Please enter the Purchase Order Amount before generating billing.");
+    return;
+  }
+
+  const label = getBillingDocumentLabel(type);
+  const amount = getBillingDocumentAmount(type, math);
+  const percent = getBillingDocumentPercent(type, math);
+  const billingNo = getBillingDocumentNumber(project, type);
+
+  const html = `
+    <main class="billing-document">
+      <header class="doc-head">
+        <div>
+          <div class="doc-brand">LEMYU Fiber Optic Installation and Services</div>
+          <p>${escapeProjectHtml(project.location || "")}</p>
+        </div>
+        <div class="doc-title">${escapeProjectHtml(label)}</div>
+      </header>
+
+      <section class="info-grid">
+        <div class="info-box"><small>Billing No.</small>${escapeProjectHtml(billingNo)}</div>
+        <div class="info-box"><small>Date</small>${escapeProjectHtml(getReadableDate(new Date()))}</div>
+        <div class="info-box"><small>Purchase Order No.</small>${escapeProjectHtml(values.purchase_order_number)}</div>
+        <div class="info-box"><small>Project Code</small>${escapeProjectHtml(project.project_code || "-")}</div>
+        <div class="info-box"><small>Bill To</small>${escapeProjectHtml(project.client_name || "-")}</div>
+        <div class="info-box"><small>Project</small>${escapeProjectHtml(project.project_title || "-")}</div>
+      </section>
+
+      <table>
+        <thead><tr><th>Description</th><th>Billing Percentage</th><th class="amount">Amount</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>${escapeProjectHtml(label)} for ${escapeProjectHtml(project.project_title || "approved project")}</td>
+            <td>${percent.toFixed(2)}%</td>
+            <td class="amount">${peso(amount)}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2">Purchase Order Amount</td><td class="amount">${peso(math.poAmount)}</td></tr>
+          <tr><td colspan="2">Downpayment Billing</td><td class="amount">${peso(math.downAmount)}</td></tr>
+          <tr><td colspan="2">Progress Billed to Date</td><td class="amount">${peso(math.progressCumulativeAmount)}</td></tr>
+          <tr class="total-row"><td colspan="2">Amount Due for this Billing</td><td class="amount">${peso(amount)}</td></tr>
+          <tr><td colspan="2">Remaining Unpaid Balance after this Billing</td><td class="amount">${peso(type === "final" ? 0 : Math.max(math.poAmount - (type === "downpayment" ? math.downAmount : math.progressCumulativeAmount), 0))}</td></tr>
+        </tfoot>
+      </table>
+
+      <div class="signature-grid">
+        <div class="signature-line">Prepared By<br><strong>MARK LYNDON LAWAS</strong></div>
+        <div class="signature-line">Received By<br><strong>${escapeProjectHtml(project.client_name || "CLIENT")}</strong></div>
+      </div>
+    </main>
+  `;
+
+  openGeneratedDocument(`${label} - ${project.project_code || ""}`, html, getBillingPrintStyles());
+};
+
+window.generateDeliveryReceipt = function() {
+  const project = getBillingProjectFromEdit();
+  if (!project) {
+    alert("Open a project first before generating DR.");
+    return;
+  }
+
+  const values = getBillingFormValues(project);
+  if (!values.purchase_order_number && !values.purchase_order_file_url) {
+    alert("Upload or enter the client Purchase Order first before generating the DR.");
+    return;
+  }
+
+  const items = Array.isArray(project.quotation_items) && project.quotation_items.length
+    ? project.quotation_items
+    : getLocalQuotationItems(project.id);
+  const rows = (items.length ? items : [{ description: project.project_title || "Project deliverables", qty: 1, unit: "LOT", amount: values.purchase_order_amount || project.contract_amount || 0 }])
+    .map(item => normalizeContractItem(item, project.project_title || "Project deliverables"));
+  const drNo = `DR-${getContractDateStamp(new Date())}-${String(project.project_code || project.id || "PROJECT").replace(/[^\w-]/g, "")}`;
+
+  const html = `
+    <main class="billing-document">
+      <header class="doc-head">
+        <div>
+          <div class="doc-brand">LEMYU Fiber Optic Installation and Services</div>
+          <p>Delivery Receipt generated from uploaded client Purchase Order.</p>
+        </div>
+        <div class="doc-title">Delivery Receipt</div>
+      </header>
+
+      <section class="info-grid">
+        <div class="info-box"><small>DR No.</small>${escapeProjectHtml(drNo)}</div>
+        <div class="info-box"><small>Date</small>${escapeProjectHtml(getReadableDate(new Date()))}</div>
+        <div class="info-box"><small>PO No.</small>${escapeProjectHtml(values.purchase_order_number || "-")}</div>
+        <div class="info-box"><small>Project Code</small>${escapeProjectHtml(project.project_code || "-")}</div>
+        <div class="info-box"><small>Sold To</small>${escapeProjectHtml(project.client_name || "-")}</div>
+        <div class="info-box"><small>Address / Location</small>${escapeProjectHtml(project.location || "-")}</div>
+      </section>
+
+      <table>
+        <thead><tr><th>Product Description</th><th>Qty.</th><th>Unit</th><th class="amount">Amount</th></tr></thead>
+        <tbody>
+          ${rows.map(item => `
+            <tr>
+              <td>${escapeProjectHtml(item.description || "-")}${item.details ? `<br><small>${escapeProjectHtml(item.details)}</small>` : ""}</td>
+              <td>${escapeProjectHtml(item.qty || 0)}</td>
+              <td>${escapeProjectHtml(item.unit || "")}</td>
+              <td class="amount">${peso(item.amount || 0)}</td>
+            </tr>
+          `).join("")}
+          <tr><td colspan="4">--NOTHING TO FOLLOW--</td></tr>
+        </tbody>
+      </table>
+
+      <div class="signature-grid">
+        <div class="signature-line">Released By<br><strong>LEMYU Fiber Optic Installation and Services</strong></div>
+        <div class="signature-line">Received By<br><strong>Signature Over Printed Name</strong></div>
+      </div>
+    </main>
+  `;
+
+  openGeneratedDocument(`Delivery Receipt - ${project.project_code || ""}`, html, getBillingPrintStyles());
+};
 
 function getContractDateStamp(dateValue = new Date()) {
   const date = new Date(dateValue);
@@ -3383,6 +3703,7 @@ function renderProjectList() {
       : `
           <a href="#" onclick="viewProject('${project.id}'); return false;">View</a>
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
+          <a href="#" onclick="editProject('${project.id}'); return false;">Billing / DR</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
           <a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>
@@ -3945,6 +4266,7 @@ window.editProject = async function(id) {
   edit_manpower_terms.value = manpowerDetails.terms || "";
   edit_manpower_work_description.value = manpowerDetails.workDescription || manpowerDetails.scope || project.project_title || "";
   edit_manpower_additional_comments.value = manpowerDetails.additionalComments || manpowerDetails.notes || "";
+  fillBillingFields(project);
   const editManpowerItems = (manpowerDetails.items || []).length
     ? manpowerDetails.items
     : [{
@@ -3973,6 +4295,14 @@ const editProjectForm = document.getElementById("editProjectForm");
 document.getElementById("edit_quotation_type")?.addEventListener("change", toggleEditQuotationTypeView);
 document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
   if (edit_down_payment) edit_down_payment.value = event.target.value;
+});
+[
+  "edit_purchase_order_number",
+  "edit_purchase_order_amount",
+  "edit_billing_down_payment_amount",
+  "edit_billing_progress_percent"
+].forEach(id => {
+  document.getElementById(id)?.addEventListener("input", updateBillingSummary);
 });
 document.getElementById("progress_files")?.addEventListener("change", event => {
   const selectedFiles = Array.from(event.target.files || []);
@@ -4038,6 +4368,20 @@ if (editProjectForm) {
     const manpowerContractAmount = Math.max(Number(document.getElementById("edit_manpower_contract_amount")?.value || manpowerAmount || currentProject.contract_amount || 0), 0);
     const manpowerDownPaymentAmount = Math.max(Number(edit_manpower_down_payment.value || 0), 0);
     const manpowerProjectBudgetAmount = Math.max(Number(document.getElementById("edit_manpower_project_budget")?.value || 0), 0);
+    const billingValues = getBillingFormValues(currentProject);
+    const purchaseOrderInput = document.getElementById("edit_purchase_order_file");
+    const purchaseOrderFile = purchaseOrderInput?.files?.[0] || null;
+
+    if (purchaseOrderFile) {
+      try {
+        const uploadedPo = await uploadProjectFile(purchaseOrderFile, "purchase-orders", ["contracts", "progress-files"]);
+        billingValues.purchase_order_file_name = uploadedPo.filePath || purchaseOrderFile.name;
+        billingValues.purchase_order_file_url = uploadedPo.publicUrl;
+      } catch (uploadError) {
+        alert("Purchase Order upload error: " + uploadError.message);
+        return;
+      }
+    }
 
     const record = {
       quotation_type: quotationType,
@@ -4066,7 +4410,13 @@ if (editProjectForm) {
       ppr_prepared_by: isManpower ? edit_manpower_prepared_by.value : edit_ppr_prepared_by.value,
       ppr_noted_by: isCctv ? "" : (edit_ppr_noted_by.value || currentProject.ppr_noted_by || ""),
       remarks: isManpower ? buildEditManpowerRemarks() : isCctv ? buildEditCctvRemarks(currentProject) : edit_remarks.value,
-      quotation_items: quotationItems
+      quotation_items: quotationItems,
+      purchase_order_number: billingValues.purchase_order_number,
+      purchase_order_amount: billingValues.purchase_order_amount,
+      purchase_order_file_name: billingValues.purchase_order_file_name,
+      purchase_order_file_url: billingValues.purchase_order_file_url,
+      billing_down_payment_amount: billingValues.billing_down_payment_amount,
+      billing_progress_percent: billingValues.billing_progress_percent
     };
 
     let savedProject = null;
@@ -4079,7 +4429,19 @@ if (editProjectForm) {
         record,
         "id",
         editingId,
-        ["completed_date", "client_email", "progress_percentage", "quotation_type", "quotation_items"],
+        [
+          "completed_date",
+          "client_email",
+          "progress_percentage",
+          "quotation_type",
+          "quotation_items",
+          "purchase_order_number",
+          "purchase_order_amount",
+          "purchase_order_file_name",
+          "purchase_order_file_url",
+          "billing_down_payment_amount",
+          "billing_progress_percent"
+        ],
         { returnRecord: true }
       );
 
@@ -4094,6 +4456,14 @@ if (editProjectForm) {
 
     saveLocalClientName(editingId, record.client_contact_name);
     saveLocalDownPayment(editingId, record.down_payment);
+    saveLocalProjectBilling(editingId, {
+      purchase_order_number: record.purchase_order_number,
+      purchase_order_amount: record.purchase_order_amount,
+      purchase_order_file_name: record.purchase_order_file_name,
+      purchase_order_file_url: record.purchase_order_file_url,
+      billing_down_payment_amount: record.billing_down_payment_amount,
+      billing_progress_percent: record.billing_progress_percent
+    });
     if (isCctv) {
       await syncCctvInventoryUsage(previousQuotationItems, quotationItems);
     }
