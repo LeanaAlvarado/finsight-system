@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-balance-v124";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-downpayment-labels-v125";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

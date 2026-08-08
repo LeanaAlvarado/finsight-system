@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-billing-balance-v124";
+import { supabase } from "./supabase.js?v=20260808-billing-downpayment-labels-v125";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

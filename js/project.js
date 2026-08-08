@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-balance-v124";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-downpayment-labels-v125";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1153,14 +1153,14 @@ window.generateBillingDocument = function(type = "") {
   const totalAmountDue = Math.max(math.poAmount - totalAppliedBilling, 0);
   const billingRows = [
     {
-      label: `Less Downpayment (${math.downPercent.toFixed(2)}%)`,
+      label: `Less 1st Downpayment (${math.downPercent.toFixed(2)}%)`,
       amount: downAmount
     }
   ];
 
   if (billingType === "progress" || billingType === "last" || billingType === "final") {
     billingRows.push({
-      label: `Less Progress Billing Additional (${math.progressAdditionalPercent.toFixed(2)}%)`,
+      label: `Less 2nd Downpayment / Progress Billing (${math.progressAdditionalPercent.toFixed(2)}%)`,
       amount: progressAdditionalAmount
     });
   }
