@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-quotation-output-v122";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-flow-v123";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1002,17 +1002,17 @@ function fillBillingFields(project = {}) {
 }
 
 function getBillingDocumentLabel(type = "") {
-  if (type === "first") return "First Billing";
-  if (type === "downpayment") return "First Billing";
+  if (type === "first") return "Billing";
+  if (type === "downpayment") return "Billing";
   if (type === "progress") return "Progress Billing";
-  if (type === "last") return "Last Billing";
-  if (type === "final") return "Last Billing";
+  if (type === "last") return "Final Billing";
+  if (type === "final") return "Final Billing";
   return "Billing";
 }
 
 function getBillingDocumentAmount(type = "", math = {}) {
   if (type === "first" || type === "downpayment") return math.downAmount;
-  if (type === "progress") return math.progressCurrentAmount;
+  if (type === "progress") return math.progressCumulativeAmount;
   if (type === "last" || type === "final") return math.finalBillingAmount;
   return 0;
 }
@@ -1020,7 +1020,7 @@ function getBillingDocumentAmount(type = "", math = {}) {
 function getBillingDocumentPercent(type = "", math = {}) {
   if (type === "first" || type === "downpayment") return math.downPercent;
   if (type === "progress") return math.progressCumulativePercent;
-  if (type === "last" || type === "final") return 100;
+  if (type === "last" || type === "final") return Math.max(100 - math.progressCumulativePercent, 0);
   return 0;
 }
 
