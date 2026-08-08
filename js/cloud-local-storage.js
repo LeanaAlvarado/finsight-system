@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-dr-quotation-style-v130";
+import { supabase } from "./supabase.js?v=20260808-dr-signature-grid-v131";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

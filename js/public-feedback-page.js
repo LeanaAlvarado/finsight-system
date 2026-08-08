@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-dr-quotation-style-v130";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-dr-signature-grid-v131";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

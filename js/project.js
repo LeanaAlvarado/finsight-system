@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-quotation-style-v130";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-signature-grid-v131";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1109,6 +1109,9 @@ function getManpowerBillingPrintStyles() {
     .prepared-label,.prepared-name,.prepared-position{display:block;font-weight:normal;line-height:1.35;}
     .prepared-signature{width:160px;height:42px;margin:0 0 -6px 52px;opacity:1;overflow:hidden;}
     .prepared-signature .signature-svg{width:100%;height:100%;object-fit:contain;display:block;mix-blend-mode:multiply;}
+    .receipt-signatures{display:grid;grid-template-columns:1fr 1fr;gap:70px;margin-top:34px;text-transform:uppercase;font-size:13px;}
+    .receipt-signature-line{border-top:1px solid #111;width:100%;padding-top:7px;min-height:58px;}
+    .receipt-signature-name,.receipt-signature-label{display:block;line-height:1.25;}
     @media print{
       *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;forced-color-adjust:none !important;}
       html,body{width:186mm;min-height:0;background:#fff !important;}
@@ -1375,14 +1378,15 @@ window.generateDeliveryReceipt = function() {
 
       <div class="thank-you">Thank You</div>
 
-      <div class="prepared">
-        <div class="prepared-line"></div>
-        <span class="prepared-name">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</span>
-        <span class="prepared-label">Released By</span>
-        <br>
-        <div class="prepared-line"></div>
-        <span class="prepared-name">SIGNATURE OVER PRINTED NAME</span>
-        <span class="prepared-label">Received By</span>
+      <div class="receipt-signatures">
+        <div class="receipt-signature-line">
+          <span class="receipt-signature-name">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</span>
+          <span class="receipt-signature-label">Released By</span>
+        </div>
+        <div class="receipt-signature-line">
+          <span class="receipt-signature-name">SIGNATURE OVER PRINTED NAME</span>
+          <span class="receipt-signature-label">Received By</span>
+        </div>
       </div>
   `;
 

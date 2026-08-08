@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260808-dr-quotation-style-v130";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260808-dr-signature-grid-v131";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

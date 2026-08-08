@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-dr-quotation-style-v130";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-dr-signature-grid-v131";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
