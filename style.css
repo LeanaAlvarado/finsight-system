@@ -595,6 +595,12 @@ select{
   height:40px;
 }
 
+select{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
 textarea{
   min-height:96px;
   resize:vertical;

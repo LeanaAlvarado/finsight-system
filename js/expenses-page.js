@@ -159,6 +159,13 @@ function getProjectName(projectId, record = {}) {
     : record.project_title || record.project_code || "No related project";
 }
 
+function getProjectOptionLabel(project = {}) {
+  const code = String(project.project_code || "").trim();
+  const title = String(project.project_title || project.client_name || "Untitled Project").trim();
+  const fullLabel = [code, title].filter(Boolean).join(" - ") || "Untitled Project";
+  return fullLabel.length > 54 ? `${fullLabel.slice(0, 51)}...` : fullLabel;
+}
+
 function getSelectedExpenseProject() {
   return projectRecords.find(project => String(project.id || "") === String(projectSelect.value || ""));
 }
@@ -246,18 +253,21 @@ function populateProjectSelects() {
   }
 
   projectRecords.forEach(project => {
-    const projectName = project.project_title || project.project_code || project.client_name || "Untitled Project";
+    const projectName = getProjectOptionLabel(project);
+    const fullProjectName = [project.project_code, project.project_title || project.client_name]
+      .filter(Boolean)
+      .join(" - ") || projectName;
 
     if (payrollProjectSelect) {
-      payrollProjectSelect.innerHTML += `<option value="${project.id}">${escapeHtml(projectName)}</option>`;
+      payrollProjectSelect.innerHTML += `<option value="${project.id}" title="${escapeHtml(fullProjectName)}">${escapeHtml(projectName)}</option>`;
     }
 
     if (expenseProjectSelect) {
-      expenseProjectSelect.innerHTML += `<option value="${project.id}">${escapeHtml(projectName)}</option>`;
+      expenseProjectSelect.innerHTML += `<option value="${project.id}" title="${escapeHtml(fullProjectName)}">${escapeHtml(projectName)}</option>`;
     }
 
     if (expenseProjectFilter) {
-      expenseProjectFilter.innerHTML += `<option value="${project.id}">${escapeHtml(projectName)}</option>`;
+      expenseProjectFilter.innerHTML += `<option value="${project.id}" title="${escapeHtml(fullProjectName)}">${escapeHtml(projectName)}</option>`;
     }
   });
 }
