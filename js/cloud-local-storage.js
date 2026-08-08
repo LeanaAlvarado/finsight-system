@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-billing-flow-v123";
+import { supabase } from "./supabase.js?v=20260808-billing-balance-v124";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

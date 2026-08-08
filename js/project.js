@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-flow-v123";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-balance-v124";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1141,11 +1141,30 @@ window.generateBillingDocument = function(type = "") {
   }
 
   const title = getBillingDocumentLabel(billingType);
-  const amount = getBillingDocumentAmount(billingType, math);
-  const percent = getBillingDocumentPercent(billingType, math);
-  const remainingAfterBilling = (billingType === "last" || billingType === "final")
-    ? 0
-    : Math.max(math.poAmount - amount, 0);
+  const downAmount = Math.min(math.downAmount, math.poAmount);
+  const progressAdditionalAmount = Math.min(
+    Math.max(math.poAmount * (math.progressAdditionalPercent / 100), 0),
+    Math.max(math.poAmount - downAmount, 0)
+  );
+  const totalAppliedBilling = Math.min(
+    downAmount + (billingType === "first" || billingType === "downpayment" ? 0 : progressAdditionalAmount),
+    math.poAmount
+  );
+  const totalAmountDue = Math.max(math.poAmount - totalAppliedBilling, 0);
+  const billingRows = [
+    {
+      label: `Less Downpayment (${math.downPercent.toFixed(2)}%)`,
+      amount: downAmount
+    }
+  ];
+
+  if (billingType === "progress" || billingType === "last" || billingType === "final") {
+    billingRows.push({
+      label: `Less Progress Billing Additional (${math.progressAdditionalPercent.toFixed(2)}%)`,
+      amount: progressAdditionalAmount
+    });
+  }
+
   const manpower = getManpowerQuotationDetails(project);
   const fallbackManpowerQty = Number(manpower.workers || 1) || 1;
   const fallbackManpowerAmount = Number(project.contract_amount || 0)
@@ -1242,13 +1261,15 @@ window.generateBillingDocument = function(type = "") {
             <td colspan="3"></td>
             <td class="amount-cell">${formatQuotationAmount(math.poAmount)}</td>
           </tr>
+          ${billingRows.map(row => `
+            <tr class="total-row">
+              <td colspan="3" class="total-label">${escapeProjectHtml(row.label)}</td>
+              <td class="amount-cell">-${formatQuotationAmount(row.amount)}</td>
+            </tr>
+          `).join("")}
           <tr class="total-row">
-            <td colspan="3" class="total-label">${escapeProjectHtml(title)} (${percent.toFixed(2)}%)</td>
-            <td class="amount-cell">${formatQuotationAmount(amount)}</td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="3" class="total-label">Balance Due</td>
-            <td class="amount-cell">${formatQuotationAmount(remainingAfterBilling)}</td>
+            <td colspan="3" class="total-label">${billingType === "last" || billingType === "final" ? "Final Billing Amount" : "Total Amount Due"}</td>
+            <td class="amount-cell">${formatQuotationAmount(totalAmountDue)}</td>
           </tr>
         </tbody>
       </table>
