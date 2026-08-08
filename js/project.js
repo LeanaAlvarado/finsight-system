@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-no-po-required-v133";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-print-gap-v134";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1123,6 +1123,48 @@ function getManpowerBillingPrintStyles() {
   `;
 }
 
+function getDeliveryReceiptPrintStyles() {
+  return `${getManpowerBillingPrintStyles()}
+    .dr-items{
+      break-inside:auto;
+      page-break-inside:auto;
+    }
+    .dr-items tr{
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+    .dr-items .description-cell{
+      text-align:left;
+      font-size:11px;
+      line-height:1.25;
+    }
+    .dr-items .blank-cell{
+      height:14px;
+    }
+    .receipt-signatures{
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+    @media print{
+      table.dr-items{
+        break-inside:auto !important;
+        page-break-inside:auto !important;
+      }
+      .dr-items thead{
+        display:table-header-group;
+      }
+      .dr-items tr{
+        break-inside:avoid !important;
+        page-break-inside:avoid !important;
+      }
+      .receipt-signatures{
+        break-inside:avoid !important;
+        page-break-inside:avoid !important;
+      }
+    }
+  `;
+}
+
 window.generateBillingDocument = function(type = "") {
   const project = getBillingProjectFromEdit();
   if (!project) {
@@ -1231,7 +1273,7 @@ window.generateBillingDocument = function(type = "") {
       <div class="scope-box">${escapeProjectHtml(manpower.additionalComments || manpower.notes || "-")}</div>
 
       <div class="section-title">Quotation Items</div>
-      <table class="manpower-items">
+      <table class="manpower-items dr-items">
         <thead>
           <tr>
             <th>Description</th>
@@ -1359,7 +1401,7 @@ window.generateDeliveryReceipt = function() {
               <td class="amount-cell">${formatQuotationAmount(item.amount || 0)}</td>
             </tr>
           `).join("")}
-          ${Array.from({ length: Math.max(0, 7 - rows.length) }).map(() => `
+          ${Array.from({ length: Math.max(0, 2 - rows.length) }).map(() => `
             <tr>
               <td class="blank-cell"></td>
               <td class="blank-cell"></td>
@@ -1391,7 +1433,7 @@ window.generateDeliveryReceipt = function() {
       </div>
   `;
 
-  openGeneratedDocument(`Delivery Receipt - ${project.project_code || ""}`, html, getManpowerBillingPrintStyles());
+  openGeneratedDocument(`Delivery Receipt - ${project.project_code || ""}`, html, getDeliveryReceiptPrintStyles());
 };
 
 function getContractDateStamp(dateValue = new Date()) {

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-dr-no-po-required-v133";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-dr-print-gap-v134";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
