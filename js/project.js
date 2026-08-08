@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-dropdown-v121";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-quotation-output-v122";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1075,6 +1075,51 @@ function getBillingPrintStyles() {
   `;
 }
 
+function getManpowerBillingPrintStyles() {
+  return `
+    @page{size:A4;margin:12mm;}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;forced-color-adjust:none;}
+    html{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{font-family:Arial, Helvetica, sans-serif;width:186mm;min-height:273mm;margin:0 auto;padding:0;background:#fff;color:#111827;line-height:1.28;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .letterhead{display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:2px solid #0b5d66;padding-bottom:7px;margin-bottom:11px;}
+    .logo{width:236px;max-width:48%;}
+    .quote-meta{text-align:right;font-size:11px;}
+    h1{margin:0 0 5px;color:#0b5d66;text-transform:uppercase;font-size:21px;letter-spacing:.06em;}
+    .company-name{margin:4px 0 0;font-weight:bold;color:#0b5d66;text-align:center;text-transform:uppercase;}
+    .section-title{margin:13px 0 5px;padding:5px 7px;background:#0b5d66;color:#fff;font-weight:bold;text-transform:uppercase;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{border:1px solid #8fa3af;padding:6px 7px;font-size:11px;vertical-align:top;}
+    th{background:#d9edf0;color:#082f35;text-align:center;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .details td:first-child{width:22%;font-weight:bold;background:#f4f8f9;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .scope-box{border:1px solid #8fa3af;min-height:54px;padding:8px 9px;white-space:pre-wrap;}
+    .manpower-items th{background:#0b5d66;color:#fff;border:1px solid #111;padding:5px 7px;}
+    .manpower-items td{border:1px solid #111;padding:4px 7px;font-size:12px;}
+    .manpower-items .description-cell{text-align:center;font-size:14px;}
+    .manpower-items .qty-cell{width:8%;text-align:center;}
+    .manpower-items .price-cell{width:18%;text-align:right;}
+    .manpower-items .amount-cell{width:18%;text-align:right;background:#c7e7f7;}
+    .manpower-items .blank-cell{height:25px;}
+    .manpower-items .final-total td{background:#0b5d66;height:25px;border-color:#111;}
+    .manpower-items .final-total .amount-cell{background:#c7e7f7;color:#0b1f35;font-weight:800;font-size:14px;}
+    .total-row td{font-weight:bold;background:#f4f8f9;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .total-label{text-align:right;font-weight:bold;}
+    .thank-you{margin-top:18px;padding:4px 8px;background:#0b5d66;color:#fff;text-align:center;text-transform:uppercase;font-size:15px;font-weight:bold;-webkit-print-color-adjust:exact;print-color-adjust:exact;break-after:avoid;page-break-after:avoid;}
+    .prepared{display:inline-block;margin-top:14px;width:330px;min-height:0;font-size:15px;text-transform:uppercase;break-inside:avoid;page-break-inside:avoid;page-break-before:avoid;}
+    .prepared-line{border-top:1px solid #111;width:330px;height:1px;margin:0 0 5px 0;padding:0;}
+    .prepared-label,.prepared-name,.prepared-position{display:block;font-weight:normal;line-height:1.35;}
+    .prepared-signature{width:160px;height:42px;margin:0 0 -6px 52px;opacity:1;overflow:hidden;}
+    .prepared-signature .signature-svg{width:100%;height:100%;object-fit:contain;display:block;mix-blend-mode:multiply;}
+    @media print{
+      *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;forced-color-adjust:none !important;}
+      html,body{width:186mm;min-height:0;background:#fff !important;}
+      .section-title,.thank-you,th,.details td:first-child,.total-row td,td[style*="background"]{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+      .letterhead{break-inside:avoid;}
+      table,.scope-box{break-inside:avoid;}
+      .thank-you,.prepared{break-inside:avoid;page-break-inside:avoid;}
+    }
+  `;
+}
+
 window.generateBillingDocument = function(type = "") {
   const project = getBillingProjectFromEdit();
   if (!project) {
@@ -1098,77 +1143,128 @@ window.generateBillingDocument = function(type = "") {
   const title = getBillingDocumentLabel(billingType);
   const amount = getBillingDocumentAmount(billingType, math);
   const percent = getBillingDocumentPercent(billingType, math);
-  const previousBilledAmount = billingType === "progress"
-    ? math.downAmount
-    : (billingType === "last" || billingType === "final")
-    ? math.progressCumulativeAmount
-    : 0;
   const remainingAfterBilling = (billingType === "last" || billingType === "final")
     ? 0
-    : Math.max(math.poAmount - previousBilledAmount - amount, 0);
+    : Math.max(math.poAmount - amount, 0);
+  const manpower = getManpowerQuotationDetails(project);
+  const fallbackManpowerQty = Number(manpower.workers || 1) || 1;
+  const fallbackManpowerAmount = Number(project.contract_amount || 0)
+    ? Number(project.contract_amount || 0) / fallbackManpowerQty
+    : Number(manpower.days || 0) * Number(manpower.rate || 0);
+  const manpowerItems = (manpower.items || []).length
+    ? manpower.items
+    : [{
+        description: manpower.position || manpower.workDescription || project.project_title || "Manpower Services",
+        qty: fallbackManpowerQty,
+        amount: fallbackManpowerAmount
+      }];
+  const normalizedManpowerItems = manpowerItems.map(item => {
+    const qty = Number(item.qty || 0);
+    const unitPrice = Number(item.unitPrice ?? item.price ?? item.amount ?? 0);
+    return {
+      ...item,
+      qty,
+      unitPrice,
+      amount: qty * unitPrice
+    };
+  });
+  const quotationDate = new Date().toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  const workDescription = manpower.workDescription || manpower.scope || project.project_title || "";
+  const preparedByName = cleanSignatoryName(manpower.preparedBy || project.ppr_prepared_by)
+    || getCurrentAccountName()
+    || "MARK LYNDON LAWAS";
+  const preparedPosition = cleanSignatoryName(manpower.preparedPosition) || "OPERATION MANAGER";
 
   const html = `
-    <main class="billing-document">
-      <header class="letterhead">
+      <div class="letterhead">
         <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
         <div class="quote-meta">
           <h1>${escapeProjectHtml(title)}</h1>
           <div><b>PO No:</b> ${escapeProjectHtml(values.purchase_order_number)}</div>
-          <div><b>Date:</b> ${escapeProjectHtml(getReadableDate(new Date()))}</div>
+          <div><b>Date:</b> ${escapeProjectHtml(quotationDate)}</div>
         </div>
-      </header>
+      </div>
       <div class="company-name">LEMYU Fiber Optic Installation and Services</div>
 
       <div class="section-title">Client Details</div>
       <table class="details">
         <tr>
-          <td>Client Name</td>
-          <td>${escapeProjectHtml(project.client_name || "-")}</td>
-          <td>Date</td>
-          <td>${escapeProjectHtml(new Date().toLocaleDateString("en-US"))}</td>
+          <td>CLIENT NAME:</td>
+          <td>${escapeProjectHtml(getProjectClientName(project) || project.client_name || "-")}</td>
+          <td style="width:17%;background:#0b5d66;color:#fff;font-weight:bold;text-align:center;">Date</td>
+          <td style="width:16%;">${escapeProjectHtml(new Date().toLocaleDateString("en-US"))}</td>
         </tr>
-        <tr>
-          <td>Project Code</td>
-          <td>${escapeProjectHtml(project.project_code || "-")}</td>
-          <td>PO No.</td>
-          <td>${escapeProjectHtml(values.purchase_order_number)}</td>
-        </tr>
-        <tr>
-          <td>Project Title</td>
-          <td colspan="3">${escapeProjectHtml(project.project_title || "-")}</td>
-        </tr>
-        <tr>
-          <td>Location</td>
-          <td colspan="3">${escapeProjectHtml(project.location || "-")}</td>
-        </tr>
+        <tr><td>CLIENT CONTACT NUMBER:</td><td>${escapeProjectHtml(project.contact_number || "-")}</td></tr>
+        <tr><td>CLIENT EMAIL:</td><td>${escapeProjectHtml(manpower.clientEmail || project.client_email || "-")}</td></tr>
       </table>
 
-      <div class="section-title">Billing Items</div>
-      <table>
-        <thead><tr><th>Description</th><th>Billing Percentage</th><th class="amount">Amount</th></tr></thead>
-        <tbody>
+      <div class="section-title">Terms of Service</div>
+      <div class="scope-box">${escapeProjectHtml(manpower.terms || "-")}</div>
+
+      <div class="section-title">Work Description</div>
+      <div class="scope-box">${escapeProjectHtml(workDescription || "-")}</div>
+
+      <div class="section-title">Additional Comments</div>
+      <div class="scope-box">${escapeProjectHtml(manpower.additionalComments || manpower.notes || "-")}</div>
+
+      <div class="section-title">Quotation Items</div>
+      <table class="manpower-items">
+        <thead>
           <tr>
-            <td>${escapeProjectHtml(project.project_title || "approved project")}</td>
-            <td>${percent.toFixed(2)}%</td>
-            <td class="amount">${peso(amount)}</td>
+            <th>Description</th>
+            <th class="qty-cell">Qty</th>
+            <th class="price-cell">Unit Price</th>
+            <th style="width:22%;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${normalizedManpowerItems.map(item => `
+            <tr>
+              <td class="description-cell">${escapeProjectHtml(item.description || "-")}</td>
+              <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
+              <td class="price-cell">${formatQuotationAmount(item.unitPrice || 0)}</td>
+              <td class="amount-cell">${formatQuotationAmount(item.amount || 0)}</td>
+            </tr>
+          `).join("")}
+          ${Array.from({ length: Math.max(0, 7 - normalizedManpowerItems.length) }).map(() => `
+            <tr>
+              <td class="blank-cell"></td>
+              <td class="blank-cell"></td>
+              <td class="blank-cell"></td>
+              <td class="amount-cell blank-cell"></td>
+            </tr>
+          `).join("")}
+          <tr class="final-total">
+            <td colspan="3"></td>
+            <td class="amount-cell">${formatQuotationAmount(math.poAmount)}</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="3" class="total-label">${escapeProjectHtml(title)} (${percent.toFixed(2)}%)</td>
+            <td class="amount-cell">${formatQuotationAmount(amount)}</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="3" class="total-label">Balance Due</td>
+            <td class="amount-cell">${formatQuotationAmount(remainingAfterBilling)}</td>
           </tr>
         </tbody>
-        <tfoot>
-          <tr><td colspan="2">Contract / Purchase Order Amount</td><td class="amount">${peso(math.poAmount)}</td></tr>
-          <tr><td colspan="2">Previously Billed Amount</td><td class="amount">${peso(previousBilledAmount)}</td></tr>
-          <tr class="total-row"><td colspan="2">Amount Due</td><td class="amount">${peso(amount)}</td></tr>
-          <tr><td colspan="2">Remaining Balance</td><td class="amount">${peso(remainingAfterBilling)}</td></tr>
-        </tfoot>
       </table>
 
-      <div class="signature-grid">
-        <div class="signature-line">Prepared By<br><strong>MARK LYNDON LAWAS</strong></div>
-        <div class="signature-line">Received By<br><strong>${escapeProjectHtml(project.client_name || "CLIENT")}</strong></div>
+      <div class="thank-you">Thank You</div>
+
+      <div class="prepared">
+        <div class="prepared-signature">${markSignatureSvg()}</div>
+        <div class="prepared-line"></div>
+        <span class="prepared-name">${escapeProjectHtml(preparedByName)}</span>
+        <span class="prepared-label">Prepared By</span>
+        <span class="prepared-position">${escapeProjectHtml(preparedPosition)}</span>
       </div>
-    </main>
   `;
 
-  openGeneratedDocument(`${title} - ${project.project_code || ""}`, html, getBillingPrintStyles());
+  openGeneratedDocument(`${title} - ${project.project_code || ""}`, html, getManpowerBillingPrintStyles());
 };
 
 window.generateDeliveryReceipt = function() {

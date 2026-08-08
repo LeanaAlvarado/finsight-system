@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-dropdown-v121";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-quotation-output-v122";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

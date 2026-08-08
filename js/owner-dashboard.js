@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-dropdown-v121";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-quotation-output-v122";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

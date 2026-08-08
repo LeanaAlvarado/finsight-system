@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260808-billing-dropdown-v121";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260808-billing-quotation-output-v122";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

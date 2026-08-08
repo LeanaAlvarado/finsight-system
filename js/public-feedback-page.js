@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-dropdown-v121";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-quotation-output-v122";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
