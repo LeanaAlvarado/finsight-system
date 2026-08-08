@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-compact-items-v136";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-cctv-serial-dr-v137";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1138,6 +1138,12 @@ function getDeliveryReceiptPrintStyles() {
       font-size:10px;
       line-height:1.18;
     }
+    .dr-serials{
+      margin-top:2px;
+      font-size:9px;
+      line-height:1.18;
+      white-space:normal;
+    }
     .dr-items .blank-cell{
       height:14px;
     }
@@ -1399,7 +1405,10 @@ function generateDeliveryReceiptFromProject(project = null) {
         <tbody>
           ${rows.map(item => `
             <tr>
-              <td class="description-cell">${escapeProjectHtml(item.description || "-")}</td>
+              <td class="description-cell">
+                ${escapeProjectHtml(item.description || "-")}
+                ${item.serial_numbers || item.serialNumbers ? `<div class="dr-serials"><b>SN:</b> ${escapeProjectHtml(item.serial_numbers || item.serialNumbers).replace(/\r?\n/g, "<br>")}</div>` : ""}
+              </td>
               <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
               <td class="price-cell">${escapeProjectHtml(item.unit || "-")}</td>
               <td class="amount-cell">${formatQuotationAmount(item.amount || 0)}</td>
@@ -2601,6 +2610,7 @@ function createEditCctvMaterialRow(item = {}) {
   tr.innerHTML = `
     <td><input class="edit-cctv-material-name" required value="${escapeProjectHtml(item.name || "")}" placeholder="Material name"></td>
     <td><input class="edit-cctv-material-description" value="${escapeProjectHtml(item.description || "")}" placeholder="Description"></td>
+    <td class="serial-column"><textarea class="edit-cctv-material-serials" rows="2" placeholder="Serial number per line">${escapeProjectHtml(item.serial_numbers || item.serialNumbers || "")}</textarea></td>
     <td><input class="edit-cctv-material-qty" type="number" min="0" step="0.01" required value="${item.qty ?? 1}"></td>
     <td>
       <select class="edit-cctv-material-unit">
@@ -2627,12 +2637,14 @@ function fillEditCctvMaterialRow(row, item = {}) {
   row.dataset.pictureUrl = item.picture_url || "";
   const nameField = row.querySelector(".edit-cctv-material-name");
   const descriptionField = row.querySelector(".edit-cctv-material-description");
+  const serialField = row.querySelector(".edit-cctv-material-serials");
   const qtyField = row.querySelector(".edit-cctv-material-qty");
   const unitField = row.querySelector(".edit-cctv-material-unit");
   const priceField = row.querySelector(".edit-cctv-material-price");
 
   if (nameField) nameField.value = item.name || "";
   if (descriptionField) descriptionField.value = item.description || "";
+  if (serialField) serialField.value = item.serial_numbers || item.serialNumbers || "";
   if (qtyField) qtyField.value = item.qty ?? 1;
   if (unitField) {
     const unit = String(item.unit || "").trim().toUpperCase();
@@ -2653,14 +2665,28 @@ function resetEditCctvMaterials(items = []) {
   const rows = items.length ? items : [{ name: "", description: "", qty: 1, unit: "", price: 0 }];
   body.innerHTML = "";
   rows.forEach(item => body.appendChild(createEditCctvMaterialRow(item)));
+  const table = document.getElementById("editCctvMaterialsTable");
+  const button = document.getElementById("toggleCctvSerialsBtn");
+  if (table) table.classList.add("serials-hidden");
+  if (button) button.textContent = "Show Serial Numbers";
   updateEditCctvMaterialsTotal();
 }
+
+window.toggleEditCctvSerials = function() {
+  const table = document.getElementById("editCctvMaterialsTable");
+  const button = document.getElementById("toggleCctvSerialsBtn");
+  if (!table) return;
+
+  const isHidden = table.classList.toggle("serials-hidden");
+  if (button) button.textContent = isHidden ? "Show Serial Numbers" : "Hide Serial Numbers";
+};
 
 function getEditCctvMaterials() {
   return [...document.querySelectorAll("#editCctvMaterialsBody tr")]
     .map(row => ({
       name: row.querySelector(".edit-cctv-material-name")?.value.trim() || "",
       description: row.querySelector(".edit-cctv-material-description")?.value.trim() || "",
+      serial_numbers: row.querySelector(".edit-cctv-material-serials")?.value.trim() || "",
       qty: Number(row.querySelector(".edit-cctv-material-qty")?.value || 0),
       unit: row.querySelector(".edit-cctv-material-unit")?.value.trim() || "",
       price: Number(row.querySelector(".edit-cctv-material-price")?.value || 0),

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260808-dr-compact-items-v136">
+<link rel="stylesheet" href="style.css?v=20260808-cctv-serial-dr-v137">
 </head>
 
 <body>
@@ -427,14 +427,19 @@
               <option value="">Select from inventory / material catalog</option>
             </select>
           </div>
+          <div class="serial-toggle-control">
+            <label>Serial Numbers</label>
+            <button id="toggleCctvSerialsBtn" type="button" class="secondary-btn" onclick="toggleEditCctvSerials()">Show Serial Numbers</button>
+          </div>
         </div>
 
         <div class="table-wrap inventory-entry-box">
-          <table class="inventory-entry-table">
+          <table id="editCctvMaterialsTable" class="inventory-entry-table serials-hidden">
             <thead>
               <tr>
                 <th>Material Name</th>
                 <th>Description</th>
+                <th class="serial-column">Serial Number</th>
                 <th>Quantity</th>
                 <th>Unit</th>
                 <th>Unit Price</th>
@@ -445,7 +450,7 @@
             <tbody id="editCctvMaterialsBody"></tbody>
             <tfoot>
               <tr>
-                <td colspan="5" style="text-align:right;font-weight:800;">Materials Total</td>
+                <td colspan="6" style="text-align:right;font-weight:800;">Materials Total</td>
                 <td id="editCctvMaterialsTotal" style="font-weight:800;">PHP 0.00</td>
                 <td></td>
               </tr>
@@ -534,7 +539,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260808-dr-compact-items-v136"></script>
+<script type="module" src="js/app.js?v=20260808-cctv-serial-dr-v137"></script>
 
 </body>
 </html>

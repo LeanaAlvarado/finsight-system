@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-dr-compact-items-v136";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-cctv-serial-dr-v137";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

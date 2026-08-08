@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260808-dr-compact-items-v136";
+import { supabase } from "./supabase.js?v=20260808-cctv-serial-dr-v137";
 import {
   clearLoginLockout,
   getLockout,
