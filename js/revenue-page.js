@@ -114,23 +114,31 @@ function getProjectDate(project = {}) {
 }
 
 function getProjectFinancials(project = {}) {
+  const hasPayrollRecords = revenuePayroll.length > 0;
   const projectExpenses = revenueExpenses
-    .filter(e => recordBelongsToProject(e, project) && e.category !== "Payroll")
+    .filter(e => recordBelongsToProject(e, project) && normalizeMatchValue(e.category) !== "payroll")
     .reduce((sum, e) => sum + number(e.amount), 0);
 
-  const projectPayroll = revenuePayroll
-    .filter(pr => recordBelongsToProject(pr, project))
-    .reduce((sum, pr) => sum + number(pr.salary_amount), 0);
+  const projectPayroll = hasPayrollRecords
+    ? revenuePayroll
+      .filter(pr => recordBelongsToProject(pr, project))
+      .reduce((sum, pr) => sum + number(pr.salary_amount), 0)
+    : revenueExpenses
+      .filter(e => recordBelongsToProject(e, project) && normalizeMatchValue(e.category) === "payroll")
+      .reduce((sum, e) => sum + number(e.amount), 0);
 
   const contract = number(project.contract_amount);
   const budget = number(project.project_budget);
+  const budgetUsed = projectExpenses + projectPayroll;
+  const remainingBudget = budget - budgetUsed;
+  const budgetUtilization = budget > 0 ? (budgetUsed / budget) * 100 : 0;
   const downPayment = getProjectDownPayment(project);
   const balance = Math.max(contract - downPayment, 0);
   const taxPercent = project.tax_amount === null || project.tax_amount === undefined || project.tax_amount === ""
     ? 0
     : number(project.tax_amount);
   const tax = contract * (taxPercent / 100);
-  const net = contract - budget - tax - projectExpenses - projectPayroll;
+  const net = contract - budget - tax;
 
   return {
     project,
@@ -138,6 +146,9 @@ function getProjectFinancials(project = {}) {
     projectPayroll,
     contract,
     budget,
+    budgetUsed,
+    remainingBudget,
+    budgetUtilization,
     downPayment,
     balance,
     taxPercent,
@@ -265,7 +276,7 @@ function renderRevenueTable() {
   if (!revenueTable) return;
 
   if (revenueLoadError) {
-    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
     renderRevenuePagination(0);
     return;
   }
@@ -281,7 +292,7 @@ function renderRevenueTable() {
     const message = revenueProjects.length && hasActiveRevenueFilters()
       ? "No projects match the selected filters."
       : "No project records found.";
-    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">${message}</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">${message}</td></tr>`;
     renderRevenuePagination(totalItems);
     return;
   }
@@ -304,6 +315,9 @@ function renderRevenueTable() {
       <td>${peso(row.tax)}</td>
       <td>${peso(row.projectExpenses)}</td>
       <td>${peso(row.projectPayroll)}</td>
+      <td>${peso(row.budgetUsed)}</td>
+      <td class="${row.remainingBudget >= 0 ? "good" : "bad"}">${peso(row.remainingBudget)}</td>
+      <td>${row.budget > 0 ? `${row.budgetUtilization.toFixed(2)}%` : "0.00%"}</td>
       <td class="${row.net >= 0 ? "good" : "bad"}">${peso(row.net)}</td>
     </tr>
   `).join("");
@@ -313,7 +327,7 @@ function renderRevenueTable() {
 
 async function loadRevenue() {
   if (revenueTable) {
-    revenueTable.innerHTML = `<tr><td colspan="11" style="text-align:center;">Loading project records...</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Loading project records...</td></tr>`;
   }
 
   const [projectResult, expenseResult, payrollResult] = await Promise.all([
@@ -353,7 +367,7 @@ async function loadRevenue() {
     totalPayrollVal += row.projectPayroll;
   });
 
-  const netRevenueVal = totalContractVal - totalBudgetVal - totalTaxVal - totalExpenseVal - totalPayrollVal;
+  const netRevenueVal = totalContractVal - totalBudgetVal - totalTaxVal;
 
   setText("totalContract", peso(totalContractVal));
   setText("totalTaxes", peso(totalTaxVal));
@@ -437,3 +451,16 @@ window.addEventListener("storage", event => {
     loadRevenue();
   }
 });
+
+window.addEventListener("lemyu:data-sync-complete", loadRevenue);
+window.addEventListener("lemyu:local-data-changed", loadRevenue);
+
+const revenueChannel = supabase.channel("revenue-budget-live");
+["projects", "expenses", "payroll"].forEach(table => {
+  revenueChannel.on(
+    "postgres_changes",
+    { event: "*", schema: "public", table },
+    loadRevenue
+  );
+});
+revenueChannel.subscribe();

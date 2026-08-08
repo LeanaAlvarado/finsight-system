@@ -1098,17 +1098,30 @@ function getContractLogo(project) {
   return "assets/logo.jpg";
 }
 
-function getProjectFinancials(project, expenses = []) {
+function getProjectFinancials(project, expenses = [], payroll = []) {
   const projectExpenses = expenses
-    .filter(exp => exp.project_id === project.id)
+    .filter(exp => String(exp.project_id || "") === String(project.id || "") && String(exp.category || "").trim().toLowerCase() !== "payroll")
     .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+  const projectPayroll = payroll.length
+    ? payroll
+      .filter(item => String(item.project_id || "") === String(project.id || ""))
+      .reduce((sum, item) => sum + Number(item.salary_amount || 0), 0)
+    : expenses
+      .filter(exp => String(exp.project_id || "") === String(project.id || "") && String(exp.category || "").trim().toLowerCase() === "payroll")
+      .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+  const budget = Number(project.project_budget || 0);
+  const budgetUsed = projectExpenses + projectPayroll + Number(project.initial_actual_cost || 0);
 
   return {
-    budget: Number(project.project_budget || 0),
+    budget,
     contract: Number(project.contract_amount || 0),
     downPayment: getProjectDownPayment(project),
     tax: getProjectTaxAmount(project),
-    expenses: projectExpenses + Number(project.initial_actual_cost || 0)
+    expenses: projectExpenses,
+    payroll: projectPayroll,
+    budgetUsed,
+    remainingBudget: budget - budgetUsed,
+    utilization: budget > 0 ? (budgetUsed / budget) * 100 : 0
   };
 }
 
@@ -3700,23 +3713,27 @@ window.viewProject = async function(id, options = {}) {
   }
 
   if (isFinanceScope()) {
-    const { data: expenses = [] } = await supabase
-      .from("expenses")
-      .select("*")
-      .eq("project_id", id);
-    const financials = getProjectFinancials(project, expenses);
-    const profit = financials.contract - financials.budget - financials.tax - financials.expenses;
+    const [{ data: expenses = [] }, { data: payroll = [] }] = await Promise.all([
+      supabase.from("expenses").select("*").eq("project_id", id),
+      supabase.from("payroll").select("*").eq("project_id", id)
+    ]);
+    const financials = getProjectFinancials(project, expenses, payroll);
+    const profit = financials.contract - financials.budget - financials.tax;
 
     viewContent.innerHTML = `
       <div class="details-grid">
         <div class="detail-item"><small>Project Code</small><strong>${project.project_code || "-"}</strong></div>
         <div class="detail-item"><small>Project Title</small><strong>${project.project_title || "-"}</strong></div>
         <div class="detail-item"><small>Status</small><strong>${project.status || "-"}</strong></div>
-        <div class="detail-item"><small>Project Budget</small><strong>${peso(financials.budget)}</strong></div>
+        <div class="detail-item"><small>Contract Budget</small><strong>${peso(financials.budget)}</strong></div>
         <div class="detail-item"><small>Contract Amount</small><strong>${peso(financials.contract)}</strong></div>
         <div class="detail-item"><small>Amount Paid</small><strong>${peso(financials.downPayment)}</strong></div>
         <div class="detail-item"><small>Tax Amount</small><strong>${peso(financials.tax)}</strong></div>
-        <div class="detail-item"><small>Total Expenses</small><strong>${peso(financials.expenses)}</strong></div>
+        <div class="detail-item"><small>Operational Expenses</small><strong>${peso(financials.expenses)}</strong></div>
+        <div class="detail-item"><small>Payroll</small><strong>${peso(financials.payroll)}</strong></div>
+        <div class="detail-item"><small>Total Budget Used</small><strong>${peso(financials.budgetUsed)}</strong></div>
+        <div class="detail-item"><small>Remaining Budget</small><strong>${peso(financials.remainingBudget)}</strong></div>
+        <div class="detail-item"><small>Budget Utilization</small><strong>${financials.utilization.toFixed(2)}%</strong></div>
         <div class="detail-item"><small>Balance Due</small><strong>${peso(Math.max(financials.contract - financials.downPayment, 0))}</strong></div>
         <div class="detail-item"><small>Projected Profit</small><strong>${peso(profit)}</strong></div>
       </div>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260808-operational-expenses-v108">
+<link rel="stylesheet" href="style.css?v=20260808-contract-budget-v109">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -239,18 +239,18 @@
           <strong id="profitMargin">0.00%</strong>
         </div>
         <div class="mini-bi metric-risk">
-          <small>At-Risk Projects</small>
+          <small>Projects Near Budget Limit</small>
           <strong id="riskProjectCount">0</strong>
         </div>
         <div class="mini-bi metric-best">
-          <small>Best Project</small>
+          <small>Total Remaining Budget</small>
           <strong id="bestProjectProfit">PHP 0.00</strong>
-          <span id="bestProjectName">No project record yet.</span>
+          <span id="bestProjectName">Across monitored projects.</span>
         </div>
         <div class="mini-bi metric-cost">
-          <small>Top Cost Driver</small>
+          <small>Average Budget Use</small>
           <strong id="topCostDriver">-</strong>
-          <span id="topCostDriverAmount">PHP 0.00</span>
+          <span id="topCostDriverAmount">0 over budget</span>
         </div>
       </div>
       <div id="businessInsightList" class="insight-list"></div>
@@ -260,7 +260,7 @@
       <div class="card-head">
         <div>
           <h3>Cost Overrun Alerts</h3>
-          <p class="muted">Projects whose actual expenses are near or above approved budget.</p>
+          <p class="muted">Projects whose payroll and operational expenses are near or above contract budget.</p>
         </div>
         <button type="button" id="viewAllCostAlerts" class="dashboard-card-link button-link" hidden>View all alerts</button>
       </div>
@@ -271,7 +271,7 @@
       <div class="card-head">
         <div>
           <h3>Project Profitability</h3>
-          <p class="muted">Ranks projects by net profit after budget, taxes, and budget overruns.</p>
+          <p class="muted">Ranks projects by contract amount, contract budget, tax, and budget utilization.</p>
         </div>
         <a class="dashboard-card-link" href="revenue.html">View revenue</a>
       </div>
@@ -296,7 +296,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260808-operational-expenses-v108"></script>
+<script type="module" src="js/app.js?v=20260808-contract-budget-v109"></script>
 
 
 </body>

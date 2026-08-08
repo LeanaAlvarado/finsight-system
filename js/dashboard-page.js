@@ -10,8 +10,9 @@ let showingAllCostAlerts = false;
 let latestDashboardProjects = [];
 let latestProjectMaterials = [];
 
-const ALERT_WARNING_THRESHOLD = 80;
-const ALERT_CRITICAL_THRESHOLD = 100;
+const ALERT_WARNING_THRESHOLD = 70;
+const ALERT_CRITICAL_THRESHOLD = 85;
+const ALERT_OVER_BUDGET_THRESHOLD = 100;
 const ALERT_PREVIEW_LIMIT = 5;
 const ACTIVE_ALERT_STATUSES = new Set(["Active", "Viewed"]);
 const MATERIAL_PROJECT_STATUSES = new Set(["approved", "completed", "complete"]);
@@ -319,7 +320,7 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const budgetRemaining = budget > 0 ? Math.max(budget - actualBudgetSpend, 0) : 0;
     const budgetUtilization = budget > 0 ? (actualBudgetSpend / budget) * 100 : 0;
     const appliedMaterialCost = budget > 0 ? 0 : materialTotal;
-    const totalCost = budget + tax + appliedMaterialCost + budgetOverrun;
+    const totalCost = budget + tax + appliedMaterialCost;
     const profit = revenue - totalCost;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     const costRatio = revenue > 0 ? (totalCost / revenue) * 100 : 0;
@@ -346,10 +347,24 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
   });
 }
 
+function getBudgetStatusInfo(analysis = {}) {
+  if (analysis.remainingBudget < 0 || analysis.budgetUtilization > ALERT_OVER_BUDGET_THRESHOLD) {
+    return { label: "Over Budget", className: "over-budget" };
+  }
+
+  if (analysis.budgetUtilization >= ALERT_CRITICAL_THRESHOLD) {
+    return { label: "Critical", className: "critical" };
+  }
+
+  if (analysis.budgetUtilization >= ALERT_WARNING_THRESHOLD) {
+    return { label: "Warning", className: "warning" };
+  }
+
+  return { label: "Safe", className: "safe" };
+}
+
 function getProjectStatus(analysis) {
-  if (analysis.profit < 0 || analysis.budgetOverrun > 0) return "Critical";
-  if (analysis.budgetUtilization >= ALERT_WARNING_THRESHOLD || analysis.costRatio >= 90 || analysis.margin < 15) return "Watch";
-  return "Healthy";
+  return getBudgetStatusInfo(analysis).label;
 }
 
 function renderProfitabilityTable(projectAnalytics) {
@@ -366,7 +381,7 @@ function renderProfitabilityTable(projectAnalytics) {
   }
 
   table.innerHTML = rankedProjects.map((item, index) => {
-    const status = getProjectStatus(item);
+    const status = getBudgetStatusInfo(item);
     return `
       <tr>
         <td>${index + 1}</td>
@@ -375,7 +390,7 @@ function renderProfitabilityTable(projectAnalytics) {
         <td>${peso(item.totalCost)}</td>
         <td class="${item.profit >= 0 ? "good" : "bad"}">${peso(item.profit)}</td>
         <td>${item.margin.toFixed(2)}%</td>
-        <td><span class="bi-status ${status.toLowerCase()}">${status}</span></td>
+        <td><span class="bi-status ${status.className}">${status.label}</span></td>
       </tr>
     `;
   }).join("");
@@ -680,12 +695,14 @@ function getProjectActualExpenses(project, expenses = [], payroll = []) {
 }
 
 function getAlertSeverity(utilization) {
+  if (utilization > ALERT_OVER_BUDGET_THRESHOLD) return "Over Budget";
   if (utilization >= ALERT_CRITICAL_THRESHOLD) return "Critical";
   if (utilization >= ALERT_WARNING_THRESHOLD) return "Warning";
   return "";
 }
 
 function getCostAlertSortRank(alert) {
+  if (alert.severity === "Over Budget") return 0;
   if (alert.exceededAmount > 0) return 0;
   if (alert.utilization >= ALERT_CRITICAL_THRESHOLD) return 1;
   return 2;
@@ -727,8 +744,8 @@ function buildCostOverrunAlerts(projects, expenses, savedAlerts = [], payroll = 
         status: savedAlert.status || "Active",
         createdAt: savedAlert.created_at || savedAlert.createdAt || new Date().toISOString(),
         message: exceededAmount > 0
-          ? `${getProjectLabel(project)} has exceeded its approved budget by ${peso(exceededAmount)}.`
-          : `${getProjectLabel(project)} has used ${utilization.toFixed(0)}% of its approved budget.`
+          ? `${getProjectLabel(project)} has exceeded its allocated contract budget by ${peso(exceededAmount)}.`
+          : `${getProjectLabel(project)} has already utilized ${utilization.toFixed(0)}% of its allocated contract budget.`
       };
     })
     .filter(Boolean)
@@ -739,8 +756,12 @@ function getAlertSortRank(alert) {
   return getCostAlertSortRank(alert);
 }
 
+function getStatusClassName(value = "") {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
+}
+
 function renderAlertStatusBadge(severity) {
-  return `<span class="cost-alert-badge ${severity.toLowerCase()}">${severity}</span>`;
+  return `<span class="cost-alert-badge ${getStatusClassName(severity)}">${severity}</span>`;
 }
 
 function renderCostAlerts(alerts) {
@@ -754,8 +775,8 @@ function renderCostAlerts(alerts) {
   if (!alerts.length) {
     list.innerHTML = `
       <div class="alert-item good-alert">
-        <strong>No cost overrun detected</strong>
-        <span>All monitored projects are below 80% budget utilization.</span>
+        <strong>No budget limit alert detected</strong>
+        <span>All monitored projects are below 70% contract budget utilization.</span>
       </div>
     `;
     document.getElementById("viewAllCostAlerts")?.setAttribute("hidden", "");
@@ -777,7 +798,7 @@ function renderCostAlerts(alerts) {
     const progress = Math.min(alert.utilization, 140);
 
     return `
-      <div class="cost-alert-card ${alert.severity.toLowerCase()}">
+      <div class="cost-alert-card ${getStatusClassName(alert.severity)}">
         <div class="cost-alert-top">
           <strong>${escapeHtml(alert.projectName)}</strong>
           ${renderAlertStatusBadge(alert.severity)}
@@ -786,8 +807,8 @@ function renderCostAlerts(alerts) {
           <span style="width:${Math.min(progress, 100).toFixed(2)}%"></span>
         </div>
         <div class="cost-alert-grid">
-          <span><small>Approved Budget</small><strong>${peso(alert.budget)}</strong></span>
-          <span><small>Actual Expenses</small><strong>${peso(alert.actualExpenses)}</strong></span>
+          <span><small>Contract Budget</small><strong>${peso(alert.budget)}</strong></span>
+          <span><small>Budget Used</small><strong>${peso(alert.actualExpenses)}</strong></span>
           <span><small>${alert.exceededAmount > 0 ? "Exceeded Amount" : "Remaining Budget"}</small><strong>${amountLabel}</strong></span>
           <span><small>Utilization</small><strong>${alert.utilization.toFixed(2)}%</strong></span>
         </div>
@@ -989,7 +1010,7 @@ function renderBusinessInsights(projectAnalytics, categoryTotals, totals) {
   const bestProject = sortedProjects[0];
   const lowestProject = [...projectAnalytics].sort((a, b) => a.margin - b.margin)[0];
   const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
-  const riskCount = projectAnalytics.filter(item => getProjectStatus(item) !== "Healthy").length;
+  const riskCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label !== "Safe").length;
   const insights = [];
 
   if (bestProject) {
@@ -1016,8 +1037,8 @@ function renderBusinessInsights(projectAnalytics, categoryTotals, totals) {
   insights.push({
     title: "Portfolio risk",
     text: riskCount
-      ? `${riskCount} project${riskCount === 1 ? "" : "s"} need cost or margin review.`
-      : "No project is currently marked as cost-risk by the BI rules."
+      ? `${riskCount} project${riskCount === 1 ? "" : "s"} are near or above the contract budget limit.`
+      : "No project is currently near its contract budget limit."
   });
 
   if (totals.revenue > 0) {
@@ -1125,17 +1146,19 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   const totalProjectCost = projectAnalytics.reduce((sum, item) => sum + item.totalCost, 0);
   const profit = revenue - totalProjectCost;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-  const sortedProjects = [...projectAnalytics].sort((a, b) => b.profit - a.profit);
-  const bestProject = sortedProjects[0];
-  const riskCount = projectAnalytics.filter(item => getProjectStatus(item) !== "Healthy").length;
-  const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+  const riskCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label !== "Safe").length;
+  const overBudgetCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label === "Over Budget").length;
+  const totalRemainingBudget = projectAnalytics.reduce((sum, item) => sum + number(item.remainingBudget), 0);
+  const averageBudgetUtilization = projectAnalytics.length
+    ? projectAnalytics.reduce((sum, item) => sum + number(item.budgetUtilization), 0) / projectAnalytics.length
+    : 0;
 
   setText("profitMargin", `${margin.toFixed(2)}%`);
   setText("riskProjectCount", riskCount);
-  setText("bestProjectProfit", bestProject ? peso(bestProject.profit) : peso(0));
-  setText("bestProjectName", bestProject ? bestProject.label : "No project record yet.");
-  setText("topCostDriver", topCategory ? topCategory[0] : "-");
-  setText("topCostDriverAmount", topCategory ? peso(topCategory[1]) : peso(0));
+  setText("bestProjectProfit", peso(totalRemainingBudget));
+  setText("bestProjectName", "Across monitored projects.");
+  setText("topCostDriver", `${averageBudgetUtilization.toFixed(2)}%`);
+  setText("topCostDriverAmount", `${overBudgetCount} over budget`);
 
   renderExpenseCategoryChart(categoryTotals);
   renderCategoryBreakdownList(categoryTotals);

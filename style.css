@@ -1807,7 +1807,8 @@ tbody tr:hover{
   background:#fffaf0;
 }
 
-.cost-alert-card.critical{
+.cost-alert-card.critical,
+.cost-alert-card.over-budget{
   border-left-color:#b42318;
   background:#fff5f5;
 }
@@ -1840,7 +1841,8 @@ tbody tr:hover{
   color:#8a5a00;
 }
 
-.cost-alert-badge.critical{
+.cost-alert-badge.critical,
+.cost-alert-badge.over-budget{
   background:#fde1df;
   color:#9f1d1d;
 }
@@ -1859,7 +1861,8 @@ tbody tr:hover{
   background:#b7791f;
 }
 
-.cost-alert-card.critical .cost-alert-progress span{
+.cost-alert-card.critical .cost-alert-progress span,
+.cost-alert-card.over-budget .cost-alert-progress span{
   background:#b42318;
 }
 
@@ -2135,17 +2138,20 @@ tbody tr:hover{
   text-transform:uppercase;
 }
 
-.bi-status.healthy{
+.bi-status.healthy,
+.bi-status.safe{
   background:#e7f5ed;
   color:#166534;
 }
 
-.bi-status.watch{
+.bi-status.watch,
+.bi-status.warning{
   background:#fff7e6;
   color:#8a5a00;
 }
 
-.bi-status.critical{
+.bi-status.critical,
+.bi-status.over-budget{
   background:#fdecec;
   color:#9f1d1d;
 }
