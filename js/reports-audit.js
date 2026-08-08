@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-billing-link-v117";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-remove-billing-action-v118";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
