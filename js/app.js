@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260808-dr-signature-grid-v131";
+const appVersion = "20260808-cctv-dr-manpower-po-v132";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

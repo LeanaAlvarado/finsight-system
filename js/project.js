@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-signature-grid-v131";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-cctv-dr-manpower-po-v132";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1295,11 +1295,12 @@ window.generateDeliveryReceipt = function() {
     return;
   }
 
-  const values = getBillingFormValues(project);
-  if (!values.purchase_order_number && !values.purchase_order_file_url) {
-    alert("Upload or enter the client Purchase Order first before generating the DR.");
+  if (getProjectQuotationType(project) !== "cctv") {
+    alert("Delivery Receipt is only available for CCTV quotation projects.");
     return;
   }
+
+  const values = getBillingFormValues(project);
 
   const items = Array.isArray(project.quotation_items) && project.quotation_items.length
     ? project.quotation_items
@@ -1320,7 +1321,7 @@ window.generateDeliveryReceipt = function() {
         <div class="quote-meta">
           <h1>Delivery Receipt</h1>
           <div><b>DR No:</b> ${escapeProjectHtml(drNo)}</div>
-          <div><b>PO No:</b> ${escapeProjectHtml(values.purchase_order_number || "-")}</div>
+          <div><b>Project Code:</b> ${escapeProjectHtml(project.project_code || "-")}</div>
           <div><b>Date:</b> ${escapeProjectHtml(receiptDate)}</div>
         </div>
       </div>
@@ -2808,6 +2809,21 @@ function toggleEditQuotationTypeView() {
   const remarksLabel = remarksField?.previousElementSibling;
   if (remarksField) remarksField.style.display = isManpower ? "none" : "";
   if (remarksLabel?.tagName === "LABEL") remarksLabel.style.display = isManpower ? "none" : "";
+
+  [
+    document.getElementById("editPurchaseOrderNumberGroup"),
+    document.getElementById("editPurchaseOrderUploadGroup")
+  ].forEach(group => {
+    if (group) group.style.display = isManpower ? "" : "none";
+  });
+
+  const billingTypeGroup = document.getElementById("billing_report_type")?.closest(".form-grid > div");
+  if (billingTypeGroup) billingTypeGroup.style.display = isManpower ? "" : "none";
+
+  const generateBillingBtn = document.getElementById("generateBillingBtn");
+  const generateDrBtn = document.getElementById("generateDrBtn");
+  if (generateBillingBtn) generateBillingBtn.style.display = isManpower ? "" : "none";
+  if (generateDrBtn) generateDrBtn.style.display = isCctv ? "" : "none";
 }
 
 function buildEditManpowerRemarks() {

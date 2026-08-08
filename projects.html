@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260808-dr-signature-grid-v131">
+<link rel="stylesheet" href="style.css?v=20260808-cctv-dr-manpower-po-v132">
 </head>
 
 <body>
@@ -275,7 +275,7 @@
           <input id="edit_contract_amount" type="number">
         </div>
 
-        <div>
+        <div id="editPurchaseOrderNumberGroup">
           <label>Purchase Order Number</label>
           <input id="edit_purchase_order_number" placeholder="PO number from client">
         </div>
@@ -467,7 +467,7 @@
         <h4>Project Files</h4>
         <p class="muted">Upload purchase order documents and progress files in one organized area.</p>
         <div class="form-grid">
-          <div>
+          <div id="editPurchaseOrderUploadGroup">
             <label>Upload Purchase Order</label>
             <input id="edit_purchase_order_file" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
             <p id="purchaseOrderFileName" class="muted"></p>
@@ -488,8 +488,8 @@
       </div>
 
       <div class="form-actions project-final-actions">
-        <button type="button" onclick="generateBillingDocument()">Generate Billing</button>
-        <button type="button" onclick="generateDeliveryReceipt()">Generate DR</button>
+        <button id="generateBillingBtn" type="button" onclick="generateBillingDocument()">Generate Billing</button>
+        <button id="generateDrBtn" type="button" onclick="generateDeliveryReceipt()">Generate DR</button>
         <button type="submit">Update Project</button>
       </div>
 
@@ -534,7 +534,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260808-dr-signature-grid-v131"></script>
+<script type="module" src="js/app.js?v=20260808-cctv-dr-manpower-po-v132"></script>
 
 </body>
 </html>
