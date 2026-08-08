@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-billing-second-row-v127";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260808-billing-fields-order-v128";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
