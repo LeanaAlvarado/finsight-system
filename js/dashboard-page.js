@@ -103,7 +103,7 @@ function toTitleCase(value = "") {
 }
 
 function addCategoryTotal(categoryTotals, category, amount) {
-  const label = String(category || "Other Expenses").trim() || "Other Expenses";
+  const label = String(category || "Operational Expenses").trim() || "Operational Expenses";
   categoryTotals.set(label, (categoryTotals.get(label) || 0) + number(amount));
 }
 
