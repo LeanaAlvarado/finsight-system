@@ -592,6 +592,16 @@ function getProjectDownPayment(project) {
   return Number(project?.down_payment ?? getDownPaymentsMap()[project?.id] ?? 0);
 }
 
+function getProjectDownPaymentPercent(project = {}) {
+  const localBilling = getProjectBillingMap()[project?.id] || {};
+  const explicitPercent = project.billing_down_payment_percent ?? localBilling.billing_down_payment_percent;
+  if (explicitPercent !== undefined && explicitPercent !== null && explicitPercent !== "") {
+    return Math.min(Math.max(Number(explicitPercent || 0), 0), 100);
+  }
+
+  return getPercentFromAmount(getProjectDownPayment(project), Number(project.contract_amount || 0));
+}
+
 function getProjectBillingMap() {
   try {
     return JSON.parse(localStorage.getItem(LOCAL_PROJECT_BILLING_KEY) || "{}");
@@ -613,21 +623,25 @@ function saveLocalProjectBilling(projectId, billing = {}) {
 
 function getProjectBillingData(project = {}) {
   const localBilling = getProjectBillingMap()[project?.id] || {};
+  const downPaymentPercent = project.billing_down_payment_percent ?? localBilling.billing_down_payment_percent;
   return {
     purchase_order_number: project.purchase_order_number ?? localBilling.purchase_order_number ?? "",
-    purchase_order_amount: Number(project.purchase_order_amount ?? localBilling.purchase_order_amount ?? project.contract_amount ?? 0),
+    purchase_order_amount: Number(project.contract_amount ?? localBilling.purchase_order_amount ?? 0),
     purchase_order_file_name: project.purchase_order_file_name ?? localBilling.purchase_order_file_name ?? "",
     purchase_order_file_url: project.purchase_order_file_url ?? localBilling.purchase_order_file_url ?? "",
     billing_down_payment_amount: Number(project.billing_down_payment_amount ?? localBilling.billing_down_payment_amount ?? 0),
+    billing_down_payment_percent: downPaymentPercent === undefined || downPaymentPercent === null || downPaymentPercent === ""
+      ? getProjectDownPaymentPercent(project)
+      : Number(downPaymentPercent || 0),
     billing_progress_percent: Number(project.billing_progress_percent ?? localBilling.billing_progress_percent ?? 0)
   };
 }
 
 function getProjectBillingMath(project = {}) {
   const billing = getProjectBillingData(project);
-  const poAmount = Math.max(Number(billing.purchase_order_amount || 0), 0);
-  const downAmount = Math.min(Math.max(Number(billing.billing_down_payment_amount || 0), 0), poAmount);
-  const downPercent = getPercentFromAmount(downAmount, poAmount);
+  const poAmount = Math.max(Number(project.contract_amount ?? billing.purchase_order_amount ?? 0), 0);
+  const downPercent = Math.min(Math.max(Number(billing.billing_down_payment_percent || 0), 0), 100);
+  const downAmount = poAmount * (downPercent / 100);
   const progressAdditionalPercent = Math.min(Math.max(Number(billing.billing_progress_percent || 0), 0), 100);
   const progressCumulativePercent = Math.min(downPercent + progressAdditionalPercent, 100);
   const progressCumulativeAmount = poAmount * (progressCumulativePercent / 100);
@@ -949,12 +963,20 @@ function getBillingProjectFromEdit() {
 
 function getBillingFormValues(project = {}) {
   const saved = getProjectBillingData(project);
+  const isManpower = document.getElementById("edit_quotation_type")?.value === "manpower";
+  const contractField = isManpower
+    ? document.getElementById("edit_manpower_contract_amount")
+    : document.getElementById("edit_contract_amount");
+  const downPercentField = isManpower
+    ? document.getElementById("edit_manpower_down_payment")
+    : document.getElementById("edit_down_payment");
   return {
     purchase_order_number: document.getElementById("edit_purchase_order_number")?.value.trim() || saved.purchase_order_number || "",
-    purchase_order_amount: Number(document.getElementById("edit_purchase_order_amount")?.value || saved.purchase_order_amount || project.contract_amount || 0),
+    purchase_order_amount: Number(contractField?.value || project.contract_amount || saved.purchase_order_amount || 0),
     purchase_order_file_name: saved.purchase_order_file_name || "",
     purchase_order_file_url: saved.purchase_order_file_url || "",
-    billing_down_payment_amount: Number(document.getElementById("edit_billing_down_payment_amount")?.value || saved.billing_down_payment_amount || 0),
+    billing_down_payment_amount: 0,
+    billing_down_payment_percent: Number(downPercentField?.value || saved.billing_down_payment_percent || 0),
     billing_progress_percent: Number(document.getElementById("edit_billing_progress_percent")?.value || saved.billing_progress_percent || 0)
   };
 }
@@ -962,7 +984,7 @@ function getBillingFormValues(project = {}) {
 function updateBillingSummary() {
   const project = getBillingProjectFromEdit() || {};
   const values = getBillingFormValues(project);
-  const math = getProjectBillingMath({ ...project, ...values });
+  const math = getProjectBillingMath({ ...project, contract_amount: values.purchase_order_amount, ...values });
   const summary = document.getElementById("billingSummary");
 
   if (!summary) return;
@@ -973,10 +995,10 @@ function updateBillingSummary() {
   }
 
   summary.innerHTML = `
-    <strong>PO Amount:</strong> ${peso(math.poAmount)}<br>
-    <strong>Downpayment Billing:</strong> ${peso(math.downAmount)} (${math.downPercent.toFixed(2)}%)<br>
+    <strong>Contract / PO Amount:</strong> ${peso(math.poAmount)}<br>
+    <strong>First Billing:</strong> ${peso(math.downAmount)} (${math.downPercent.toFixed(2)}%)<br>
     <strong>Progress Billing:</strong> ${math.progressCumulativePercent.toFixed(2)}% cumulative, ${peso(math.progressCurrentAmount)} current progress billing<br>
-    <strong>Final Billing:</strong> ${peso(math.finalBillingAmount)} remaining unpaid balance
+    <strong>Last Billing:</strong> ${peso(math.finalBillingAmount)} remaining unpaid balance
   `;
 }
 
@@ -984,8 +1006,6 @@ function fillBillingFields(project = {}) {
   const billing = getProjectBillingData(project);
   const fieldMap = {
     edit_purchase_order_number: billing.purchase_order_number,
-    edit_purchase_order_amount: billing.purchase_order_amount || "",
-    edit_billing_down_payment_amount: billing.billing_down_payment_amount || "",
     edit_billing_progress_percent: billing.billing_progress_percent || ""
   };
 
@@ -1005,28 +1025,30 @@ function fillBillingFields(project = {}) {
 }
 
 function getBillingDocumentLabel(type = "") {
-  if (type === "downpayment") return "Downpayment Billing";
+  if (type === "first") return "First Billing";
+  if (type === "downpayment") return "First Billing";
   if (type === "progress") return "Progress Billing";
-  if (type === "final") return "Final Billing";
+  if (type === "last") return "Last Billing";
+  if (type === "final") return "Last Billing";
   return "Billing";
 }
 
 function getBillingDocumentAmount(type = "", math = {}) {
-  if (type === "downpayment") return math.downAmount;
+  if (type === "first" || type === "downpayment") return math.downAmount;
   if (type === "progress") return math.progressCurrentAmount;
-  if (type === "final") return math.finalBillingAmount;
+  if (type === "last" || type === "final") return math.finalBillingAmount;
   return 0;
 }
 
 function getBillingDocumentPercent(type = "", math = {}) {
-  if (type === "downpayment") return math.downPercent;
+  if (type === "first" || type === "downpayment") return math.downPercent;
   if (type === "progress") return math.progressCumulativePercent;
-  if (type === "final") return 100;
+  if (type === "last" || type === "final") return 100;
   return 0;
 }
 
 function getBillingDocumentNumber(project = {}, type = "") {
-  const prefix = type === "downpayment" ? "BILL-DP" : type === "progress" ? "BILL-PB" : "BILL-FB";
+  const prefix = type === "first" || type === "downpayment" ? "BILL-01" : type === "progress" ? "BILL-PB" : "BILL-LB";
   const code = String(project.project_code || project.id || "PROJECT").replace(/[^\w-]/g, "");
   return `${prefix}-${getContractDateStamp(new Date())}-${code || "PROJECT"}`;
 }
@@ -1081,13 +1103,13 @@ window.generateBillingDocument = function(type = "downpayment") {
   }
 
   const values = getBillingFormValues(project);
-  const math = getProjectBillingMath({ ...project, ...values });
+  const math = getProjectBillingMath({ ...project, contract_amount: values.purchase_order_amount, ...values });
   if (!values.purchase_order_number) {
     alert("Please enter the Purchase Order Number before generating billing.");
     return;
   }
   if (!math.poAmount) {
-    alert("Please enter the Purchase Order Amount before generating billing.");
+    alert("Please enter the Contract Amount before generating billing.");
     return;
   }
 
@@ -1125,11 +1147,11 @@ window.generateBillingDocument = function(type = "downpayment") {
           </tr>
         </tbody>
         <tfoot>
-          <tr><td colspan="2">Purchase Order Amount</td><td class="amount">${peso(math.poAmount)}</td></tr>
-          <tr><td colspan="2">Downpayment Billing</td><td class="amount">${peso(math.downAmount)}</td></tr>
+          <tr><td colspan="2">Contract / Purchase Order Amount</td><td class="amount">${peso(math.poAmount)}</td></tr>
+          <tr><td colspan="2">First Billing</td><td class="amount">${peso(math.downAmount)}</td></tr>
           <tr><td colspan="2">Progress Billed to Date</td><td class="amount">${peso(math.progressCumulativeAmount)}</td></tr>
           <tr class="total-row"><td colspan="2">Amount Due for this Billing</td><td class="amount">${peso(amount)}</td></tr>
-          <tr><td colspan="2">Remaining Unpaid Balance after this Billing</td><td class="amount">${peso(type === "final" ? 0 : Math.max(math.poAmount - (type === "downpayment" ? math.downAmount : math.progressCumulativeAmount), 0))}</td></tr>
+          <tr><td colspan="2">Remaining Unpaid Balance after this Billing</td><td class="amount">${peso((type === "last" || type === "final") ? 0 : Math.max(math.poAmount - ((type === "first" || type === "downpayment") ? math.downAmount : math.progressCumulativeAmount), 0))}</td></tr>
         </tfoot>
       </table>
 
@@ -2617,7 +2639,7 @@ function buildEditManpowerRemarks() {
   const lines = [
     "Quotation Type: Manpower",
     edit_manpower_client_email.value ? `Client Email: ${edit_manpower_client_email.value}` : "",
-    edit_manpower_down_payment.value ? `Amount Paid: ${edit_manpower_down_payment.value}` : "",
+    edit_manpower_down_payment.value ? `Downpayment Percent: ${edit_manpower_down_payment.value}` : "",
     edit_project_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(Number(edit_project_duration_days.value || 0)))}` : "",
     edit_manpower_prepared_by.value ? `Prepared By: ${edit_manpower_prepared_by.value}` : "",
     edit_manpower_prepared_position.value ? `Position: ${edit_manpower_prepared_position.value}` : "",
@@ -4244,7 +4266,7 @@ window.editProject = async function(id) {
   if (editManpowerProgress) editManpowerProgress.value = edit_progress_percentage.value;
   edit_project_budget.value = Number(project.project_budget || 0) ? Number(project.project_budget || 0) : "";
   edit_contract_amount.value = project.contract_amount || 0;
-  edit_down_payment.value = getProjectDownPayment(project);
+  edit_down_payment.value = getProjectDownPaymentPercent(project);
   edit_tax_amount.value = project.tax_amount ?? "";
   edit_ppr_prepared_by.value = project.ppr_prepared_by || "";
   edit_ppr_noted_by.value = project.ppr_noted_by || "";
@@ -4253,7 +4275,7 @@ window.editProject = async function(id) {
   edit_manpower_client_contact.value = project.contact_number || "";
   edit_manpower_client_email.value = manpowerDetails.clientEmail || project.client_email || "";
   edit_manpower_location.value = project.location || "";
-  edit_manpower_down_payment.value = getProjectDownPayment(project);
+  edit_manpower_down_payment.value = getProjectDownPaymentPercent(project);
   edit_down_payment.value = edit_manpower_down_payment.value;
   const editManpowerContractAmount = document.getElementById("edit_manpower_contract_amount");
   if (editManpowerContractAmount) editManpowerContractAmount.value = Number(project.contract_amount || 0);
@@ -4295,11 +4317,14 @@ const editProjectForm = document.getElementById("editProjectForm");
 document.getElementById("edit_quotation_type")?.addEventListener("change", toggleEditQuotationTypeView);
 document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
   if (edit_down_payment) edit_down_payment.value = event.target.value;
+  updateBillingSummary();
 });
 [
   "edit_purchase_order_number",
-  "edit_purchase_order_amount",
-  "edit_billing_down_payment_amount",
+  "edit_contract_amount",
+  "edit_manpower_contract_amount",
+  "edit_down_payment",
+  "edit_manpower_down_payment",
   "edit_billing_progress_percent"
 ].forEach(id => {
   document.getElementById(id)?.addEventListener("input", updateBillingSummary);
@@ -4366,7 +4391,7 @@ if (editProjectForm) {
       ? currentProject.quotation_items
       : getLocalQuotationItems(editingId);
     const manpowerContractAmount = Math.max(Number(document.getElementById("edit_manpower_contract_amount")?.value || manpowerAmount || currentProject.contract_amount || 0), 0);
-    const manpowerDownPaymentAmount = Math.max(Number(edit_manpower_down_payment.value || 0), 0);
+    const downPaymentPercent = Math.min(Math.max(Number((isManpower ? edit_manpower_down_payment.value : edit_down_payment.value) || 0), 0), 100);
     const manpowerProjectBudgetAmount = Math.max(Number(document.getElementById("edit_manpower_project_budget")?.value || 0), 0);
     const billingValues = getBillingFormValues(currentProject);
     const purchaseOrderInput = document.getElementById("edit_purchase_order_file");
@@ -4405,7 +4430,7 @@ if (editProjectForm) {
         : edit_progress_percentage),
       project_budget: isManpower ? manpowerProjectBudgetAmount : Number(edit_project_budget.value || currentProject.project_budget || 0),
       contract_amount: isManpower ? manpowerContractAmount : Number(edit_contract_amount.value || currentProject.contract_amount || 0),
-      down_payment: isManpower ? manpowerDownPaymentAmount : Number(edit_down_payment.value || currentProject.down_payment || 0),
+      down_payment: (isManpower ? manpowerContractAmount : Number(edit_contract_amount.value || currentProject.contract_amount || 0)) * (downPaymentPercent / 100),
       tax_amount: edit_tax_amount.value === "" ? null : Number(edit_tax_amount.value || 0),
       ppr_prepared_by: isManpower ? edit_manpower_prepared_by.value : edit_ppr_prepared_by.value,
       ppr_noted_by: isCctv ? "" : (edit_ppr_noted_by.value || currentProject.ppr_noted_by || ""),
@@ -4416,6 +4441,7 @@ if (editProjectForm) {
       purchase_order_file_name: billingValues.purchase_order_file_name,
       purchase_order_file_url: billingValues.purchase_order_file_url,
       billing_down_payment_amount: billingValues.billing_down_payment_amount,
+      billing_down_payment_percent: downPaymentPercent,
       billing_progress_percent: billingValues.billing_progress_percent
     };
 
@@ -4440,6 +4466,7 @@ if (editProjectForm) {
           "purchase_order_file_name",
           "purchase_order_file_url",
           "billing_down_payment_amount",
+          "billing_down_payment_percent",
           "billing_progress_percent"
         ],
         { returnRecord: true }
@@ -4462,6 +4489,7 @@ if (editProjectForm) {
       purchase_order_file_name: record.purchase_order_file_name,
       purchase_order_file_url: record.purchase_order_file_url,
       billing_down_payment_amount: record.billing_down_payment_amount,
+      billing_down_payment_percent: record.billing_down_payment_percent,
       billing_progress_percent: record.billing_progress_percent
     });
     if (isCctv) {

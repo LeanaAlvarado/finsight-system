@@ -119,6 +119,7 @@ async function upsertProject(localProject = {}) {
     purchase_order_file_name: localProject.purchase_order_file_name || "",
     purchase_order_file_url: localProject.purchase_order_file_url || "",
     billing_down_payment_amount: Number(localProject.billing_down_payment_amount || 0),
+    billing_down_payment_percent: Number(localProject.billing_down_payment_percent || 0),
     billing_progress_percent: Number(localProject.billing_progress_percent || 0),
     contract_file_name: localProject.contract_file_name || "",
     contract_file_url: localProject.contract_file_url || ""

@@ -31,6 +31,8 @@ const manpower_location = document.getElementById("manpower_location");
 const manpower_duration_days = document.getElementById("manpower_duration_days");
 const manpower_amount_paid = document.getElementById("manpower_amount_paid");
 const manpower_contract_amount = document.getElementById("manpower_contract_amount");
+const manpower_purchase_order_number = document.getElementById("manpower_purchase_order_number");
+const manpower_purchase_order_file = document.getElementById("manpower_purchase_order_file");
 const manpower_project_budget = document.getElementById("manpower_project_budget");
 const manpower_progress_percentage = document.getElementById("manpower_progress_percentage");
 const manpower_prepared_by = document.getElementById("manpower_prepared_by");
@@ -44,6 +46,9 @@ const cctv_installation_charge = document.getElementById("cctv_installation_char
 const cctv_summary_computation = document.getElementById("cctv_summary_computation");
 const cctv_note = document.getElementById("cctv_note");
 const cctv_terms = document.getElementById("cctv_terms");
+const cctv_purchase_order_number = document.getElementById("cctv_purchase_order_number");
+const cctv_purchase_order_file = document.getElementById("cctv_purchase_order_file");
+const cctv_down_payment_percent = document.getElementById("cctv_down_payment_percent");
 const feedbackTable = document.getElementById("feedbackTable");
 const PROPOSAL_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
@@ -612,6 +617,8 @@ function buildProposalRemarks() {
     const cctvLines = [
       "Quotation Type: CCTV",
       project_duration_days?.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(project_duration_days.value)))}` : "",
+      cctv_purchase_order_number?.value ? `Purchase Order Number: ${cctv_purchase_order_number.value}` : "",
+      cctv_down_payment_percent?.value ? `Downpayment Percent: ${cctv_down_payment_percent.value}` : "",
       cctv_intro.value ? `CCTV Intro: ${cctv_intro.value}` : "",
       cctv_installation_charge.value ? `Installation Charge: ${cctv_installation_charge.value}` : "",
       cctv_summary_computation.value ? `Summary of Computation: ${cctv_summary_computation.value}` : "",
@@ -630,6 +637,8 @@ function buildProposalRemarks() {
     "Quotation Type: Manpower",
     manpower_client_email.value ? `Client Email: ${manpower_client_email.value}` : "",
     manpower_duration_days.value ? `Project Duration Days: ${Math.max(1, Math.trunc(number(manpower_duration_days.value)))}` : "",
+    manpower_purchase_order_number?.value ? `Purchase Order Number: ${manpower_purchase_order_number.value}` : "",
+    manpower_amount_paid.value ? `Downpayment Percent: ${manpower_amount_paid.value}` : "",
     manpower_prepared_by.value ? `Prepared By: ${manpower_prepared_by.value}` : "",
     manpower_prepared_position.value ? `Position: ${manpower_prepared_position.value}` : "",
     manpower_terms.value ? `Terms of Service: ${manpower_terms.value}` : "",
@@ -772,9 +781,13 @@ proposalForm.addEventListener("submit", async event => {
 
     const selectedFile = contract_file.files[0];
     let uploadedFile = null;
+    let uploadedPurchaseOrder = null;
     const isManpower = quotationTypeInput.value === "manpower";
     const manpowerItems = isManpower ? getManpowerQuotationItems() : [];
     const quotationItems = quotationTypeInput.value === "cctv" ? [] : manpowerItems;
+    const selectedPurchaseOrderFile = isManpower
+      ? manpower_purchase_order_file?.files?.[0]
+      : cctv_purchase_order_file?.files?.[0];
 
     if (selectedFile) {
       try {
@@ -785,9 +798,21 @@ proposalForm.addEventListener("submit", async event => {
       }
     }
 
+    if (selectedPurchaseOrderFile) {
+      try {
+        uploadedPurchaseOrder = await uploadProposalFile(selectedPurchaseOrderFile);
+      } catch (uploadError) {
+        alert("Purchase Order upload error: " + uploadError.message);
+        return;
+      }
+    }
+
     const generatedProjectCode = document.getElementById("project_code")?.value.trim() || await setProposalProjectCode();
     const workDescription = manpower_work_description.value.trim();
     const fallbackTitle = manpowerItems[0]?.description || "Manpower Quotation";
+    const contractValue = isManpower ? number(manpower_contract_amount?.value || contract_amount.value) : number(contract_amount.value);
+    const downPaymentPercent = Math.min(Math.max(number(isManpower ? manpower_amount_paid?.value : cctv_down_payment_percent?.value || down_payment.value), 0), 100);
+    const downPaymentAmount = contractValue * (downPaymentPercent / 100);
 
     const localRecord = {
       project_code: generatedProjectCode,
@@ -802,14 +827,21 @@ proposalForm.addEventListener("submit", async event => {
       status: status.value || "Pending",
       progress_percentage: getOverallProjectProgressValue(),
       project_budget: isManpower ? number(manpower_project_budget?.value || project_budget.value) : number(project_budget.value),
-      contract_amount: isManpower ? number(manpower_contract_amount?.value || contract_amount.value) : number(contract_amount.value),
-      down_payment: isManpower ? number(manpower_amount_paid?.value || down_payment.value) : number(down_payment.value),
+      contract_amount: contractValue,
+      down_payment: downPaymentAmount,
       tax_amount: null,
       ppr_prepared_by: isManpower ? (ppr_prepared_by.value || manpower_prepared_by.value) : ppr_prepared_by.value,
       ppr_noted_by: ppr_noted_by?.value || "",
       remarks: buildProposalRemarks(),
       quotation_type: quotationTypeInput.value,
       quotation_items: quotationItems,
+      purchase_order_number: isManpower ? (manpower_purchase_order_number?.value || "") : (cctv_purchase_order_number?.value || ""),
+      purchase_order_amount: contractValue,
+      purchase_order_file_name: uploadedPurchaseOrder?.fileName || "",
+      purchase_order_file_url: uploadedPurchaseOrder?.publicUrl || "",
+      billing_down_payment_amount: 0,
+      billing_down_payment_percent: downPaymentPercent,
+      billing_progress_percent: 0,
       contract_file_name: uploadedFile?.fileName || "",
       contract_file_url: uploadedFile?.publicUrl || ""
     };
@@ -830,6 +862,13 @@ proposalForm.addEventListener("submit", async event => {
         "ppr_noted_by",
         "quotation_type",
         "quotation_items",
+        "purchase_order_number",
+        "purchase_order_amount",
+        "purchase_order_file_name",
+        "purchase_order_file_url",
+        "billing_down_payment_amount",
+        "billing_down_payment_percent",
+        "billing_progress_percent",
         "contract_file_name",
         "contract_file_url"
       ],
