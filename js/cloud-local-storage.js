@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-cctv-dr-action-v135";
+import { supabase } from "./supabase.js?v=20260808-dr-compact-items-v136";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

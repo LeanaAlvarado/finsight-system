@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-cctv-dr-action-v135";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-dr-compact-items-v136";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

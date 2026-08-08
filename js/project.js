@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-cctv-dr-action-v135";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-compact-items-v136";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1130,13 +1130,13 @@ function getDeliveryReceiptPrintStyles() {
       page-break-inside:auto;
     }
     .dr-items tr{
-      break-inside:avoid;
-      page-break-inside:avoid;
+      break-inside:auto;
+      page-break-inside:auto;
     }
     .dr-items .description-cell{
       text-align:left;
-      font-size:11px;
-      line-height:1.25;
+      font-size:10px;
+      line-height:1.18;
     }
     .dr-items .blank-cell{
       height:14px;
@@ -1154,8 +1154,8 @@ function getDeliveryReceiptPrintStyles() {
         display:table-header-group;
       }
       .dr-items tr{
-        break-inside:avoid !important;
-        page-break-inside:avoid !important;
+        break-inside:auto !important;
+        page-break-inside:auto !important;
       }
       .receipt-signatures{
         break-inside:avoid !important;
@@ -1273,7 +1273,7 @@ window.generateBillingDocument = function(type = "") {
       <div class="scope-box">${escapeProjectHtml(manpower.additionalComments || manpower.notes || "-")}</div>
 
       <div class="section-title">Quotation Items</div>
-      <table class="manpower-items dr-items">
+      <table class="manpower-items">
         <thead>
           <tr>
             <th>Description</th>
@@ -1387,7 +1387,7 @@ function generateDeliveryReceiptFromProject(project = null) {
       </table>
 
       <div class="section-title">Delivered Items</div>
-      <table class="manpower-items">
+      <table class="manpower-items dr-items">
         <thead>
           <tr>
             <th>Description</th>
@@ -1399,7 +1399,7 @@ function generateDeliveryReceiptFromProject(project = null) {
         <tbody>
           ${rows.map(item => `
             <tr>
-              <td class="description-cell">${escapeProjectHtml(item.description || "-")}${item.details ? `<br><small>${escapeProjectHtml(item.details)}</small>` : ""}</td>
+              <td class="description-cell">${escapeProjectHtml(item.description || "-")}</td>
               <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
               <td class="price-cell">${escapeProjectHtml(item.unit || "-")}</td>
               <td class="amount-cell">${formatQuotationAmount(item.amount || 0)}</td>
