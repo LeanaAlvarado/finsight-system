@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-quotation-style-v119";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-as-quotation-v120";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-quotation-style-v119";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-as-quotation-v120";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1085,12 +1085,11 @@ function getBillingPrintStyles() {
     .quote-meta div{font-size:12px;line-height:1.35;}
     .company-name{font-size:10px;text-align:left;color:#0b5d66;margin:2px 0 14px;}
     .section-title{background:#0b5d66;color:#fff;font-weight:800;text-transform:uppercase;text-align:center;padding:5px 8px;margin:14px 0 0;}
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-    .info-box{border:1px solid #cbd8e6;padding:9px 10px;border-radius:4px;}
-    .info-box small{display:block;color:#52677f;font-weight:800;text-transform:uppercase;font-size:10px;margin-bottom:3px;}
     table{width:100%;border-collapse:collapse;margin:14px 0;}
     th,td{border:1px solid #1f2937;padding:8px;vertical-align:top;}
     th{background:#0b5d66;color:#fff;text-transform:uppercase;font-size:11px;text-align:left;}
+    .details td:first-child{width:24%;background:#f4f8f9;font-weight:800;text-transform:uppercase;}
+    .details td:nth-child(3){width:18%;background:#f4f8f9;font-weight:800;text-transform:uppercase;}
     .amount{text-align:right;white-space:nowrap;font-weight:800;}
     .total-row td{font-weight:800;background:#c7e7f7;}
     .signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:48px;}
@@ -1117,10 +1116,16 @@ window.generateBillingDocument = function(type = "downpayment") {
     return;
   }
 
-  const label = getBillingDocumentLabel(type);
   const amount = getBillingDocumentAmount(type, math);
   const percent = getBillingDocumentPercent(type, math);
-  const billingNo = getBillingDocumentNumber(project, type);
+  const previousBilledAmount = type === "progress"
+    ? math.downAmount
+    : (type === "last" || type === "final")
+    ? math.progressCumulativeAmount
+    : 0;
+  const remainingAfterBilling = (type === "last" || type === "final")
+    ? 0
+    : Math.max(math.poAmount - previousBilledAmount - amount, 0);
 
   const html = `
     <main class="billing-document">
@@ -1134,32 +1139,45 @@ window.generateBillingDocument = function(type = "downpayment") {
       </header>
       <div class="company-name">LEMYU Fiber Optic Installation and Services</div>
 
-      <div class="section-title">Billing Details</div>
-      <section class="info-grid">
-        <div class="info-box"><small>Billing Type</small>${escapeProjectHtml(label)}</div>
-        <div class="info-box"><small>Billing No.</small>${escapeProjectHtml(billingNo)}</div>
-        <div class="info-box"><small>Project Code</small>${escapeProjectHtml(project.project_code || "-")}</div>
-        <div class="info-box"><small>Bill To</small>${escapeProjectHtml(project.client_name || "-")}</div>
-        <div class="info-box"><small>Project</small>${escapeProjectHtml(project.project_title || "-")}</div>
-        <div class="info-box"><small>Location</small>${escapeProjectHtml(project.location || "-")}</div>
-      </section>
+      <div class="section-title">Client Details</div>
+      <table class="details">
+        <tr>
+          <td>Client Name</td>
+          <td>${escapeProjectHtml(project.client_name || "-")}</td>
+          <td>Date</td>
+          <td>${escapeProjectHtml(new Date().toLocaleDateString("en-US"))}</td>
+        </tr>
+        <tr>
+          <td>Project Code</td>
+          <td>${escapeProjectHtml(project.project_code || "-")}</td>
+          <td>PO No.</td>
+          <td>${escapeProjectHtml(values.purchase_order_number)}</td>
+        </tr>
+        <tr>
+          <td>Project Title</td>
+          <td colspan="3">${escapeProjectHtml(project.project_title || "-")}</td>
+        </tr>
+        <tr>
+          <td>Location</td>
+          <td colspan="3">${escapeProjectHtml(project.location || "-")}</td>
+        </tr>
+      </table>
 
       <div class="section-title">Billing Items</div>
       <table>
         <thead><tr><th>Description</th><th>Billing Percentage</th><th class="amount">Amount</th></tr></thead>
         <tbody>
           <tr>
-            <td>${escapeProjectHtml(label)} for ${escapeProjectHtml(project.project_title || "approved project")}</td>
+            <td>${escapeProjectHtml(project.project_title || "approved project")}</td>
             <td>${percent.toFixed(2)}%</td>
             <td class="amount">${peso(amount)}</td>
           </tr>
         </tbody>
         <tfoot>
           <tr><td colspan="2">Contract / Purchase Order Amount</td><td class="amount">${peso(math.poAmount)}</td></tr>
-          <tr><td colspan="2">First Billing</td><td class="amount">${peso(math.downAmount)}</td></tr>
-          <tr><td colspan="2">Progress Billed to Date</td><td class="amount">${peso(math.progressCumulativeAmount)}</td></tr>
-          <tr class="total-row"><td colspan="2">Amount Due for this Billing</td><td class="amount">${peso(amount)}</td></tr>
-          <tr><td colspan="2">Remaining Unpaid Balance after this Billing</td><td class="amount">${peso((type === "last" || type === "final") ? 0 : Math.max(math.poAmount - ((type === "first" || type === "downpayment") ? math.downAmount : math.progressCumulativeAmount), 0))}</td></tr>
+          <tr><td colspan="2">Previously Billed Amount</td><td class="amount">${peso(previousBilledAmount)}</td></tr>
+          <tr class="total-row"><td colspan="2">Amount Due</td><td class="amount">${peso(amount)}</td></tr>
+          <tr><td colspan="2">Remaining Balance</td><td class="amount">${peso(remainingAfterBilling)}</td></tr>
         </tfoot>
       </table>
 
@@ -1170,7 +1188,7 @@ window.generateBillingDocument = function(type = "downpayment") {
     </main>
   `;
 
-  openGeneratedDocument(`${label} - ${project.project_code || ""}`, html, getBillingPrintStyles());
+  openGeneratedDocument(`Billing - ${project.project_code || ""}`, html, getBillingPrintStyles());
 };
 
 window.generateDeliveryReceipt = function() {

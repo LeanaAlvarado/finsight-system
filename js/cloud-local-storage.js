@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-billing-quotation-style-v119";
+import { supabase } from "./supabase.js?v=20260808-billing-as-quotation-v120";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

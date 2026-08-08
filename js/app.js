@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260808-billing-quotation-style-v119";
+const appVersion = "20260808-billing-as-quotation-v120";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

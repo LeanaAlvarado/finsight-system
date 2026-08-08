@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260808-billing-quotation-style-v119";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260808-billing-as-quotation-v120";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
