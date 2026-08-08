@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-no-downpayment-comment-v129";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-dr-quotation-style-v130";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1304,49 +1304,89 @@ window.generateDeliveryReceipt = function() {
   const rows = (items.length ? items : [{ description: project.project_title || "Project deliverables", qty: 1, unit: "LOT", amount: values.purchase_order_amount || project.contract_amount || 0 }])
     .map(item => normalizeContractItem(item, project.project_title || "Project deliverables"));
   const drNo = `DR-${getContractDateStamp(new Date())}-${String(project.project_code || project.id || "PROJECT").replace(/[^\w-]/g, "")}`;
+  const receiptDate = new Date().toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+  const deliveredTotal = rows.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   const html = `
-    <main class="billing-document">
-      <header class="doc-head">
-        <div>
-          <div class="doc-brand">LEMYU Fiber Optic Installation and Services</div>
-          <p>Delivery Receipt generated from uploaded client Purchase Order.</p>
+      <div class="letterhead">
+        <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
+        <div class="quote-meta">
+          <h1>Delivery Receipt</h1>
+          <div><b>DR No:</b> ${escapeProjectHtml(drNo)}</div>
+          <div><b>PO No:</b> ${escapeProjectHtml(values.purchase_order_number || "-")}</div>
+          <div><b>Date:</b> ${escapeProjectHtml(receiptDate)}</div>
         </div>
-        <div class="doc-title">Delivery Receipt</div>
-      </header>
+      </div>
+      <div class="company-name">LEMYU Fiber Optic Installation and Services</div>
 
-      <section class="info-grid">
-        <div class="info-box"><small>DR No.</small>${escapeProjectHtml(drNo)}</div>
-        <div class="info-box"><small>Date</small>${escapeProjectHtml(getReadableDate(new Date()))}</div>
-        <div class="info-box"><small>PO No.</small>${escapeProjectHtml(values.purchase_order_number || "-")}</div>
-        <div class="info-box"><small>Project Code</small>${escapeProjectHtml(project.project_code || "-")}</div>
-        <div class="info-box"><small>Sold To</small>${escapeProjectHtml(project.client_name || "-")}</div>
-        <div class="info-box"><small>Address / Location</small>${escapeProjectHtml(project.location || "-")}</div>
-      </section>
+      <div class="section-title">Client Details</div>
+      <table class="details">
+        <tr>
+          <td>CLIENT NAME:</td>
+          <td>${escapeProjectHtml(getProjectClientName(project) || project.client_name || "-")}</td>
+          <td style="width:17%;background:#0b5d66;color:#fff;font-weight:bold;text-align:center;">Date</td>
+          <td style="width:16%;">${escapeProjectHtml(new Date().toLocaleDateString("en-US"))}</td>
+        </tr>
+        <tr><td>PROJECT CODE:</td><td>${escapeProjectHtml(project.project_code || "-")}</td></tr>
+        <tr><td>PROJECT TITLE:</td><td>${escapeProjectHtml(project.project_title || "-")}</td></tr>
+        <tr><td>LOCATION:</td><td>${escapeProjectHtml(project.location || "-")}</td></tr>
+      </table>
 
-      <table>
-        <thead><tr><th>Product Description</th><th>Qty.</th><th>Unit</th><th class="amount">Amount</th></tr></thead>
+      <div class="section-title">Delivered Items</div>
+      <table class="manpower-items">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th class="qty-cell">Qty</th>
+            <th class="price-cell">Unit</th>
+            <th style="width:22%;">Amount</th>
+          </tr>
+        </thead>
         <tbody>
           ${rows.map(item => `
             <tr>
-              <td>${escapeProjectHtml(item.description || "-")}${item.details ? `<br><small>${escapeProjectHtml(item.details)}</small>` : ""}</td>
-              <td>${escapeProjectHtml(item.qty || 0)}</td>
-              <td>${escapeProjectHtml(item.unit || "")}</td>
-              <td class="amount">${peso(item.amount || 0)}</td>
+              <td class="description-cell">${escapeProjectHtml(item.description || "-")}${item.details ? `<br><small>${escapeProjectHtml(item.details)}</small>` : ""}</td>
+              <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
+              <td class="price-cell">${escapeProjectHtml(item.unit || "-")}</td>
+              <td class="amount-cell">${formatQuotationAmount(item.amount || 0)}</td>
             </tr>
           `).join("")}
-          <tr><td colspan="4">--NOTHING TO FOLLOW--</td></tr>
+          ${Array.from({ length: Math.max(0, 7 - rows.length) }).map(() => `
+            <tr>
+              <td class="blank-cell"></td>
+              <td class="blank-cell"></td>
+              <td class="blank-cell"></td>
+              <td class="amount-cell blank-cell"></td>
+            </tr>
+          `).join("")}
+          <tr class="final-total">
+            <td colspan="3"></td>
+            <td class="amount-cell">${formatQuotationAmount(deliveredTotal)}</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="4" class="total-label" style="text-align:center;">-- NOTHING TO FOLLOW --</td>
+          </tr>
         </tbody>
       </table>
 
-      <div class="signature-grid">
-        <div class="signature-line">Released By<br><strong>LEMYU Fiber Optic Installation and Services</strong></div>
-        <div class="signature-line">Received By<br><strong>Signature Over Printed Name</strong></div>
+      <div class="thank-you">Thank You</div>
+
+      <div class="prepared">
+        <div class="prepared-line"></div>
+        <span class="prepared-name">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</span>
+        <span class="prepared-label">Released By</span>
+        <br>
+        <div class="prepared-line"></div>
+        <span class="prepared-name">SIGNATURE OVER PRINTED NAME</span>
+        <span class="prepared-label">Received By</span>
       </div>
-    </main>
   `;
 
-  openGeneratedDocument(`Delivery Receipt - ${project.project_code || ""}`, html, getBillingPrintStyles());
+  openGeneratedDocument(`Delivery Receipt - ${project.project_code || ""}`, html, getManpowerBillingPrintStyles());
 };
 
 function getContractDateStamp(dateValue = new Date()) {

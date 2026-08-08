@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-no-downpayment-comment-v129";
+import { supabase } from "./supabase.js?v=20260808-dr-quotation-style-v130";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
