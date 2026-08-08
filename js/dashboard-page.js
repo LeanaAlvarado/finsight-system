@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-remove-billing-action-v118";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-billing-quotation-style-v119";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

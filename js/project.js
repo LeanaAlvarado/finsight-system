@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-remove-billing-action-v118";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260808-billing-quotation-style-v119";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1077,18 +1077,22 @@ function getBillingPrintStyles() {
     @page{size:A4;margin:16mm;}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body{margin:0;background:#eef2f6;color:#0b1f35;font-family:Arial, Helvetica, sans-serif;font-size:12px;}
-    .billing-document{width:185mm;min-height:265mm;margin:0 auto;background:#fff;padding:18mm 15mm;}
-    .doc-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0b315f;padding-bottom:12px;margin-bottom:18px;}
-    .doc-brand{font-weight:800;color:#0b315f;text-transform:uppercase;letter-spacing:.05em;}
-    .doc-title{text-align:right;font-size:22px;font-weight:800;text-transform:uppercase;}
+    .billing-document{width:186mm;min-height:265mm;margin:0 auto;background:#fff;padding:16mm 14mm;}
+    .letterhead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0b5d66;padding-bottom:8px;margin-bottom:4px;}
+    .logo{width:200px;height:auto;display:block;}
+    .quote-meta{text-align:right;padding-top:12px;}
+    .quote-meta h1{margin:0 0 8px;color:#0b5d66;font-size:24px;letter-spacing:2px;text-transform:uppercase;}
+    .quote-meta div{font-size:12px;line-height:1.35;}
+    .company-name{font-size:10px;text-align:left;color:#0b5d66;margin:2px 0 14px;}
+    .section-title{background:#0b5d66;color:#fff;font-weight:800;text-transform:uppercase;text-align:center;padding:5px 8px;margin:14px 0 0;}
     .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
     .info-box{border:1px solid #cbd8e6;padding:9px 10px;border-radius:4px;}
     .info-box small{display:block;color:#52677f;font-weight:800;text-transform:uppercase;font-size:10px;margin-bottom:3px;}
     table{width:100%;border-collapse:collapse;margin:14px 0;}
     th,td{border:1px solid #1f2937;padding:8px;vertical-align:top;}
-    th{background:#e8f0f8;text-transform:uppercase;font-size:11px;text-align:left;}
+    th{background:#0b5d66;color:#fff;text-transform:uppercase;font-size:11px;text-align:left;}
     .amount{text-align:right;white-space:nowrap;font-weight:800;}
-    .total-row td{font-weight:800;background:#f5f8fb;}
+    .total-row td{font-weight:800;background:#c7e7f7;}
     .signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:48px;}
     .signature-line{border-top:1px solid #111827;padding-top:6px;text-align:center;}
     @media print{body{background:#fff;}.billing-document{width:auto;min-height:auto;margin:0;padding:0;}}
@@ -1120,23 +1124,27 @@ window.generateBillingDocument = function(type = "downpayment") {
 
   const html = `
     <main class="billing-document">
-      <header class="doc-head">
-        <div>
-          <div class="doc-brand">LEMYU Fiber Optic Installation and Services</div>
-          <p>${escapeProjectHtml(project.location || "")}</p>
+      <header class="letterhead">
+        <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
+        <div class="quote-meta">
+          <h1>Billing</h1>
+          <div><b>PO No:</b> ${escapeProjectHtml(values.purchase_order_number)}</div>
+          <div><b>Date:</b> ${escapeProjectHtml(getReadableDate(new Date()))}</div>
         </div>
-        <div class="doc-title">${escapeProjectHtml(label)}</div>
       </header>
+      <div class="company-name">LEMYU Fiber Optic Installation and Services</div>
 
+      <div class="section-title">Billing Details</div>
       <section class="info-grid">
+        <div class="info-box"><small>Billing Type</small>${escapeProjectHtml(label)}</div>
         <div class="info-box"><small>Billing No.</small>${escapeProjectHtml(billingNo)}</div>
-        <div class="info-box"><small>Date</small>${escapeProjectHtml(getReadableDate(new Date()))}</div>
-        <div class="info-box"><small>Purchase Order No.</small>${escapeProjectHtml(values.purchase_order_number)}</div>
         <div class="info-box"><small>Project Code</small>${escapeProjectHtml(project.project_code || "-")}</div>
         <div class="info-box"><small>Bill To</small>${escapeProjectHtml(project.client_name || "-")}</div>
         <div class="info-box"><small>Project</small>${escapeProjectHtml(project.project_title || "-")}</div>
+        <div class="info-box"><small>Location</small>${escapeProjectHtml(project.location || "-")}</div>
       </section>
 
+      <div class="section-title">Billing Items</div>
       <table>
         <thead><tr><th>Description</th><th>Billing Percentage</th><th class="amount">Amount</th></tr></thead>
         <tbody>

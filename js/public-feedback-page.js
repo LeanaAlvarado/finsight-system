@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-remove-billing-action-v118";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260808-billing-quotation-style-v119";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
