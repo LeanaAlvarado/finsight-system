@@ -9,6 +9,9 @@ let revenueExpenses = [];
 let revenuePayroll = [];
 let revenueCurrentPage = 1;
 let revenueLoadError = "";
+let revenueLoadPromise = null;
+let revenueReloadQueued = false;
+let revenueRefreshTimer = null;
 const revenueListState = {
   search: "",
   date: "all",
@@ -325,8 +328,8 @@ function renderRevenueTable() {
   renderRevenuePagination(totalItems);
 }
 
-async function loadRevenue() {
-  if (revenueTable) {
+async function loadRevenue({ silent = false } = {}) {
+  if (!silent && revenueTable && !revenueProjects.length) {
     revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Loading project records...</td></tr>`;
   }
 
@@ -377,6 +380,30 @@ async function loadRevenue() {
   renderRevenueTable();
 }
 
+async function refreshRevenueNow(options = {}) {
+  if (revenueLoadPromise) {
+    revenueReloadQueued = true;
+    return revenueLoadPromise;
+  }
+
+  revenueLoadPromise = loadRevenue(options).finally(() => {
+    revenueLoadPromise = null;
+    if (revenueReloadQueued) {
+      revenueReloadQueued = false;
+      scheduleRevenueRefresh(150, { silent: true });
+    }
+  });
+
+  return revenueLoadPromise;
+}
+
+function scheduleRevenueRefresh(delay = 250, options = { silent: true }) {
+  window.clearTimeout(revenueRefreshTimer);
+  revenueRefreshTimer = window.setTimeout(() => {
+    refreshRevenueNow(options);
+  }, delay);
+}
+
 window.saveProjectTax = async function(projectId) {
   const field = document.getElementById(`tax_${projectId}`);
   const taxValue = field.value === "" ? null : number(field.value);
@@ -396,7 +423,7 @@ window.saveProjectTax = async function(projectId) {
 
   if (isLocalProjectId(projectId)) {
     saveLocalProjectMirror(updatedProject);
-    await loadRevenue();
+    await refreshRevenueNow({ silent: true });
     return;
   }
 
@@ -412,7 +439,7 @@ window.saveProjectTax = async function(projectId) {
     saveLocalProjectMirror(updatedProject);
   }
 
-  await loadRevenue();
+  await refreshRevenueNow({ silent: true });
 };
 
 window.goToRevenuePage = function(page) {
@@ -444,23 +471,23 @@ function bindRevenueFilters() {
 }
 
 bindRevenueFilters();
-loadRevenue();
+refreshRevenueNow({ silent: false });
 
 window.addEventListener("storage", event => {
   if (event.key === LOCAL_PROJECTS_KEY) {
-    loadRevenue();
+    scheduleRevenueRefresh(250, { silent: true });
   }
 });
 
-window.addEventListener("lemyu:data-sync-complete", loadRevenue);
-window.addEventListener("lemyu:local-data-changed", loadRevenue);
+window.addEventListener("lemyu:data-sync-complete", () => scheduleRevenueRefresh(250, { silent: true }));
+window.addEventListener("lemyu:local-data-changed", () => scheduleRevenueRefresh(250, { silent: true }));
 
 const revenueChannel = supabase.channel("revenue-budget-live");
 ["projects", "expenses", "payroll"].forEach(table => {
   revenueChannel.on(
     "postgres_changes",
     { event: "*", schema: "public", table },
-    loadRevenue
+    () => scheduleRevenueRefresh(300, { silent: true })
   );
 });
 revenueChannel.subscribe();
