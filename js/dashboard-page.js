@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-cctv-dr-manpower-po-v132";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260808-dr-no-po-required-v133";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
