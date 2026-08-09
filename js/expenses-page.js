@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
 
 let projectRecords = [];
 let expenseRecords = [];

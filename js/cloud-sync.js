@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
+import { supabase } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

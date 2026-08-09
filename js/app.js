@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260809-cctv-serial-draft-v140";
+const appVersion = "20260809-cctv-serial-visible-save-v141";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

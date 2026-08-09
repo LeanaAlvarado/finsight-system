@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2590,7 +2590,34 @@ function updateEditCctvMaterialRowTotal(row) {
 
 function formatSerialNumbersForEdit(value = "") {
   const cleaned = String(value || "").trim();
-  return cleaned ? `${cleaned}\n` : "";
+  return cleaned;
+}
+
+function parseEditCctvSerialNumbers(value = "") {
+  return String(value || "")
+    .split(/\r?\n|,/)
+    .map(serial => serial.trim())
+    .filter(Boolean);
+}
+
+function getEditCctvRowSerialNumbers(row, includeDraft = true) {
+  if (!row) return "";
+  const savedSerials = parseEditCctvSerialNumbers(row.dataset.serialNumbers || "");
+  const draftSerials = includeDraft
+    ? parseEditCctvSerialNumbers(row.querySelector(".edit-cctv-material-serials")?.value || "")
+    : [];
+  return [...savedSerials, ...draftSerials].join("\n");
+}
+
+function renderEditCctvSerialList(row) {
+  if (!row) return;
+  const list = row.querySelector(".saved-serial-list");
+  if (!list) return;
+
+  const serials = parseEditCctvSerialNumbers(row.dataset.serialNumbers || "");
+  list.innerHTML = serials.length
+    ? `<div class="saved-serial-title">Saved Serials</div>${serials.map(serial => `<div class="saved-serial-item">${escapeProjectHtml(serial)}</div>`).join("")}`
+    : `<div class="saved-serial-empty">No saved serial yet.</div>`;
 }
 
 function saveEditCctvMaterialDraft() {
@@ -2604,6 +2631,15 @@ function bindEditCctvMaterialRow(row) {
   row.querySelector(".edit-cctv-material-qty")?.addEventListener("input", () => updateEditCctvMaterialRowTotal(row));
   row.querySelector(".edit-cctv-material-price")?.addEventListener("input", () => updateEditCctvMaterialRowTotal(row));
   row.querySelector(".edit-cctv-material-serials")?.addEventListener("input", saveEditCctvMaterialDraft);
+  row.querySelector(".save-serial-btn")?.addEventListener("click", () => {
+    const textarea = row.querySelector(".edit-cctv-material-serials");
+    const nextSerials = getEditCctvRowSerialNumbers(row, true);
+    row.dataset.serialNumbers = nextSerials;
+    if (textarea) textarea.value = "";
+    renderEditCctvSerialList(row);
+    saveEditCctvMaterialDraft();
+  });
+  renderEditCctvSerialList(row);
   updateEditCctvMaterialRowTotal(row);
   return row;
 }
@@ -2614,6 +2650,7 @@ function createEditCctvMaterialRow(item = {}) {
   tr.dataset.catalogId = item.catalog_id || "";
   tr.dataset.pictureName = item.picture_name || "";
   tr.dataset.pictureUrl = item.picture_url || "";
+  tr.dataset.serialNumbers = formatSerialNumbersForEdit(item.serial_numbers || item.serialNumbers || "");
   const selectedUnit = String(item.unit || "").trim().toUpperCase();
   const unitOptions = [
     ...MATERIAL_UNIT_OPTIONS,
@@ -2623,7 +2660,13 @@ function createEditCctvMaterialRow(item = {}) {
   tr.innerHTML = `
     <td><input class="edit-cctv-material-name" required value="${escapeProjectHtml(item.name || "")}" placeholder="Material name"></td>
     <td><input class="edit-cctv-material-description" value="${escapeProjectHtml(item.description || "")}" placeholder="Description"></td>
-    <td class="serial-column"><textarea class="edit-cctv-material-serials" rows="2" placeholder="Serial number per line">${escapeProjectHtml(formatSerialNumbersForEdit(item.serial_numbers || item.serialNumbers || ""))}</textarea></td>
+    <td class="serial-column">
+      <div class="serial-entry-stack">
+        <textarea class="edit-cctv-material-serials" rows="2" placeholder="Type serial, then Save Serial"></textarea>
+        <button type="button" class="secondary-btn save-serial-btn">Save Serial</button>
+        <div class="saved-serial-list"></div>
+      </div>
+    </td>
     <td class="quotation-action-cell">
       <button type="button" onclick="addEditCctvMaterialRow()">Add</button>
       <button type="button" class="danger-btn" onclick="removeEditCctvMaterialRow(this)">Delete</button>
@@ -2648,6 +2691,7 @@ function fillEditCctvMaterialRow(row, item = {}) {
   row.dataset.catalogId = item.catalog_id || "";
   row.dataset.pictureName = item.picture_name || "";
   row.dataset.pictureUrl = item.picture_url || "";
+  row.dataset.serialNumbers = formatSerialNumbersForEdit(item.serial_numbers || item.serialNumbers || "");
   const nameField = row.querySelector(".edit-cctv-material-name");
   const descriptionField = row.querySelector(".edit-cctv-material-description");
   const serialField = row.querySelector(".edit-cctv-material-serials");
@@ -2657,7 +2701,8 @@ function fillEditCctvMaterialRow(row, item = {}) {
 
   if (nameField) nameField.value = item.name || "";
   if (descriptionField) descriptionField.value = item.description || "";
-  if (serialField) serialField.value = formatSerialNumbersForEdit(item.serial_numbers || item.serialNumbers || "");
+  if (serialField) serialField.value = "";
+  renderEditCctvSerialList(row);
   if (qtyField) qtyField.value = item.qty ?? 1;
   if (unitField) {
     const unit = String(item.unit || "").trim().toUpperCase();
@@ -2699,7 +2744,7 @@ function getEditCctvMaterials() {
     .map(row => ({
       name: row.querySelector(".edit-cctv-material-name")?.value.trim() || "",
       description: row.querySelector(".edit-cctv-material-description")?.value.trim() || "",
-      serial_numbers: row.querySelector(".edit-cctv-material-serials")?.value.trim() || "",
+      serial_numbers: getEditCctvRowSerialNumbers(row, true),
       qty: Number(row.querySelector(".edit-cctv-material-qty")?.value || 0),
       unit: row.querySelector(".edit-cctv-material-unit")?.value.trim() || "",
       price: Number(row.querySelector(".edit-cctv-material-price")?.value || 0),

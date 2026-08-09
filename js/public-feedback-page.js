@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
