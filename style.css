@@ -3056,17 +3056,17 @@ tbody tr:hover{
 
 #editCctvMaterialsTable th:nth-child(4),
 #editCctvMaterialsTable td:nth-child(4){
-  width:92px;
+  width:9%;
 }
 
 #editCctvMaterialsTable th:nth-child(5),
 #editCctvMaterialsTable td:nth-child(5){
-  width:9%;
+  width:10%;
 }
 
 #editCctvMaterialsTable th:nth-child(6),
 #editCctvMaterialsTable td:nth-child(6){
-  width:10%;
+  width:11%;
 }
 
 #editCctvMaterialsTable th:nth-child(7),
@@ -3076,7 +3076,7 @@ tbody tr:hover{
 
 #editCctvMaterialsTable th:nth-child(8),
 #editCctvMaterialsTable td:nth-child(8){
-  width:11%;
+  width:92px;
 }
 
 #editCctvMaterialsTable .serial-column textarea{

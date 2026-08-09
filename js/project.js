@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-action-end-v142";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2667,10 +2667,6 @@ function createEditCctvMaterialRow(item = {}) {
         <div class="saved-serial-list"></div>
       </div>
     </td>
-    <td class="quotation-action-cell">
-      <button type="button" onclick="addEditCctvMaterialRow()">Add</button>
-      <button type="button" class="danger-btn" onclick="removeEditCctvMaterialRow(this)">Delete</button>
-    </td>
     <td><input class="edit-cctv-material-qty" type="number" min="0" step="0.01" required value="${item.qty ?? 1}"></td>
     <td>
       <select class="edit-cctv-material-unit">
@@ -2680,6 +2676,10 @@ function createEditCctvMaterialRow(item = {}) {
     </td>
     <td><input class="edit-cctv-material-price" type="number" min="0" step="0.01" required value="${item.price ?? 0}"></td>
     <td class="edit-cctv-material-total">${peso(Number(item.qty ?? 1) * Number(item.price ?? 0))}</td>
+    <td class="quotation-action-cell">
+      <button type="button" onclick="addEditCctvMaterialRow()">Add</button>
+      <button type="button" class="danger-btn" onclick="removeEditCctvMaterialRow(this)">Delete</button>
+    </td>
   `;
   return bindEditCctvMaterialRow(tr);
 }

@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-cctv-action-end-v142";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

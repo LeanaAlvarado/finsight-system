@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260809-cctv-serial-visible-save-v141";
+import { supabase } from "./supabase.js?v=20260809-cctv-action-end-v142";
 import {
   clearLoginLockout,
   getLockout,
