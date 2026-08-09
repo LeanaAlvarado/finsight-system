@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-action-end-v142";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-dr-serial-items-v143";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1138,11 +1138,25 @@ function getDeliveryReceiptPrintStyles() {
       font-size:10px;
       line-height:1.18;
     }
-    .dr-serials{
+    .dr-item-name{
+      display:block;
+      font-weight:bold;
+      text-transform:uppercase;
+      color:#0b1f35;
+    }
+    .dr-item-details{
+      display:block;
       margin-top:2px;
+      color:#111827;
+    }
+    .dr-serials{
+      margin-top:4px;
       font-size:9px;
       line-height:1.18;
       white-space:normal;
+    }
+    .dr-serials b{
+      color:#0b1f35;
     }
     .dr-items .blank-cell{
       height:14px;
@@ -1406,7 +1420,8 @@ function generateDeliveryReceiptFromProject(project = null) {
           ${rows.map(item => `
             <tr>
               <td class="description-cell">
-                ${escapeProjectHtml(item.description || "-")}
+                <span class="dr-item-name">${escapeProjectHtml(item.name || item.description || "-")}</span>
+                ${item.details && item.details !== item.name ? `<span class="dr-item-details">${escapeProjectHtml(item.details)}</span>` : ""}
                 ${item.serial_numbers || item.serialNumbers ? `<div class="dr-serials"><b>SN:</b> ${escapeProjectHtml(item.serial_numbers || item.serialNumbers).replace(/\r?\n/g, "<br>")}</div>` : ""}
               </td>
               <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
@@ -1525,8 +1540,10 @@ function normalizeContractItem(item = {}, fallbackDescription = "Project service
   const amount = Number(item.total_amount ?? item.line_total ?? (qty * unitPrice) ?? 0);
 
   return {
+    name: item.name || item.material_name || "",
     description: item.name || item.description || item.details || fallbackDescription,
     details: item.details || item.description || "",
+    serial_numbers: item.serial_numbers || item.serialNumbers || "",
     qty,
     unit: item.unit || "",
     unitPrice,
