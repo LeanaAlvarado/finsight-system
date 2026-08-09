@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-project-code-first-v152";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-lock-quotation-type-v153";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -4665,7 +4665,10 @@ window.editProject = async function(id) {
   if (editProjectSection) editProjectSection.style.display = "block";
 
   const editQuotationType = document.getElementById("edit_quotation_type");
-  if (editQuotationType) editQuotationType.value = getProjectQuotationType(project);
+  if (editQuotationType) {
+    editQuotationType.value = getProjectQuotationType(project);
+    editQuotationType.disabled = true;
+  }
   const manpowerDetails = getManpowerQuotationDetails(project);
   const cctvDetails = getCctvQuotationDetails(project);
   edit_project_code.value = project.project_code || "";

@@ -613,6 +613,14 @@ textarea:focus{
   box-shadow:0 0 0 3px rgba(31,78,121,.14);
 }
 
+input:disabled,
+select:disabled,
+textarea:disabled{
+  background:#eef4f9;
+  color:#526174;
+  cursor:not-allowed;
+}
+
 .amount-input::-webkit-inner-spin-button,
 .amount-input::-webkit-outer-spin-button{
   -webkit-appearance:none;
