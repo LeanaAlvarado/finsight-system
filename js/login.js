@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260809-contract-status-save-v166";
+import { supabase } from "./supabase.js?v=20260809-fast-project-list-v167";
 import {
   clearLoginLockout,
   getLockout,

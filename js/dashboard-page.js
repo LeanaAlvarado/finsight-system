@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-contract-status-save-v166";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-fast-project-list-v167";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

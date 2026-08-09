@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-contract-status-save-v166";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-fast-project-list-v167";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

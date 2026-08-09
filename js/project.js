@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-contract-status-save-v166";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-fast-project-list-v167";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -4180,8 +4180,19 @@ function renderProjectList() {
 
 // LOAD PROJECTS
 async function loadProjects() {
+  const localProjects = getLocalSavedProjects();
+
+  if (localProjects.length) {
+    allProjects = mergeProjects([]);
+    renderProjectList();
+    setNextProjectCode(allProjects);
+    renderOperationsExpenseProjectOptions();
+  }
+
   if (tbody) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading project records...</td></tr>`;
+    if (!localProjects.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading project records...</td></tr>`;
+    }
   }
 
   const { data: supabaseProjects, error } = await supabase
@@ -4205,20 +4216,11 @@ async function loadProjects() {
   allProjects = projects;
   setNextProjectCode(allProjects);
   renderOperationsExpenseProjectOptions();
-
-  const { data: expenseData = [], error: expenseError } = await supabase
-    .from("expenses")
-    .select("*");
-
-  if (expenseError) {
-    console.warn("Project list loaded without expense records.", expenseError);
-  }
-
-  const expenses = Array.isArray(expenseData) ? expenseData : [];
-
-  await syncProjectContracts(allProjects, expenses);
-  renderSmartContracts();
   renderProjectList();
+
+  syncProjectContracts(allProjects)
+    .then(renderSmartContracts)
+    .catch(error => console.warn("Project contracts will refresh later.", error));
 
   if (pendingDetailProjectId) {
     const projectId = pendingDetailProjectId;
