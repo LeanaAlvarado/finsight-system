@@ -1041,6 +1041,13 @@ tbody tr:hover{
   background:#334155;
 }
 
+.field-action-btn{
+  width:100%;
+  min-height:36px;
+  margin-top:8px;
+  padding:8px 10px;
+}
+
 .inventory-entry-box{
   margin-top:16px;
 }

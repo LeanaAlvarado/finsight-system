@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-billing-action-v146";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-billing-in-details-v147";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -3005,6 +3005,8 @@ function toggleEditQuotationTypeView() {
 
   const billingTypeGroup = document.getElementById("billing_report_type")?.closest(".form-grid > div");
   if (billingTypeGroup) billingTypeGroup.style.display = isManpower || isCctv ? "" : "none";
+  const generateBillingBtn = document.getElementById("generateBillingBtn");
+  if (generateBillingBtn) generateBillingBtn.style.display = isManpower || isCctv ? "" : "none";
 
 }
 
@@ -4090,9 +4092,6 @@ function renderProjectList() {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
     const reportMeta = getProjectReportMeta(project);
-    const billingAction = ["manpower", "cctv"].includes(getProjectQuotationType(project))
-      ? `<a href="#" onclick="generateBillingDocumentForProject('${project.id}'); return false;">Generate Billing</a>`
-      : "";
     const drAction = getProjectQuotationType(project) === "cctv"
       ? `<a href="#" onclick="generateDeliveryReceiptForProject('${project.id}'); return false;">Generate DR</a>`
       : "";
@@ -4105,7 +4104,6 @@ function renderProjectList() {
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
-          ${billingAction}
           ${drAction}
           <a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>
