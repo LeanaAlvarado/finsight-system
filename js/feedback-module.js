@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-par-feedback-lookup-v173";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-feedback-project-title-v174";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");
@@ -891,8 +891,38 @@ proposalForm.addEventListener("submit", async event => {
   }
 });
 
+function normalizeFeedbackMatchValue(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
 function getFeedbackProject(feedback = {}) {
-  return feedbackProjects.find(project => String(project.id || "") === String(feedback.project_id || ""));
+  const feedbackValues = [
+    feedback.project_id,
+    feedback.project_code,
+    feedback.project_reference,
+    feedback.project_service,
+    feedback.project_title
+  ].map(normalizeFeedbackMatchValue).filter(Boolean);
+
+  return feedbackProjects.find(project => {
+    const projectValues = [
+      project.id,
+      project.project_code,
+      project.project_title
+    ].map(normalizeFeedbackMatchValue).filter(Boolean);
+
+    return feedbackValues.some(value => projectValues.includes(value));
+  });
+}
+
+function getFeedbackProjectTitle(feedback = {}) {
+  const project = getFeedbackProject(feedback);
+  return project?.project_title
+    || feedback.project_service
+    || feedback.project_title
+    || feedback.project_code
+    || feedback.project_reference
+    || "-";
 }
 
 function getFeedbackRating(feedback = {}) {
@@ -948,7 +978,7 @@ function getFilteredFeedbackRecords() {
         feedback.client_name,
         feedback.comments,
         feedback.recommendations,
-        project?.project_title,
+        getFeedbackProjectTitle(feedback),
         project?.project_code,
         project?.client_name
       ].join(" ").toLowerCase();
@@ -1047,13 +1077,12 @@ function renderFeedbackTable() {
   }
 
   feedbackTable.innerHTML = pageFeedbacks.map(feedback => {
-    const project = getFeedbackProject(feedback);
     const rating = getFeedbackRating(feedback);
     const date = getFeedbackDate(feedback) || "-";
 
     return `
       <tr>
-        <td>${escapeHtml(project ? project.project_title : "-")}</td>
+        <td>${escapeHtml(getFeedbackProjectTitle(feedback))}</td>
         <td>${escapeHtml(feedback.client_name || "-")}</td>
         <td>${number(rating)} / 5</td>
         <td>${formatDate(date)}</td>
@@ -1087,7 +1116,14 @@ async function loadFeedback(){
   feedbackLoadError = "";
   feedbackRecords = feedbackResult.data || [];
   const { data: projects = [] } = await readTable("projects");
-  feedbackProjects = projects || [];
+  const localProjects = getLocalSavedProjects();
+  const projectMap = new Map();
+  [...(projects || []), ...localProjects].forEach(project => {
+    const key = String(project.id || project.project_code || project.project_title || "").trim();
+    if (!key) return;
+    projectMap.set(key, { ...(projectMap.get(key) || {}), ...project });
+  });
+  feedbackProjects = Array.from(projectMap.values());
 
   // revenue
   const totalRevenueVal = feedbackProjects.reduce((s,p)=>s + number(p.contract_amount),0);

@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260809-par-feedback-lookup-v173";
+const appVersion = "20260809-feedback-project-title-v174";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

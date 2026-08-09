@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-par-feedback-lookup-v173";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-feedback-project-title-v174";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
@@ -16,21 +16,29 @@ function isUuid(value = "") {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
 }
 
-async function resolveFeedbackProjectId() {
-  if (isUuid(projectId)) return projectId;
+async function resolveFeedbackProject() {
+  if (isUuid(projectId)) {
+    const { data } = await supabase
+      .from("projects")
+      .select("id, project_code, project_title")
+      .eq("id", projectId)
+      .limit(1)
+      .maybeSingle();
+    return data || { id: projectId, project_code: projectCodeParam, project_title: projectServiceParam };
+  }
 
   const projectCode = projectCodeParam.trim();
-  if (!projectCode) return "";
+  if (!projectCode) return null;
 
   const { data, error } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, project_code, project_title")
     .eq("project_code", projectCode)
     .limit(1)
     .maybeSingle();
 
-  if (error || !data?.id) return "";
-  return isUuid(data.id) ? data.id : "";
+  if (error || !data?.id) return null;
+  return data;
 }
 
 if (feedbackDateField) {
@@ -60,12 +68,15 @@ publicFeedbackForm.addEventListener("submit", async function(e) {
   submitButton.disabled = true;
   submitButton.textContent = "Submitting...";
 
-  const resolvedProjectId = await resolveFeedbackProjectId();
+  const resolvedProject = await resolveFeedbackProject();
+  const resolvedProjectId = isUuid(resolvedProject?.id) ? resolvedProject.id : "";
+  const resolvedProjectTitle = resolvedProject?.project_title || projectServiceField.value.trim();
   const feedbackRecord = {
     client_name: clientNameField.value.trim(),
-    project_service: projectServiceField.value.trim(),
+    project_service: resolvedProjectTitle,
+    project_title: resolvedProjectTitle,
     project_reference: projectId || projectCodeParam || projectServiceField.value.trim(),
-    project_code: projectCodeParam,
+    project_code: resolvedProject?.project_code || projectCodeParam,
     rating: ratingValue,
     overall_satisfaction: ratingValue,
     comments: commentsField.value.trim(),
@@ -80,6 +91,7 @@ publicFeedbackForm.addEventListener("submit", async function(e) {
   const { error } = await insertWithOptionalColumns("feedback", feedbackRecord, [
     "project_id",
     "project_service",
+    "project_title",
     "project_reference",
     "project_code",
     "rating",
