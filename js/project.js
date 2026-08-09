@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-ui-v138";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2611,6 +2611,10 @@ function createEditCctvMaterialRow(item = {}) {
     <td><input class="edit-cctv-material-name" required value="${escapeProjectHtml(item.name || "")}" placeholder="Material name"></td>
     <td><input class="edit-cctv-material-description" value="${escapeProjectHtml(item.description || "")}" placeholder="Description"></td>
     <td class="serial-column"><textarea class="edit-cctv-material-serials" rows="2" placeholder="Serial number per line">${escapeProjectHtml(item.serial_numbers || item.serialNumbers || "")}</textarea></td>
+    <td class="quotation-action-cell">
+      <button type="button" onclick="addEditCctvMaterialRow()">Add</button>
+      <button type="button" class="danger-btn" onclick="removeEditCctvMaterialRow(this)">Delete</button>
+    </td>
     <td><input class="edit-cctv-material-qty" type="number" min="0" step="0.01" required value="${item.qty ?? 1}"></td>
     <td>
       <select class="edit-cctv-material-unit">
@@ -2620,10 +2624,6 @@ function createEditCctvMaterialRow(item = {}) {
     </td>
     <td><input class="edit-cctv-material-price" type="number" min="0" step="0.01" required value="${item.price ?? 0}"></td>
     <td class="edit-cctv-material-total">${peso(Number(item.qty ?? 1) * Number(item.price ?? 0))}</td>
-    <td class="quotation-action-cell">
-      <button type="button" onclick="addEditCctvMaterialRow()">Add</button>
-      <button type="button" class="danger-btn" onclick="removeEditCctvMaterialRow(this)">Delete</button>
-    </td>
   `;
   return bindEditCctvMaterialRow(tr);
 }
@@ -2724,6 +2724,7 @@ async function loadEditCctvMaterials(project = {}) {
       catalog_id: item.catalog_id || "",
       name: item.name || "",
       description: item.description || "",
+      serial_numbers: item.serial_numbers || item.serialNumbers || "",
       qty: getQuotationQty(item.qty),
       unit: getInventoryUnit(item),
       price: Number(item.price || 0),
@@ -2737,6 +2738,7 @@ async function loadEditCctvMaterials(project = {}) {
     catalog_id: item.catalog_id || "",
     name: item.name || item.description || "",
     description: item.details || item.description || "",
+    serial_numbers: item.serial_numbers || item.serialNumbers || "",
     qty: getQuotationQty(item.qty),
     unit: item.unit || "",
     price: Number(item.price ?? item.unitPrice ?? item.amount ?? 0),
