@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-project-load-timeout-v168";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-progress-files-toggle-v169";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

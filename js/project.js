@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-project-load-timeout-v168";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-progress-files-toggle-v169";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -9,6 +9,7 @@ let allProjects = [];
 let activeSmartContract = null;
 let projectCurrentPage = 1;
 let pendingProgressFiles = [];
+let uploadedProgressFilesVisible = false;
 const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const EXPENSE_PROOF_BUCKETS = ["expense-proofs", "expenses", "receipts", "proofs", "progress-files", "contracts"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
@@ -4715,6 +4716,8 @@ window.editProject = async function(id) {
   editingId = id;
   editingProjectCode = project.project_code || "";
   pendingProgressFiles = [];
+  uploadedProgressFilesVisible = false;
+  updateUploadedProgressFilesVisibility();
   const progressInput = document.getElementById("progress_files");
   if (progressInput) progressInput.value = "";
   renderPendingProgressFiles();
@@ -5562,9 +5565,24 @@ window.removePendingProgressFile = function(index) {
   renderPendingProgressFiles();
 };
 
+function updateUploadedProgressFilesVisibility() {
+  const list = document.getElementById("uploadedProgressFiles");
+  const button = document.querySelector(".compact-toggle-btn");
+  if (!list || !button) return;
+
+  list.hidden = !uploadedProgressFilesVisible;
+  button.textContent = uploadedProgressFilesVisible ? "Hide Files" : "Show Files";
+}
+
+window.toggleUploadedProgressFiles = function() {
+  uploadedProgressFilesVisible = !uploadedProgressFilesVisible;
+  updateUploadedProgressFilesVisibility();
+};
+
 async function loadProgressFiles(projectId) {
   if (isLocalProjectId(projectId)) {
     uploadedProgressFiles.innerHTML = `<p class="muted">Progress file uploads are available after this project is synced to the database.</p>`;
+    updateUploadedProgressFilesVisibility();
     return;
   }
 
@@ -5602,6 +5620,7 @@ async function loadProgressFiles(projectId) {
         </div>
       `).join("")
     : `<p class="muted">No uploaded progress files yet.</p>`;
+  updateUploadedProgressFilesVisibility();
 }
 
 window.updateProgressFileComment = async function(fileId) {

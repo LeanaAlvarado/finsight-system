@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-project-load-timeout-v168";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-progress-files-toggle-v169";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

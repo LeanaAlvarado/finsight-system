@@ -940,6 +940,29 @@ tbody tr:hover{
   background:#fff;
 }
 
+.uploaded-files-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.uploaded-files-header h4{
+  margin:0;
+}
+
+.compact-toggle-btn{
+  min-height:34px;
+  padding:7px 12px;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.uploaded-progress-files-list[hidden]{
+  display:none !important;
+}
+
 .catalog-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));

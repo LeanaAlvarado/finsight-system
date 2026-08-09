@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-project-load-timeout-v168";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-progress-files-toggle-v169";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

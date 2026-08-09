@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-project-load-timeout-v168";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-progress-files-toggle-v169";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
