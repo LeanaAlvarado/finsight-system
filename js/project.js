@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-compact-feedback-v172";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-feedback-lookup-v173";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -388,6 +388,88 @@ function getPprScopeItems(project = {}) {
 function formatPprValue(value, formatter = value => value, fallback = "Not Available") {
   if (value === null || value === undefined || value === "") return fallback;
   return formatter(value);
+}
+
+function isSupabaseUuid(value = "") {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+function uniquePprFeedbackRecords(records = []) {
+  const seen = new Set();
+  return records.filter(record => {
+    const key = String(record.id || `${record.client_name || ""}|${record.project_code || ""}|${record.date || record.created_at || ""}|${record.comments || ""}`);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function readPprFeedbackBy(column, value) {
+  const searchValue = String(value || "").trim();
+  if (!searchValue) return [];
+
+  const { data, error } = await supabase
+    .from("feedback")
+    .select("*")
+    .eq(column, searchValue);
+
+  if (error) {
+    console.warn(`Client feedback lookup by ${column} failed.`, error.message || error);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function loadPprFeedbackRecords(projectId, project = {}) {
+  const lookups = [];
+  const addLookup = (column, value) => {
+    const cleanValue = String(value || "").trim();
+    if (!cleanValue) return;
+    if (lookups.some(item => item.column === column && item.value === cleanValue)) return;
+    lookups.push({ column, value: cleanValue });
+  };
+
+  if (isSupabaseUuid(projectId)) addLookup("project_id", projectId);
+  addLookup("project_code", project.project_code);
+  addLookup("project_reference", projectId);
+  addLookup("project_reference", project.project_code);
+  addLookup("project_reference", project.project_title);
+  addLookup("project_service", project.project_title);
+
+  const results = [];
+  for (const lookup of lookups) {
+    results.push(...await readPprFeedbackBy(lookup.column, lookup.value));
+  }
+
+  const directMatches = uniquePprFeedbackRecords(results);
+  if (directMatches.length) return directMatches;
+
+  const fallbackKeys = [
+    projectId,
+    project.project_code,
+    project.project_title
+  ].map(value => String(value || "").trim().toLowerCase()).filter(Boolean);
+
+  if (!fallbackKeys.length) return [];
+
+  const { data: allFeedback = [], error } = await supabase.from("feedback").select("*");
+  if (error) {
+    console.warn("Client feedback fallback lookup failed.", error.message || error);
+    return [];
+  }
+
+  return uniquePprFeedbackRecords((allFeedback || []).filter(feedback => {
+    const values = [
+      feedback.project_id,
+      feedback.project_code,
+      feedback.project_reference,
+      feedback.project_service,
+      feedback.project_title
+    ].map(value => String(value || "").trim().toLowerCase());
+
+    return fallbackKeys.some(key => values.includes(key));
+  }));
 }
 
 function buildPprQrUrl(projectId, project = {}) {
@@ -5179,16 +5261,17 @@ window.generatePPR = async function(id) {
   let feedbacks = [];
   let projectFiles = [];
 
-  if (!isLocalProjectId(id)) {
-    const [feedbackResult, filesResult] = await Promise.all([
-      supabase.from("feedback").select("*").eq("project_id", id),
-      supabase.from("project_files").select("*").eq("project_id", id).order("created_at", { ascending: false })
-    ]);
+  feedbacks = await loadPprFeedbackRecords(id, project);
 
-    if (feedbackResult.error) console.warn(`${reportMeta.code} feedback records could not be loaded.`, feedbackResult.error);
+  if (!isLocalProjectId(id)) {
+    const filesResult = await supabase
+      .from("project_files")
+      .select("*")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false });
+
     if (filesResult.error) console.warn(`${reportMeta.code} project files could not be loaded.`, filesResult.error);
 
-    feedbacks = feedbackResult.data || [];
     projectFiles = applyStoredProjectFileComments(filesResult.data || []);
   }
 
