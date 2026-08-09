@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-billing-project-title-v156";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-billing-title-clean-v157";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
