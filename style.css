@@ -2808,7 +2808,7 @@ tbody tr:hover{
 .formal-rating-row input{
   width:28px;
   height:28px;
-  accent-color:var(--blue);
+  accent-color:var(--primary);
 }
 
 .formal-rating-row span{
@@ -2824,14 +2824,19 @@ tbody tr:hover{
 .formal-feedback-actions{
   display:flex;
   justify-content:center;
-  padding-top:2px;
+  margin-top:18px;
+  padding-top:0;
 }
 
 .formal-feedback-actions button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   min-width:310px;
-  border:2px solid var(--blue);
+  min-height:46px;
+  border:2px solid var(--primary);
   border-radius:5px;
-  background:var(--blue);
+  background:var(--primary);
   color:#fff;
   padding:12px 18px;
   font-size:16px;
@@ -2840,8 +2845,8 @@ tbody tr:hover{
 }
 
 .formal-feedback-actions button:hover{
-  background:#173f64;
-  border-color:#173f64;
+  background:var(--primary-dark);
+  border-color:var(--primary-dark);
 }
 
 .formal-feedback-actions button:disabled{
