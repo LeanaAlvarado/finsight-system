@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-par-merged-info-v175";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");
@@ -904,7 +904,7 @@ function getFeedbackProject(feedback = {}) {
     feedback.project_title
   ].map(normalizeFeedbackMatchValue).filter(Boolean);
 
-  return feedbackProjects.find(project => {
+  const directProject = feedbackProjects.find(project => {
     const projectValues = [
       project.id,
       project.project_code,
@@ -913,6 +913,25 @@ function getFeedbackProject(feedback = {}) {
 
     return feedbackValues.some(value => projectValues.includes(value));
   });
+
+  if (directProject) return directProject;
+
+  const feedbackClient = normalizeFeedbackMatchValue(feedback.client_name);
+  if (!feedbackClient) return null;
+
+  const clientMatches = feedbackProjects
+    .filter(project => {
+      const clientValues = [
+        project.client_name,
+        project.company_name,
+        project.client_company
+      ].map(normalizeFeedbackMatchValue).filter(Boolean);
+
+      return clientValues.some(value => value === feedbackClient);
+    })
+    .sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
+
+  return clientMatches[0] || null;
 }
 
 function getFeedbackProjectTitle(feedback = {}) {

@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-par-merged-info-v175";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

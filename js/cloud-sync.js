@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-par-merged-info-v175";
+import { supabase } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

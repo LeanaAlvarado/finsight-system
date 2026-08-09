@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-par-merged-info-v175";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

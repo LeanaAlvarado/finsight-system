@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-merged-info-v175";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -459,7 +459,7 @@ async function loadPprFeedbackRecords(projectId, project = {}) {
     return [];
   }
 
-  return uniquePprFeedbackRecords((allFeedback || []).filter(feedback => {
+  const referenceMatches = uniquePprFeedbackRecords((allFeedback || []).filter(feedback => {
     const values = [
       feedback.project_id,
       feedback.project_code,
@@ -469,6 +469,15 @@ async function loadPprFeedbackRecords(projectId, project = {}) {
     ].map(value => String(value || "").trim().toLowerCase());
 
     return fallbackKeys.some(key => values.includes(key));
+  }));
+
+  if (referenceMatches.length) return referenceMatches;
+
+  const projectClient = String(project.client_name || getProjectClientName(project) || "").trim().toLowerCase();
+  if (!projectClient) return [];
+
+  return uniquePprFeedbackRecords((allFeedback || []).filter(feedback => {
+    return String(feedback.client_name || "").trim().toLowerCase() === projectClient;
   }));
 }
 
