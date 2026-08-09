@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-billing-v145";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-billing-action-v146";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -961,23 +961,30 @@ function getBillingProjectFromEdit() {
   return editingId ? getProjectById(editingId) || { id: editingId } : null;
 }
 
-function getBillingFormValues(project = {}) {
+function getBillingFormValues(project = {}, useFormValues = true) {
   const saved = getProjectBillingData(project);
-  const isManpower = document.getElementById("edit_quotation_type")?.value === "manpower";
-  const contractField = isManpower
+  const formQuotationType = document.getElementById("edit_quotation_type")?.value || "";
+  const isManpower = useFormValues
+    ? formQuotationType === "manpower"
+    : getProjectQuotationType(project) === "manpower";
+  const contractField = useFormValues && isManpower
     ? document.getElementById("edit_manpower_contract_amount")
-    : document.getElementById("edit_contract_amount");
-  const downPercentField = isManpower
+    : useFormValues
+    ? document.getElementById("edit_contract_amount")
+    : null;
+  const downPercentField = useFormValues && isManpower
     ? document.getElementById("edit_manpower_down_payment")
-    : document.getElementById("edit_down_payment");
+    : useFormValues
+    ? document.getElementById("edit_down_payment")
+    : null;
   return {
-    purchase_order_number: document.getElementById("edit_purchase_order_number")?.value.trim() || saved.purchase_order_number || "",
+    purchase_order_number: (useFormValues ? document.getElementById("edit_purchase_order_number")?.value.trim() : "") || saved.purchase_order_number || "",
     purchase_order_amount: Number(contractField?.value || project.contract_amount || saved.purchase_order_amount || 0),
     purchase_order_file_name: saved.purchase_order_file_name || "",
     purchase_order_file_url: saved.purchase_order_file_url || "",
     billing_down_payment_amount: 0,
     billing_down_payment_percent: Number(downPercentField?.value || saved.billing_down_payment_percent || 0),
-    billing_progress_percent: Number(document.getElementById("edit_billing_progress_percent")?.value || saved.billing_progress_percent || 0)
+    billing_progress_percent: Number((useFormValues ? document.getElementById("edit_billing_progress_percent")?.value : "") || saved.billing_progress_percent || 0)
   };
 }
 
@@ -1187,18 +1194,21 @@ function getDeliveryReceiptPrintStyles() {
   `;
 }
 
-window.generateBillingDocument = function(type = "") {
-  const project = getBillingProjectFromEdit();
+window.generateBillingDocument = function(type = "", projectOverride = null) {
+  const project = projectOverride || getBillingProjectFromEdit();
   if (!project) {
     alert("Open a project first before generating billing.");
     return;
   }
 
-  const activeQuotationType = document.getElementById("edit_quotation_type")?.value || getProjectQuotationType(project);
+  const useFormValues = !projectOverride;
+  const activeQuotationType = useFormValues
+    ? (document.getElementById("edit_quotation_type")?.value || getProjectQuotationType(project))
+    : getProjectQuotationType(project);
   const isCctvBilling = activeQuotationType === "cctv";
-  const billingType = type || document.getElementById("billing_report_type")?.value || "first";
+  const billingType = type || (useFormValues ? document.getElementById("billing_report_type")?.value : "") || "first";
 
-  const values = getBillingFormValues(project);
+  const values = getBillingFormValues(project, useFormValues);
   const math = getProjectBillingMath({ ...project, contract_amount: values.purchase_order_amount, ...values });
   const billingReferenceLabel = isCctvBilling ? "Project Code" : "PO No";
   const billingReferenceValue = isCctvBilling
@@ -1239,7 +1249,7 @@ window.generateBillingDocument = function(type = "") {
 
   const manpower = getManpowerQuotationDetails(project);
   const cctvItems = isCctvBilling
-    ? (getEditCctvMaterials().length
+    ? (useFormValues && getEditCctvMaterials().length
       ? getEditCctvMaterials()
       : (Array.isArray(project.quotation_items) && project.quotation_items.length
         ? project.quotation_items
@@ -1365,6 +1375,11 @@ window.generateBillingDocument = function(type = "") {
   `;
 
   openGeneratedDocument(`${title} - ${project.project_code || ""}`, html, getManpowerBillingPrintStyles());
+};
+
+window.generateBillingDocumentForProject = function(id = "", type = "") {
+  const project = getProjectById(id);
+  generateBillingDocument(type, project);
 };
 
 window.generateDeliveryReceipt = function() {
@@ -2991,8 +3006,6 @@ function toggleEditQuotationTypeView() {
   const billingTypeGroup = document.getElementById("billing_report_type")?.closest(".form-grid > div");
   if (billingTypeGroup) billingTypeGroup.style.display = isManpower || isCctv ? "" : "none";
 
-  const generateBillingBtn = document.getElementById("generateBillingBtn");
-  if (generateBillingBtn) generateBillingBtn.style.display = isManpower || isCctv ? "" : "none";
 }
 
 function buildEditManpowerRemarks() {
@@ -4077,6 +4090,9 @@ function renderProjectList() {
     const statusValue = project.status || "Pending";
     const quotationLabel = getProjectQuotationLabel(project);
     const reportMeta = getProjectReportMeta(project);
+    const billingAction = ["manpower", "cctv"].includes(getProjectQuotationType(project))
+      ? `<a href="#" onclick="generateBillingDocumentForProject('${project.id}'); return false;">Generate Billing</a>`
+      : "";
     const drAction = getProjectQuotationType(project) === "cctv"
       ? `<a href="#" onclick="generateDeliveryReceiptForProject('${project.id}'); return false;">Generate DR</a>`
       : "";
@@ -4089,6 +4105,7 @@ function renderProjectList() {
           <a href="#" onclick="editProject('${project.id}'); return false;">Edit</a>
           <a href="#" onclick="generateProjectQuotation('${project.id}'); return false;">${escapeHtml(quotationLabel)}</a>
           ${getContractAction(project)}
+          ${billingAction}
           ${drAction}
           <a href="#" onclick="generatePPR('${project.id}'); return false;">${reportMeta.actionLabel}</a>
           <a href="#" class="danger-link" onclick="deleteProject('${project.id}'); return false;">Delete</a>

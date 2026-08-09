@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-cctv-billing-v145";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-billing-action-v146";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
