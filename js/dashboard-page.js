@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-formal-client-feedback-v159";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-client-feedback-labels-v161";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

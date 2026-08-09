@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-formal-client-feedback-v159";
+import { supabase } from "./supabase.js?v=20260809-client-feedback-labels-v161";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-formal-client-feedback-v159";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-client-feedback-labels-v161";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-formal-client-feedback-v159";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-client-feedback-labels-v161";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

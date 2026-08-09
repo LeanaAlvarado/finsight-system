@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-formal-client-feedback-v159";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-client-feedback-labels-v161";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
@@ -9,7 +9,6 @@ const projectServiceField = document.getElementById("project_service");
 const feedbackDateField = document.getElementById("feedback_date");
 const commentsField = document.getElementById("comments");
 const recommendationsField = document.getElementById("recommendations");
-const qrReference = document.getElementById("qrReference");
 const submitButton = publicFeedbackForm.querySelector("button[type='submit']");
 
 if (feedbackDateField) {
@@ -18,11 +17,6 @@ if (feedbackDateField) {
 
 if (projectServiceField && projectServiceParam) {
   projectServiceField.value = projectServiceParam;
-}
-
-if (qrReference) {
-  const todayCode = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  qrReference.textContent = projectId ? `FS-QR-${todayCode}-${String(projectId).slice(0, 8)}` : `FS-QR-${todayCode}`;
 }
 
 publicFeedbackForm.addEventListener("submit", async function(e) {

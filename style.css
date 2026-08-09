@@ -2725,54 +2725,6 @@ tbody tr:hover{
   font-size:16px;
 }
 
-.qr-access-card{
-  display:inline-grid;
-  grid-template-columns:auto 1fr;
-  align-items:center;
-  gap:18px;
-  margin-top:20px;
-  text-align:left;
-}
-
-.qr-access-card strong,
-.qr-access-card span,
-.qr-access-card b{
-  display:block;
-}
-
-.qr-access-card strong{
-  font-size:15px;
-}
-
-.qr-access-card span{
-  margin-top:5px;
-  color:var(--muted);
-}
-
-.qr-access-card b{
-  margin-top:2px;
-  font-size:14px;
-}
-
-.qr-mark{
-  width:76px;
-  height:76px;
-  display:grid;
-  grid-template-columns:repeat(2, 1fr);
-  gap:7px;
-  padding:8px;
-  border:1px dashed #111827;
-  background:#fff;
-}
-
-.qr-mark span{
-  background:#111827;
-  box-shadow:
-    14px 0 0 #111827,
-    0 14px 0 #111827,
-    28px 28px 0 #111827;
-}
-
 .public-feedback-card{
   background:#fff;
   border:1px solid var(--line);
@@ -3717,13 +3669,6 @@ tbody tr:hover{
 
   .feedback-form-header p{
     font-size:13px;
-  }
-
-  .qr-access-card{
-    grid-template-columns:1fr;
-    justify-items:center;
-    text-align:center;
-    gap:10px;
   }
 
   .public-feedback-card{

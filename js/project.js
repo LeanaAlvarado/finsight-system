@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-formal-client-feedback-v159";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-client-feedback-labels-v161";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
