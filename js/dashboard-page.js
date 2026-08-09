@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-progress-files-toggle-v169";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-cctv-materials-toggle-v170";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

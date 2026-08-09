@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-progress-files-toggle-v169";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-cctv-materials-toggle-v170";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

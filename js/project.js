@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-progress-files-toggle-v169";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-materials-toggle-v170";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -7,6 +7,7 @@ let editingId = null;
 let editingProjectCode = "";
 let allProjects = [];
 let activeSmartContract = null;
+let editCctvMaterialsVisible = false;
 let projectCurrentPage = 1;
 let pendingProgressFiles = [];
 let uploadedProgressFilesVisible = false;
@@ -2853,8 +2854,23 @@ function resetEditCctvMaterials(items = []) {
   const button = document.getElementById("toggleCctvSerialsBtn");
   if (table) table.classList.add("serials-hidden");
   if (button) button.textContent = "Show Serial Numbers";
+  updateEditCctvMaterialsVisibility();
   updateEditCctvMaterialsTotal();
 }
+
+function updateEditCctvMaterialsVisibility() {
+  const content = document.getElementById("editCctvMaterialsContent");
+  const button = document.getElementById("toggleCctvMaterialsBtn");
+  if (!content || !button) return;
+
+  content.hidden = !editCctvMaterialsVisible;
+  button.textContent = editCctvMaterialsVisible ? "Hide Materials" : "Show Materials";
+}
+
+window.toggleEditCctvMaterials = function() {
+  editCctvMaterialsVisible = !editCctvMaterialsVisible;
+  updateEditCctvMaterialsVisibility();
+};
 
 window.toggleEditCctvSerials = function() {
   const table = document.getElementById("editCctvMaterialsTable");
@@ -4715,8 +4731,10 @@ window.editProject = async function(id) {
 
   editingId = id;
   editingProjectCode = project.project_code || "";
+  editCctvMaterialsVisible = false;
   pendingProgressFiles = [];
   uploadedProgressFilesVisible = false;
+  updateEditCctvMaterialsVisibility();
   updateUploadedProgressFilesVisibility();
   const progressInput = document.getElementById("progress_files");
   if (progressInput) progressInput.value = "";

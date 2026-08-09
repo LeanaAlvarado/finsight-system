@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260809-progress-files-toggle-v169">
+<link rel="stylesheet" href="style.css?v=20260809-cctv-materials-toggle-v170">
 </head>
 
 <body>
@@ -407,49 +407,54 @@
       </div>
 
       <div id="editCctvMaterialsPanel" class="quotation-type-panel" style="display:none;">
-        <h4>CCTV Quotation Materials</h4>
+        <div class="uploaded-files-header">
+          <h4>CCTV Quotation Materials</h4>
+          <button id="toggleCctvMaterialsBtn" type="button" class="secondary-btn compact-toggle-btn" onclick="toggleEditCctvMaterials()">Show Materials</button>
+        </div>
         <p class="muted">Edit the materials linked to this CCTV quotation project.</p>
 
-        <div class="form-grid">
-          <div>
-            <label>Choose Saved Material</label>
-            <select id="edit_cctv_material_select" onchange="handleEditCctvMaterialSelect(this)">
-              <option value="">Select from inventory / material catalog</option>
-            </select>
+        <div id="editCctvMaterialsContent" class="cctv-materials-collapsible" hidden>
+          <div class="form-grid">
+            <div>
+              <label>Choose Saved Material</label>
+              <select id="edit_cctv_material_select" onchange="handleEditCctvMaterialSelect(this)">
+                <option value="">Select from inventory / material catalog</option>
+              </select>
+            </div>
+            <div class="serial-toggle-control">
+              <label>Serial Numbers</label>
+              <button id="toggleCctvSerialsBtn" type="button" class="secondary-btn" onclick="toggleEditCctvSerials()">Show Serial Numbers</button>
+            </div>
           </div>
-          <div class="serial-toggle-control">
-            <label>Serial Numbers</label>
-            <button id="toggleCctvSerialsBtn" type="button" class="secondary-btn" onclick="toggleEditCctvSerials()">Show Serial Numbers</button>
+
+          <div class="table-wrap inventory-entry-box">
+            <table id="editCctvMaterialsTable" class="inventory-entry-table serials-hidden">
+              <thead>
+                <tr>
+                  <th>Material Name</th>
+                  <th>Description</th>
+                  <th class="serial-column">Serial Number</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  <th>Unit Price</th>
+                  <th>Total Amount</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="editCctvMaterialsBody"></tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="6" style="text-align:right;font-weight:800;">Materials Total</td>
+                  <td id="editCctvMaterialsTotal" style="font-weight:800;">PHP 0.00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
-        </div>
 
-        <div class="table-wrap inventory-entry-box">
-          <table id="editCctvMaterialsTable" class="inventory-entry-table serials-hidden">
-            <thead>
-              <tr>
-                <th>Material Name</th>
-                <th>Description</th>
-                <th class="serial-column">Serial Number</th>
-                <th>Quantity</th>
-                <th>Unit</th>
-                <th>Unit Price</th>
-                <th>Total Amount</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="editCctvMaterialsBody"></tbody>
-            <tfoot>
-              <tr>
-                <td colspan="6" style="text-align:right;font-weight:800;">Materials Total</td>
-                <td id="editCctvMaterialsTotal" style="font-weight:800;">PHP 0.00</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div class="form-actions">
-          <button type="button" onclick="addEditCctvMaterialRow()">Add Blank Material</button>
+          <div class="form-actions">
+            <button type="button" onclick="addEditCctvMaterialRow()">Add Blank Material</button>
+          </div>
         </div>
       </div>
 
@@ -530,7 +535,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260809-progress-files-toggle-v169"></script>
+<script type="module" src="js/app.js?v=20260809-cctv-materials-toggle-v170"></script>
 
 </body>
 </html>

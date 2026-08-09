@@ -963,6 +963,10 @@ tbody tr:hover{
   display:none !important;
 }
 
+.cctv-materials-collapsible[hidden]{
+  display:none !important;
+}
+
 .catalog-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));

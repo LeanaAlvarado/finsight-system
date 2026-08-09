@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-progress-files-toggle-v169";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-cctv-materials-toggle-v170";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
