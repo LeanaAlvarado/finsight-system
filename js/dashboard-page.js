@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-feedback-submit-button-v163";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-remove-expense-export-v164";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

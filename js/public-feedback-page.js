@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-feedback-submit-button-v163";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-remove-expense-export-v164";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

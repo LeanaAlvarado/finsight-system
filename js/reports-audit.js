@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-feedback-submit-button-v163";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-remove-expense-export-v164";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
