@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260809-downpayment-pair-v151">
+<link rel="stylesheet" href="style.css?v=20260809-project-code-first-v152">
 </head>
 
 <body>
@@ -189,6 +189,11 @@
       <div class="form-grid">
 
         <div>
+          <label>Project Code</label>
+          <input id="edit_project_code">
+        </div>
+
+        <div>
           <label>Quotation Type</label>
           <select id="edit_quotation_type">
             <option value="manpower">Manpower Quotation</option>
@@ -204,11 +209,6 @@
         <div>
           <label>1st Downpayment (%)</label>
           <input id="edit_down_payment" type="number" min="0" max="100" step="0.01">
-        </div>
-
-        <div>
-          <label>Project Code</label>
-          <input id="edit_project_code">
         </div>
 
         <div>
@@ -286,11 +286,6 @@
         </div>
 
         <div>
-          <label>Tax Percent</label>
-          <input id="edit_tax_amount" type="number" placeholder="Set in Taxes & Revenue" disabled>
-        </div>
-
-        <div>
           <label>Report Prepared By</label>
           <input id="edit_ppr_prepared_by">
         </div>
@@ -298,6 +293,7 @@
         <input id="edit_start_date" type="hidden">
         <input id="edit_target_completion" type="hidden">
         <input id="edit_ppr_noted_by" type="hidden">
+        <input id="edit_tax_amount" type="hidden">
 
       </div>
 
@@ -538,7 +534,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260809-downpayment-pair-v151"></script>
+<script type="module" src="js/app.js?v=20260809-project-code-first-v152"></script>
 
 </body>
 </html>

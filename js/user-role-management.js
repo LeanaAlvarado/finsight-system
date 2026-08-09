@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-downpayment-pair-v151";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-project-code-first-v152";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

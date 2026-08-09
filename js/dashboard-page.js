@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-downpayment-pair-v151";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-project-code-first-v152";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
