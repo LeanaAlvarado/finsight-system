@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-project-po-column-v154";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-manpower-project-code-v155";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

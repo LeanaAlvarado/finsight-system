@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-project-po-column-v154";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-manpower-project-code-v155";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");
@@ -75,7 +75,6 @@ const CCTV_DEFAULTS = {
   terms: "TERMS AND CONDITIONS:\n1. Prices are valid within the agreed quotation validity period.\n2. Payment terms are subject to agreement before project implementation.\n3. Schedule of installation is subject to material availability and site readiness.\n4. Warranty applies only to supplied equipment and workmanship under normal use.\n5. Client approval is required before commencement of work."
 };
 const MANPOWER_HIDDEN_FIELD_IDS = [
-  "project_code",
   "project_title",
   "client_name",
   "client_contact_name",
