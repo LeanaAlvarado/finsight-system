@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-dr-serial-items-v143";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-dr-action-only-v144";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

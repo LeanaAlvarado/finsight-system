@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-dr-serial-items-v143";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-dr-action-only-v144";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

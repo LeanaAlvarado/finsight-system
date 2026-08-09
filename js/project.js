@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-dr-serial-items-v143";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-dr-action-only-v144";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2975,9 +2975,7 @@ function toggleEditQuotationTypeView() {
   if (billingTypeGroup) billingTypeGroup.style.display = isManpower ? "" : "none";
 
   const generateBillingBtn = document.getElementById("generateBillingBtn");
-  const generateDrBtn = document.getElementById("generateDrBtn");
   if (generateBillingBtn) generateBillingBtn.style.display = isManpower ? "" : "none";
-  if (generateDrBtn) generateDrBtn.style.display = isCctv ? "" : "none";
 }
 
 function buildEditManpowerRemarks() {

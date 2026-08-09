@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-dr-serial-items-v143";
+import { supabase } from "./supabase.js?v=20260809-dr-action-only-v144";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([
