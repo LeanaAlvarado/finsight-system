@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-dr-action-only-v144";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-billing-v145";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1095,6 +1095,8 @@ function getManpowerBillingPrintStyles() {
     .manpower-items th{background:#0b5d66;color:#fff;border:1px solid #111;padding:5px 7px;}
     .manpower-items td{border:1px solid #111;padding:4px 7px;font-size:12px;}
     .manpower-items .description-cell{text-align:center;font-size:14px;}
+    .billing-item-name{display:block;font-weight:bold;text-transform:uppercase;}
+    .billing-item-details{display:block;margin-top:3px;font-size:10px;line-height:1.2;text-align:left;}
     .manpower-items .qty-cell{width:8%;text-align:center;}
     .manpower-items .price-cell{width:18%;text-align:right;}
     .manpower-items .amount-cell{width:18%;text-align:right;background:#c7e7f7;}
@@ -1192,12 +1194,20 @@ window.generateBillingDocument = function(type = "") {
     return;
   }
 
+  const activeQuotationType = document.getElementById("edit_quotation_type")?.value || getProjectQuotationType(project);
+  const isCctvBilling = activeQuotationType === "cctv";
   const billingType = type || document.getElementById("billing_report_type")?.value || "first";
 
   const values = getBillingFormValues(project);
   const math = getProjectBillingMath({ ...project, contract_amount: values.purchase_order_amount, ...values });
-  if (!values.purchase_order_number) {
-    alert("Please enter the Purchase Order Number before generating billing.");
+  const billingReferenceLabel = isCctvBilling ? "Project Code" : "PO No";
+  const billingReferenceValue = isCctvBilling
+    ? (project.project_code || document.getElementById("edit_project_code")?.value || "")
+    : values.purchase_order_number;
+  if (!billingReferenceValue) {
+    alert(isCctvBilling
+      ? "Please make sure the project has a Project Code before generating billing."
+      : "Please enter the Purchase Order Number before generating billing.");
     return;
   }
   if (!math.poAmount) {
@@ -1228,6 +1238,13 @@ window.generateBillingDocument = function(type = "") {
   ];
 
   const manpower = getManpowerQuotationDetails(project);
+  const cctvItems = isCctvBilling
+    ? (getEditCctvMaterials().length
+      ? getEditCctvMaterials()
+      : (Array.isArray(project.quotation_items) && project.quotation_items.length
+        ? project.quotation_items
+        : getLocalQuotationItems(project.id)))
+    : [];
   const fallbackManpowerQty = Number(manpower.workers || 1) || 1;
   const fallbackManpowerAmount = Number(project.contract_amount || 0)
     ? Number(project.contract_amount || 0) / fallbackManpowerQty
@@ -1239,16 +1256,10 @@ window.generateBillingDocument = function(type = "") {
         qty: fallbackManpowerQty,
         amount: fallbackManpowerAmount
       }];
-  const normalizedManpowerItems = manpowerItems.map(item => {
-    const qty = Number(item.qty || 0);
-    const unitPrice = Number(item.unitPrice ?? item.price ?? item.amount ?? 0);
-    return {
-      ...item,
-      qty,
-      unitPrice,
-      amount: qty * unitPrice
-    };
-  });
+  const billingItems = (isCctvBilling
+    ? (cctvItems.length ? cctvItems : [{ description: project.project_title || "CCTV Materials", qty: 1, unitPrice: math.poAmount }])
+    : manpowerItems)
+    .map(item => normalizeContractItem(item, isCctvBilling ? "CCTV Materials" : (manpower.workDescription || project.project_title || "Manpower Services")));
   const quotationDate = new Date().toLocaleDateString("en-PH", {
     year: "numeric",
     month: "long",
@@ -1265,7 +1276,7 @@ window.generateBillingDocument = function(type = "") {
         <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
         <div class="quote-meta">
           <h1>${escapeProjectHtml(title)}</h1>
-          <div><b>PO No:</b> ${escapeProjectHtml(values.purchase_order_number)}</div>
+          <div><b>${escapeProjectHtml(billingReferenceLabel)}:</b> ${escapeProjectHtml(billingReferenceValue)}</div>
           <div><b>Date:</b> ${escapeProjectHtml(quotationDate)}</div>
         </div>
       </div>
@@ -1281,6 +1292,9 @@ window.generateBillingDocument = function(type = "") {
         </tr>
         <tr><td>CLIENT CONTACT NUMBER:</td><td>${escapeProjectHtml(project.contact_number || "-")}</td></tr>
         <tr><td>CLIENT EMAIL:</td><td>${escapeProjectHtml(manpower.clientEmail || project.client_email || "-")}</td></tr>
+        <tr><td>PROJECT CODE:</td><td>${escapeProjectHtml(project.project_code || "-")}</td></tr>
+        <tr><td>PROJECT TITLE:</td><td>${escapeProjectHtml(project.project_title || "-")}</td></tr>
+        <tr><td>LOCATION:</td><td>${escapeProjectHtml(project.location || "-")}</td></tr>
       </table>
 
       <div class="section-title">Terms of Service</div>
@@ -1292,7 +1306,7 @@ window.generateBillingDocument = function(type = "") {
       <div class="section-title">Additional Comments</div>
       <div class="scope-box">${escapeProjectHtml(manpower.additionalComments || manpower.notes || "-")}</div>
 
-      <div class="section-title">Quotation Items</div>
+      <div class="section-title">Billing Items</div>
       <table class="manpower-items">
         <thead>
           <tr>
@@ -1303,15 +1317,18 @@ window.generateBillingDocument = function(type = "") {
           </tr>
         </thead>
         <tbody>
-          ${normalizedManpowerItems.map(item => `
+          ${billingItems.map(item => `
             <tr>
-              <td class="description-cell">${escapeProjectHtml(item.description || "-")}</td>
+              <td class="description-cell">
+                <span class="billing-item-name">${escapeProjectHtml(item.name || item.description || "-")}</span>
+                ${item.details && item.details !== item.description ? `<span class="billing-item-details">${escapeProjectHtml(item.details)}</span>` : ""}
+              </td>
               <td class="qty-cell">${escapeProjectHtml(item.qty || 0)}</td>
               <td class="price-cell">${formatQuotationAmount(item.unitPrice || 0)}</td>
               <td class="amount-cell">${formatQuotationAmount(item.amount || 0)}</td>
             </tr>
           `).join("")}
-          ${Array.from({ length: Math.max(0, 7 - normalizedManpowerItems.length) }).map(() => `
+          ${Array.from({ length: Math.max(0, 7 - billingItems.length) }).map(() => `
             <tr>
               <td class="blank-cell"></td>
               <td class="blank-cell"></td>
@@ -2972,10 +2989,10 @@ function toggleEditQuotationTypeView() {
   });
 
   const billingTypeGroup = document.getElementById("billing_report_type")?.closest(".form-grid > div");
-  if (billingTypeGroup) billingTypeGroup.style.display = isManpower ? "" : "none";
+  if (billingTypeGroup) billingTypeGroup.style.display = isManpower || isCctv ? "" : "none";
 
   const generateBillingBtn = document.getElementById("generateBillingBtn");
-  if (generateBillingBtn) generateBillingBtn.style.display = isManpower ? "" : "none";
+  if (generateBillingBtn) generateBillingBtn.style.display = isManpower || isCctv ? "" : "none";
 }
 
 function buildEditManpowerRemarks() {
