@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-billing-in-details-v147";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1101,6 +1101,7 @@ function getManpowerBillingPrintStyles() {
     .scope-box{border:1px solid #8fa3af;min-height:54px;padding:8px 9px;white-space:pre-wrap;}
     .manpower-items th{background:#0b5d66;color:#fff;border:1px solid #111;padding:5px 7px;}
     .manpower-items td{border:1px solid #111;padding:4px 7px;font-size:12px;}
+    .manpower-items .no-cell{width:6%;text-align:center;}
     .manpower-items .description-cell{text-align:center;font-size:14px;}
     .billing-item-name{display:block;font-weight:bold;text-transform:uppercase;}
     .billing-item-details{display:block;margin-top:3px;font-size:10px;line-height:1.2;text-align:left;}
@@ -1320,6 +1321,7 @@ window.generateBillingDocument = function(type = "", projectOverride = null) {
       <table class="manpower-items">
         <thead>
           <tr>
+            ${isCctvBilling ? `<th class="no-cell">No.</th>` : ""}
             <th>Description</th>
             <th class="qty-cell">Qty</th>
             <th class="price-cell">Unit Price</th>
@@ -1327,8 +1329,9 @@ window.generateBillingDocument = function(type = "", projectOverride = null) {
           </tr>
         </thead>
         <tbody>
-          ${billingItems.map(item => `
+          ${billingItems.map((item, index) => `
             <tr>
+              ${isCctvBilling ? `<td class="no-cell">${index + 1}</td>` : ""}
               <td class="description-cell">
                 <span class="billing-item-name">${escapeProjectHtml(item.name || item.description || "-")}</span>
                 ${item.details && item.details !== item.description ? `<span class="billing-item-details">${escapeProjectHtml(item.details)}</span>` : ""}
@@ -1340,6 +1343,7 @@ window.generateBillingDocument = function(type = "", projectOverride = null) {
           `).join("")}
           ${Array.from({ length: Math.max(0, 7 - billingItems.length) }).map(() => `
             <tr>
+              ${isCctvBilling ? `<td class="blank-cell"></td>` : ""}
               <td class="blank-cell"></td>
               <td class="blank-cell"></td>
               <td class="blank-cell"></td>
@@ -1347,17 +1351,17 @@ window.generateBillingDocument = function(type = "", projectOverride = null) {
             </tr>
           `).join("")}
           <tr class="final-total">
-            <td colspan="3"></td>
+            <td colspan="${isCctvBilling ? 4 : 3}"></td>
             <td class="amount-cell">${formatQuotationAmount(math.poAmount)}</td>
           </tr>
           ${billingRows.map(row => `
             <tr class="total-row">
-              <td colspan="3" class="total-label">${escapeProjectHtml(row.label)}</td>
+              <td colspan="${isCctvBilling ? 4 : 3}" class="total-label">${escapeProjectHtml(row.label)}</td>
               <td class="amount-cell">-${formatQuotationAmount(row.amount)}</td>
             </tr>
           `).join("")}
           <tr class="total-row">
-            <td colspan="3" class="total-label">${billingType === "last" || billingType === "final" ? "Final Billing Amount" : "Total Amount Due"}</td>
+            <td colspan="${isCctvBilling ? 4 : 3}" class="total-label">${billingType === "last" || billingType === "final" ? "Final Billing Amount" : "Total Amount Due"}</td>
             <td class="amount-cell">${formatQuotationAmount(totalAmountDue)}</td>
           </tr>
         </tbody>
@@ -1442,6 +1446,7 @@ function generateDeliveryReceiptFromProject(project = null) {
       <table class="manpower-items dr-items">
         <thead>
           <tr>
+            <th class="no-cell">No.</th>
             <th>Description</th>
             <th class="qty-cell">Qty</th>
             <th class="price-cell">Unit</th>
@@ -1449,8 +1454,9 @@ function generateDeliveryReceiptFromProject(project = null) {
           </tr>
         </thead>
         <tbody>
-          ${rows.map(item => `
+          ${rows.map((item, index) => `
             <tr>
+              <td class="no-cell">${index + 1}</td>
               <td class="description-cell">
                 <span class="dr-item-name">${escapeProjectHtml(item.name || item.description || "-")}</span>
                 ${item.details && item.details !== item.name ? `<span class="dr-item-details">${escapeProjectHtml(item.details)}</span>` : ""}
@@ -1466,15 +1472,16 @@ function generateDeliveryReceiptFromProject(project = null) {
               <td class="blank-cell"></td>
               <td class="blank-cell"></td>
               <td class="blank-cell"></td>
+              <td class="blank-cell"></td>
               <td class="amount-cell blank-cell"></td>
             </tr>
           `).join("")}
           <tr class="final-total">
-            <td colspan="3"></td>
+            <td colspan="4"></td>
             <td class="amount-cell">${formatQuotationAmount(deliveredTotal)}</td>
           </tr>
           <tr class="total-row">
-            <td colspan="4" class="total-label" style="text-align:center;">-- NOTHING TO FOLLOW --</td>
+            <td colspan="5" class="total-label" style="text-align:center;">-- NOTHING TO FOLLOW --</td>
           </tr>
         </tbody>
       </table>

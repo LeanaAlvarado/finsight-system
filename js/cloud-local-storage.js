@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-billing-in-details-v147";
+import { supabase } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([
