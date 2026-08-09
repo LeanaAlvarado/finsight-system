@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-par-progress-files-only-v171";
+import { supabase } from "./supabase.js?v=20260809-par-compact-feedback-v172";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-par-progress-files-only-v171";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-par-compact-feedback-v172";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

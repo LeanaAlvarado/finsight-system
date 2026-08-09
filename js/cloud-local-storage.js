@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-par-progress-files-only-v171";
+import { supabase } from "./supabase.js?v=20260809-par-compact-feedback-v172";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([
