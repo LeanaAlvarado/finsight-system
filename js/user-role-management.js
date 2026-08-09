@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-revenue-fit-table-v150";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-downpayment-pair-v151";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
