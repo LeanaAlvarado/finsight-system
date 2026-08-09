@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-remove-expense-export-v164";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-remove-project-records-tile-v165";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

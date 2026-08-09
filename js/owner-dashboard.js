@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-remove-expense-export-v164";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-remove-project-records-tile-v165";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-remove-expense-export-v164";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-remove-project-records-tile-v165";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
