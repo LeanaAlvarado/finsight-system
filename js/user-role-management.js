@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

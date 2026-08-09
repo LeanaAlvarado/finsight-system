@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");

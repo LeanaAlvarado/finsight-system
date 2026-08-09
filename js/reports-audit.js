@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

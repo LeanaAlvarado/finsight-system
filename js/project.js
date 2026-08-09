@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2588,9 +2588,22 @@ function updateEditCctvMaterialRowTotal(row) {
   updateEditCctvMaterialsTotal();
 }
 
+function formatSerialNumbersForEdit(value = "") {
+  const cleaned = String(value || "").trim();
+  return cleaned ? `${cleaned}\n` : "";
+}
+
+function saveEditCctvMaterialDraft() {
+  if (!editingId) return;
+  const items = getEditCctvMaterials();
+  saveLocalQuotationItems(editingId, items);
+  updateLocalProjectMirror(editingId, { quotation_items: items });
+}
+
 function bindEditCctvMaterialRow(row) {
   row.querySelector(".edit-cctv-material-qty")?.addEventListener("input", () => updateEditCctvMaterialRowTotal(row));
   row.querySelector(".edit-cctv-material-price")?.addEventListener("input", () => updateEditCctvMaterialRowTotal(row));
+  row.querySelector(".edit-cctv-material-serials")?.addEventListener("input", saveEditCctvMaterialDraft);
   updateEditCctvMaterialRowTotal(row);
   return row;
 }
@@ -2610,7 +2623,7 @@ function createEditCctvMaterialRow(item = {}) {
   tr.innerHTML = `
     <td><input class="edit-cctv-material-name" required value="${escapeProjectHtml(item.name || "")}" placeholder="Material name"></td>
     <td><input class="edit-cctv-material-description" value="${escapeProjectHtml(item.description || "")}" placeholder="Description"></td>
-    <td class="serial-column"><textarea class="edit-cctv-material-serials" rows="2" placeholder="Serial number per line">${escapeProjectHtml(item.serial_numbers || item.serialNumbers || "")}</textarea></td>
+    <td class="serial-column"><textarea class="edit-cctv-material-serials" rows="2" placeholder="Serial number per line">${escapeProjectHtml(formatSerialNumbersForEdit(item.serial_numbers || item.serialNumbers || ""))}</textarea></td>
     <td class="quotation-action-cell">
       <button type="button" onclick="addEditCctvMaterialRow()">Add</button>
       <button type="button" class="danger-btn" onclick="removeEditCctvMaterialRow(this)">Delete</button>
@@ -2644,7 +2657,7 @@ function fillEditCctvMaterialRow(row, item = {}) {
 
   if (nameField) nameField.value = item.name || "";
   if (descriptionField) descriptionField.value = item.description || "";
-  if (serialField) serialField.value = item.serial_numbers || item.serialNumbers || "";
+  if (serialField) serialField.value = formatSerialNumbersForEdit(item.serial_numbers || item.serialNumbers || "");
   if (qtyField) qtyField.value = item.qty ?? 1;
   if (unitField) {
     const unit = String(item.unit || "").trim().toUpperCase();

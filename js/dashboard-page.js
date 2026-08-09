@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

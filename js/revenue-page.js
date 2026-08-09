@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-save-layout-v139";
+import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260809-cctv-serial-draft-v140";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
