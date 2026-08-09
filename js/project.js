@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-layout-balance-v177";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -5501,7 +5501,7 @@ window.generatePPR = async function(id) {
         .print-view-actions button{border:1px solid #12304A;border-radius:5px;background:#12304A;color:#fff;padding:8px 12px;font-weight:700;cursor:pointer;}
         .print-view-actions .secondary-print-action{background:#fff;color:#12304A;}
         .ppr-page{position:relative;width:210mm;min-height:297mm;margin:10px auto;padding:14mm 13mm 15mm;background:#fff;page-break-after:always;overflow:hidden;}
-        .cover-page{display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,#FFFFFF 0%,#F4F7F9 100%);}
+        .cover-page{display:flex;flex-direction:column;background:linear-gradient(180deg,#FFFFFF 0%,#F4F7F9 100%);}
         .cover-top,.ppr-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #DCE4EA;padding-bottom:10px;}
         .brand-lockup,.ppr-header>div{display:flex;align-items:center;gap:10px;}
         .brand-lockup img,.ppr-header img{width:44px;height:44px;object-fit:contain;}
@@ -5516,6 +5516,7 @@ window.generatePPR = async function(id) {
         p{font-size:10px;line-height:1.38;margin:5px 0;white-space:pre-wrap;}
         .cover-meta,.cover-footer-grid,.kpi-grid,.two-col,.feedback-qr-grid,.signature-grid{display:grid;gap:8px;}
         .cover-meta{grid-template-columns:repeat(3,1fr);margin:20px 0;text-align:left;}
+        .cover-footer-grid{grid-template-columns:repeat(2,1fr);margin-top:auto;margin-bottom:8mm;}
         .cover-meta div,.cover-footer-grid div,.kpi-card,.section-card,.qr-card,.empty-state{border:1px solid #DCE4EA;background:#F8FAFC;border-radius:7px;padding:10px;}
         .cover-meta span,.cover-footer-grid span,.kpi-card span{display:block;color:#64748B;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
         .cover-meta strong,.cover-footer-grid strong,.kpi-card strong{display:block;margin-top:4px;color:#111827;font-size:13px;}
@@ -5525,15 +5526,17 @@ window.generatePPR = async function(id) {
         .kpi-card{break-inside:avoid;min-height:72px;}
         .kpi-card strong{font-size:16px;}
         .combined-project-page{padding-top:12mm;}
-        .combined-project-page h2{margin:9px 0 8px;font-size:16px;}
-        .combined-project-page .kpi-grid{grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px;}
-        .combined-project-page .kpi-card{min-height:58px;padding:8px;}
-        .combined-project-page .kpi-card strong{font-size:13px;}
-        .combined-project-page .section-card{padding:8px;margin-bottom:7px;}
-        .combined-project-page .two-col{gap:7px;}
-        .combined-project-page .info-row{padding:4px 0;font-size:8.6px;}
-        .combined-project-page .scope-list{font-size:9px;line-height:1.35;}
-        .combined-project-page p{font-size:9px;line-height:1.32;}
+        .combined-project-page h2{margin:10px 0 9px;font-size:18px;}
+        .combined-project-page h3{font-size:11px;}
+        .combined-project-page .kpi-grid{grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+        .combined-project-page .kpi-card{min-height:70px;padding:10px;}
+        .combined-project-page .kpi-card span,.combined-project-page .cover-meta span{font-size:8px;}
+        .combined-project-page .kpi-card strong{font-size:15px;}
+        .combined-project-page .section-card{padding:10px;margin-bottom:9px;}
+        .combined-project-page .two-col{gap:8px;}
+        .combined-project-page .info-row{padding:6px 0;font-size:9.5px;}
+        .combined-project-page .scope-list{font-size:10px;line-height:1.42;}
+        .combined-project-page p{font-size:10px;line-height:1.38;}
         .progress-wrap{height:8px;background:#E2E8F0;border-radius:999px;margin-top:8px;overflow:hidden;}
         .progress-fill{height:100%;background:#168C8C;border-radius:999px;}
         .progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}

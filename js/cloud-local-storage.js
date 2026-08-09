@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
+import { supabase } from "./supabase.js?v=20260809-par-layout-balance-v177";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-feedback-client-fallback-v176";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-par-layout-balance-v177";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
