@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-remove-project-records-tile-v165";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-contract-status-save-v166";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -891,7 +891,7 @@ function getProjectQuotationLabel(project = {}) {
 }
 
 function isApprovedQuotation(project = {}) {
-  return String(project.status || "").trim().toLowerCase() === "approved";
+  return ["approved", "ongoing", "completed"].includes(String(project.status || "").trim().toLowerCase());
 }
 
 function getContractAction(project = {}) {
@@ -900,8 +900,8 @@ function getContractAction(project = {}) {
   }
 
   return `
-    <span class="disabled-action" title="A contract can only be generated from an approved quotation.">Generate Contract</span>
-    <small class="contract-disabled-message">A contract can only be generated from an approved quotation.</small>
+    <span class="disabled-action" title="A contract can only be generated from an approved, ongoing, or completed quotation.">Generate Contract</span>
+    <small class="contract-disabled-message">A contract can only be generated from an approved, ongoing, or completed quotation.</small>
   `;
 }
 
@@ -2056,7 +2056,7 @@ async function getOrCreateProjectContract(projectId) {
   if (!project) return null;
 
   if (!isApprovedQuotation(project)) {
-    alert("A contract can only be generated from an approved quotation.");
+    alert("A contract can only be generated from an approved, ongoing, or completed quotation.");
     return null;
   }
 
@@ -2116,7 +2116,7 @@ window.refreshSmartContractFromQuotation = async function() {
   if (!project) return;
 
   if (!isApprovedQuotation(project)) {
-    alert("A contract can only be generated from an approved quotation.");
+    alert("A contract can only be generated from an approved, ongoing, or completed quotation.");
     return;
   }
 
@@ -4746,6 +4746,13 @@ window.editProject = async function(id) {
 
 const editProjectForm = document.getElementById("editProjectForm");
 document.getElementById("edit_quotation_type")?.addEventListener("change", toggleEditQuotationTypeView);
+document.getElementById("edit_manpower_status")?.addEventListener("change", event => {
+  if (edit_status) edit_status.value = event.target.value;
+});
+document.getElementById("edit_status")?.addEventListener("change", event => {
+  const manpowerStatus = document.getElementById("edit_manpower_status");
+  if (manpowerStatus) manpowerStatus.value = event.target.value;
+});
 document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
   if (edit_down_payment) edit_down_payment.value = event.target.value;
 });
@@ -4928,11 +4935,21 @@ if (editProjectForm) {
 
     const uploadOk = await uploadProgressFiles(editingId);
 
-    if (savedProject) await saveProjectContract(savedProject);
+    let contractOk = true;
+    if (savedProject) {
+      try {
+        await saveProjectContract(savedProject);
+      } catch (contractError) {
+        contractOk = false;
+        console.warn("Contract record was not refreshed after project update:", contractError.message || contractError);
+      }
+    }
     alert(materialsOk === false
       ? "Project updated successfully. CCTV materials were not saved because the inventory table is not ready."
       : uploadOk === false
       ? "Project updated successfully. Progress files were not uploaded because file storage or project_files table is not ready."
+      : contractOk === false
+      ? "Project updated successfully. Contract preview was not refreshed, but you can try Generate Contract from the list."
       : "Project updated successfully.");
     editingId = null;
     editingProjectCode = "";
