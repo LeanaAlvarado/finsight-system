@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-client-feedback-labels-v161";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-feedback-local-id-fix-v162";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -368,8 +368,12 @@ function formatPprValue(value, formatter = value => value, fallback = "Not Avail
   return formatter(value);
 }
 
-function buildPprQrUrl(projectId) {
-  const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?project_id=${projectId}`;
+function buildPprQrUrl(projectId, project = {}) {
+  const feedbackParams = new URLSearchParams();
+  if (projectId) feedbackParams.set("project_id", projectId);
+  if (project.project_code) feedbackParams.set("project_code", project.project_code);
+  if (project.project_title) feedbackParams.set("project", project.project_title);
+  const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?${feedbackParams.toString()}`;
   return {
     feedbackLink,
     qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(feedbackLink)}`
@@ -5097,7 +5101,7 @@ window.generatePPR = async function(id) {
   const latestFeedback = feedbacks
     .slice()
     .sort((a, b) => new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0))[0];
-  const { feedbackLink, qrUrl } = buildPprQrUrl(id);
+  const { feedbackLink, qrUrl } = buildPprQrUrl(id, project);
   const pages = [];
   const pprFileName = `${reportMeta.filePrefix}_${String(project.project_code || "PROJECT").replace(/[^\w-]+/g, "_")}_${generatedDate.toISOString().slice(0, 10)}.pdf`;
 
@@ -5605,7 +5609,12 @@ window.deleteProgressFile = async function(fileId) {
   await loadProgressFiles(editingId);
 };
 window.showProjectQR = function(projectId) {
-  const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?project_id=${projectId}`;
+  const project = allProjects.find(item => String(item.id || "") === String(projectId || "")) || {};
+  const feedbackParams = new URLSearchParams();
+  if (projectId) feedbackParams.set("project_id", projectId);
+  if (project.project_code) feedbackParams.set("project_code", project.project_code);
+  if (project.project_title) feedbackParams.set("project", project.project_title);
+  const feedbackLink = `${window.location.origin}${window.location.pathname.replace("projects.html", "public-feedback.html")}?${feedbackParams.toString()}`;
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(feedbackLink)}`;
 

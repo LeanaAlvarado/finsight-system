@@ -2829,10 +2829,10 @@ tbody tr:hover{
 
 .formal-feedback-actions button{
   min-width:310px;
-  border:2px solid #1f2937;
+  border:2px solid var(--blue);
   border-radius:5px;
-  background:#fff;
-  color:#111827;
+  background:var(--blue);
+  color:#fff;
   padding:12px 18px;
   font-size:16px;
   font-weight:800;
@@ -2840,7 +2840,13 @@ tbody tr:hover{
 }
 
 .formal-feedback-actions button:hover{
-  background:#f1f5f9;
+  background:#173f64;
+  border-color:#173f64;
+}
+
+.formal-feedback-actions button:disabled{
+  opacity:.7;
+  cursor:not-allowed;
 }
 
 .revenue-breakdown-table th:nth-child(1),

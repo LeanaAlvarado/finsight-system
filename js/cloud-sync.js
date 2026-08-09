@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-client-feedback-labels-v161";
+import { supabase } from "./supabase.js?v=20260809-feedback-local-id-fix-v162";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

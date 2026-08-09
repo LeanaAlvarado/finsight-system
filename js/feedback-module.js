@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-client-feedback-labels-v161";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260809-feedback-local-id-fix-v162";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");
