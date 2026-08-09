@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-fast-project-list-v167";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-project-load-timeout-v168";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -13,6 +13,7 @@ const PROJECT_UPLOAD_BUCKETS = ["contracts", "progress-files"];
 const EXPENSE_PROOF_BUCKETS = ["expense-proofs", "expenses", "receipts", "proofs", "progress-files", "contracts"];
 const MARK_SIGNATURE_IMAGE = "assets/mark-lyndon-lawas-signature.jpg";
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
+const PROJECT_CLOUD_CACHE_KEY = "lemyu_cached_cloud_projects";
 const LOCAL_PPR_CONFIGS_KEY = "lemyu_ppr_report_configs";
 const LOCAL_PROJECT_FILE_COMMENTS_KEY = "lemyu_project_file_comments";
 const LOCAL_PROJECT_BILLING_KEY = "lemyu_project_billing";
@@ -31,6 +32,7 @@ const projectListState = {
 };
 const PROJECT_LIST_STATE_KEY = "lemyu_project_monitoring_list_state";
 let pendingDetailProjectId = new URLSearchParams(window.location.search).get("view") || "";
+let projectLoadRequestId = 0;
 
 function getProjectListStateSnapshot() {
   return {
@@ -776,6 +778,32 @@ function getLocalSavedProjects() {
   } catch {
     return [];
   }
+}
+
+function getCachedCloudProjects() {
+  try {
+    const records = JSON.parse(localStorage.getItem(PROJECT_CLOUD_CACHE_KEY) || "[]");
+    return Array.isArray(records) ? records : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedCloudProjects(projects = []) {
+  try {
+    localStorage.setItem(PROJECT_CLOUD_CACHE_KEY, JSON.stringify(projects || []));
+  } catch {
+    // Cache is best effort only; Supabase remains the source of truth.
+  }
+}
+
+function withTimeout(promise, timeoutMs = 7000) {
+  return Promise.race([
+    promise,
+    new Promise(resolve => {
+      window.setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+    })
+  ]);
 }
 
 function saveLocalProjectMirror(project) {
@@ -4180,29 +4208,51 @@ function renderProjectList() {
 
 // LOAD PROJECTS
 async function loadProjects() {
+  const requestId = ++projectLoadRequestId;
   const localProjects = getLocalSavedProjects();
+  const cachedProjects = getCachedCloudProjects();
+  const seedProjects = mergeProjects(cachedProjects, localProjects);
 
-  if (localProjects.length) {
-    allProjects = mergeProjects([]);
+  if (seedProjects.length) {
+    allProjects = seedProjects;
     renderProjectList();
     setNextProjectCode(allProjects);
     renderOperationsExpenseProjectOptions();
   }
 
-  if (tbody) {
-    if (!localProjects.length) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading project records...</td></tr>`;
-    }
+  if (tbody && !seedProjects.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading project records...</td></tr>`;
   }
 
-  const { data: supabaseProjects, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let result = null;
+
+  try {
+    result = await withTimeout(
+      supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      7000
+    );
+  } catch (loadError) {
+    result = { error: loadError };
+  }
+
+  if (requestId !== projectLoadRequestId) return;
+
+  if (result?.timedOut) {
+    if (!allProjects.length && tbody) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Project records are taking longer than usual to load. Please use Refresh if this continues.</td></tr>`;
+      renderProjectPagination(0);
+    }
+    return;
+  }
+
+  const { data: supabaseProjects, error } = result || {};
 
   if (error) {
     console.log(error);
-    if (!getLocalSavedProjects().length) {
+    if (!seedProjects.length) {
       allProjects = [];
       if (tbody) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
@@ -4212,7 +4262,9 @@ async function loadProjects() {
     }
   }
 
-  const projects = mergeProjects(error ? [] : (supabaseProjects || []));
+  if (!error) saveCachedCloudProjects(supabaseProjects || []);
+
+  const projects = mergeProjects(error ? cachedProjects : (supabaseProjects || []), localProjects);
   allProjects = projects;
   setNextProjectCode(allProjects);
   renderOperationsExpenseProjectOptions();

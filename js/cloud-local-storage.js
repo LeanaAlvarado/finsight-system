@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260809-fast-project-list-v167";
+import { supabase } from "./supabase.js?v=20260809-project-load-timeout-v168";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

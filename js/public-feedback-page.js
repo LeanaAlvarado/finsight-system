@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-fast-project-list-v167";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-project-load-timeout-v168";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-fast-project-list-v167";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260809-project-load-timeout-v168";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([
