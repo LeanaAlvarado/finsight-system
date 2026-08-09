@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-billing-title-clean-v157";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-revenue-operational-label-v158";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

@@ -2691,6 +2691,12 @@ tbody tr:hover{
 .revenue-breakdown-table th{
   font-size:10px;
   letter-spacing:.04em;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+
+.nowrap{
+  white-space:nowrap;
 }
 
 .revenue-breakdown-table th:nth-child(1),

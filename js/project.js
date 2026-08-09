@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-billing-title-clean-v157";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-revenue-operational-label-v158";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

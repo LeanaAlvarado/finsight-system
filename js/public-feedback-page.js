@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-billing-title-clean-v157";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-revenue-operational-label-v158";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
