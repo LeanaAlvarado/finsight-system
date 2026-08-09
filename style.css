@@ -3025,12 +3025,27 @@ tbody tr:hover{
   display:none;
 }
 
+#editCctvMaterialsTable:not(.serials-hidden){
+  min-width:1180px;
+}
+
+#editCctvMaterialsTable .serial-column{
+  min-width:260px;
+  width:28%;
+}
+
+#editCctvMaterialsTable .serial-column textarea{
+  width:100%;
+  box-sizing:border-box;
+}
+
 .edit-cctv-material-serials{
-  min-height:38px;
-  height:38px;
+  min-height:78px;
+  height:78px;
   resize:vertical;
   font-size:12px;
   line-height:1.25;
+  white-space:pre-wrap;
 }
 
 .quotation-qty,

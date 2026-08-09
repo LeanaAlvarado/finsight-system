@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260808-cctv-serial-dr-v137";
+import { supabase } from "./supabase.js?v=20260809-cctv-serial-ui-v138";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([
