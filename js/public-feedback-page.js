@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-manpower-project-code-v155";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-billing-project-title-v156";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-manpower-project-code-v155";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-billing-project-title-v156";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1287,6 +1287,7 @@ window.generateBillingDocument = function(type = "", projectOverride = null) {
         <img src="${assetUrl("pdf-image-1.jpg")}" class="logo" onerror="this.src='${assetUrl("assets/logo.jpg")}'">
         <div class="quote-meta">
           <h1>${escapeProjectHtml(title)}</h1>
+          <div><b>Project Title:</b> ${escapeProjectHtml(project.project_title || "-")}</div>
           <div><b>${escapeProjectHtml(billingReferenceLabel)}:</b> ${escapeProjectHtml(billingReferenceValue)}</div>
           <div><b>Date:</b> ${escapeProjectHtml(quotationDate)}</div>
         </div>
