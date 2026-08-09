@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-lock-quotation-type-v153";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-project-po-column-v154";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

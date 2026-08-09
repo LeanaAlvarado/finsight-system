@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-lock-quotation-type-v153";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-project-po-column-v154";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -3983,6 +3983,7 @@ function getProjectDateForList(project = {}) {
 function getProjectSearchText(project = {}) {
   return [
     project.project_code,
+    project.purchase_order_number,
     project.project_title,
     project.client_name,
     project.client_contact_name,
@@ -4105,6 +4106,7 @@ function renderProjectList() {
   if (headerRow) {
     headerRow.innerHTML = `
     <th>Code</th>
+    <th>PO No.</th>
     <th>Title</th>
     <th>Client</th>
     <th>Contact</th>
@@ -4126,7 +4128,7 @@ function renderProjectList() {
     const message = allProjects.length && hasActiveProjectFilters()
       ? "No projects match the selected filters."
       : "No project records found.";
-    projectTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">${message}</td></tr>`;
+    projectTableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">${message}</td></tr>`;
     renderProjectPagination(totalItems);
     return;
   }
@@ -4155,6 +4157,7 @@ function renderProjectList() {
     return `
       <tr>
         <td>${escapeHtml(project.project_code || "-")}</td>
+        <td>${escapeHtml(project.purchase_order_number || "-")}</td>
         <td>${escapeHtml(project.project_title || "-")}</td>
         <td>${escapeHtml(project.client_name || "-")}</td>
         <td>${escapeHtml(project.contact_number || "-")}</td>
@@ -4173,7 +4176,7 @@ function renderProjectList() {
 // LOAD PROJECTS
 async function loadProjects() {
   if (tbody) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading project records...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Loading project records...</td></tr>`;
   }
 
   const { data: supabaseProjects, error } = await supabase
@@ -4186,7 +4189,7 @@ async function loadProjects() {
     if (!getLocalSavedProjects().length) {
       allProjects = [];
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
       }
       renderProjectPagination(0);
       return;
