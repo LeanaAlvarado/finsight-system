@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-par-layout-balance-v177";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260809-par-page2-fill-v178";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

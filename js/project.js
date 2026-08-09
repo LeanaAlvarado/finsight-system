@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-layout-balance-v177";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-page2-fill-v178";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -5385,13 +5385,13 @@ window.generatePPR = async function(id) {
         <div class="kpi-card"><span>Amount Paid</span><strong>${amountPaid ? peso(amountPaid) : "Not Available"}</strong></div>
         <div class="kpi-card"><span>Project Duration</span><strong>${safePprText(getProjectDurationText(project))}</strong></div>
       </div>
-      <div class="section-card">
+      <div class="section-card executive-summary-card">
         <h3>Executive Summary</h3>
         <p>${getPprSectionText(pprConfig.executiveSummary || project.remarks)}</p>
       </div>
       <h2>Project Information and Scope</h2>
       <div class="two-col">
-        <div class="section-card">
+        <div class="section-card project-detail-card">
           <h3>Client Information</h3>
           ${infoRows([
             { label: "Client Name", value: getProjectClientName(project) || project.client_name },
@@ -5401,7 +5401,7 @@ window.generatePPR = async function(id) {
             { label: "Project Site Address", value: project.location }
           ])}
         </div>
-        <div class="section-card">
+        <div class="section-card project-detail-card">
           <h3>Project Information</h3>
           ${infoRows([
             { label: "Project Code", value: project.project_code },
@@ -5416,11 +5416,11 @@ window.generatePPR = async function(id) {
           ])}
         </div>
       </div>
-      <div class="section-card">
+      <div class="section-card scope-card">
         <h3>Scope of Work</h3>
         ${scopeItems.length ? `<ul class="scope-list">${scopeItems.map(item => `<li>${escapeProjectHtml(item)}</li>`).join("")}</ul>` : `<p class="empty-text">No saved scope of work was recorded for this project.</p>`}
       </div>
-      <div class="section-card">
+      <div class="section-card dates-card">
         <h3>Important Dates</h3>
         ${infoRows([
           { label: "Project Creation Date", value: formatDate(project.created_at, "") },
@@ -5526,17 +5526,21 @@ window.generatePPR = async function(id) {
         .kpi-card{break-inside:avoid;min-height:72px;}
         .kpi-card strong{font-size:16px;}
         .combined-project-page{padding-top:12mm;}
-        .combined-project-page h2{margin:10px 0 9px;font-size:18px;}
-        .combined-project-page h3{font-size:11px;}
-        .combined-project-page .kpi-grid{grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
-        .combined-project-page .kpi-card{min-height:70px;padding:10px;}
+        .combined-project-page h2{margin:11px 0 9px;font-size:19px;}
+        .combined-project-page h3{font-size:12px;margin-bottom:9px;}
+        .combined-project-page .kpi-grid{grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:11px;}
+        .combined-project-page .kpi-card{min-height:78px;padding:11px;}
         .combined-project-page .kpi-card span,.combined-project-page .cover-meta span{font-size:8px;}
-        .combined-project-page .kpi-card strong{font-size:15px;}
-        .combined-project-page .section-card{padding:10px;margin-bottom:9px;}
+        .combined-project-page .kpi-card strong{font-size:16px;}
+        .combined-project-page .section-card{padding:11px;margin-bottom:10px;}
+        .combined-project-page .executive-summary-card{min-height:34mm;}
+        .combined-project-page .project-detail-card{min-height:62mm;}
+        .combined-project-page .scope-card{min-height:21mm;}
+        .combined-project-page .dates-card{min-height:28mm;}
         .combined-project-page .two-col{gap:8px;}
-        .combined-project-page .info-row{padding:6px 0;font-size:9.5px;}
-        .combined-project-page .scope-list{font-size:10px;line-height:1.42;}
-        .combined-project-page p{font-size:10px;line-height:1.38;}
+        .combined-project-page .info-row{padding:6px 0;font-size:10px;line-height:1.4;}
+        .combined-project-page .scope-list{font-size:10px;line-height:1.4;}
+        .combined-project-page p{font-size:10px;line-height:1.4;}
         .progress-wrap{height:8px;background:#E2E8F0;border-radius:999px;margin-top:8px;overflow:hidden;}
         .progress-fill{height:100%;background:#168C8C;border-radius:999px;}
         .progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}

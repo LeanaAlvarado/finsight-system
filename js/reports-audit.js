@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-par-layout-balance-v177";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-par-page2-fill-v178";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
