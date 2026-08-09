@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-editable-serials-v149";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

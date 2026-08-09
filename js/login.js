@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
+import { supabase } from "./supabase.js?v=20260809-editable-serials-v149";
 import {
   clearLoginLockout,
   getLockout,

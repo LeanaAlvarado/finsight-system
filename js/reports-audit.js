@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-editable-serials-v149";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

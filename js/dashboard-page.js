@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260809-editable-serials-v149";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

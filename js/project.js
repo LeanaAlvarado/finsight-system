@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-numbered-dr-billing-v148";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-editable-serials-v149";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -2672,7 +2672,13 @@ function renderEditCctvSerialList(row) {
 
   const serials = parseEditCctvSerialNumbers(row.dataset.serialNumbers || "");
   list.innerHTML = serials.length
-    ? `<div class="saved-serial-title">Saved Serials</div>${serials.map(serial => `<div class="saved-serial-item">${escapeProjectHtml(serial)}</div>`).join("")}`
+    ? `<div class="saved-serial-title">Saved Serials</div>${serials.map((serial, index) => `
+        <div class="saved-serial-item">
+          <input class="saved-serial-input" value="${escapeProjectHtml(serial)}" aria-label="Saved serial ${index + 1}">
+          <button type="button" class="serial-mini-btn" onclick="updateSavedCctvSerial(this, ${index})">Save</button>
+          <button type="button" class="serial-mini-btn danger-btn" onclick="deleteSavedCctvSerial(this, ${index})">Delete</button>
+        </div>
+      `).join("")}`
     : `<div class="saved-serial-empty">No saved serial yet.</div>`;
 }
 
@@ -2682,6 +2688,36 @@ function saveEditCctvMaterialDraft() {
   saveLocalQuotationItems(editingId, items);
   updateLocalProjectMirror(editingId, { quotation_items: items });
 }
+
+window.updateSavedCctvSerial = function(button, index) {
+  const row = button?.closest("tr");
+  const input = button?.closest(".saved-serial-item")?.querySelector(".saved-serial-input");
+  if (!row || !input) return;
+
+  const serials = parseEditCctvSerialNumbers(row.dataset.serialNumbers || "");
+  const nextValue = input.value.trim();
+  if (!nextValue) {
+    alert("Serial number cannot be blank.");
+    input.focus();
+    return;
+  }
+
+  serials[index] = nextValue;
+  row.dataset.serialNumbers = serials.filter(Boolean).join("\n");
+  renderEditCctvSerialList(row);
+  saveEditCctvMaterialDraft();
+};
+
+window.deleteSavedCctvSerial = function(button, index) {
+  const row = button?.closest("tr");
+  if (!row) return;
+
+  const serials = parseEditCctvSerialNumbers(row.dataset.serialNumbers || "");
+  serials.splice(index, 1);
+  row.dataset.serialNumbers = serials.join("\n");
+  renderEditCctvSerialList(row);
+  saveEditCctvMaterialDraft();
+};
 
 function bindEditCctvMaterialRow(row) {
   row.querySelector(".edit-cctv-material-qty")?.addEventListener("input", () => updateEditCctvMaterialRowTotal(row));
