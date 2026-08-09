@@ -3,45 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <title>Project Feedback</title>
-<link rel="stylesheet" href="style.css?v=20260809-revenue-operational-label-v158">
+<link rel="stylesheet" href="style.css?v=20260809-formal-client-feedback-v159">
 </head>
 <body>
 
-<main class="main" style="margin-left:0;max-width:700px;margin:auto;padding:30px;">
-  <section class="hero">
+<main class="public-feedback-page">
+  <section class="feedback-form-header">
     <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
     <h1>Client Feedback Form</h1>
-    <p>Please submit your evaluation for this project.</p>
+    <p>Please rate our service and share your feedback.</p>
+
+    <div class="qr-access-card">
+      <div class="qr-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div>
+        <strong>Scanned QR Access</strong>
+        <span>QR Reference</span>
+        <b id="qrReference">FS-QR</b>
+      </div>
+    </div>
   </section>
 
-  <section class="card">
-    <form id="publicFeedbackForm">
-      <label>Client Name</label>
-      <input id="client_name" required>
+  <section class="public-feedback-card">
+    <form id="publicFeedbackForm" class="formal-feedback-form">
+      <p class="required-note">Fields marked with * are required.</p>
 
-      <label>Rating</label>
-      <select id="rating" required>
-        <option value="">Select rating</option>
-        <option value="1">1 - Lowest</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5 - Highest</option>
-      </select>
-      <label>Comments</label>
-      <textarea id="comments"></textarea>
+      <div class="formal-feedback-row">
+        <label for="client_name">1. Client Name *</label>
+        <input id="client_name" placeholder="Enter your full name" required>
+      </div>
 
-      <label>Recommendations</label>
-      <textarea id="recommendations"></textarea>
+      <div class="formal-feedback-row">
+        <label for="project_service">2. Project / Service Availed *</label>
+        <input id="project_service" placeholder="Enter the project or service availed" required>
+      </div>
 
-      <div class="form-actions">
+      <div class="formal-feedback-row compact-field">
+        <label for="feedback_date">3. Date *</label>
+        <input id="feedback_date" type="date" required>
+      </div>
+
+      <fieldset class="formal-rating-row">
+        <legend>4. Overall Rating *</legend>
+        <label>
+          <input type="radio" name="rating" value="1" required>
+          <span>1</span>
+          <small>Poor</small>
+        </label>
+        <label>
+          <input type="radio" name="rating" value="2">
+          <span>2</span>
+          <small>Fair</small>
+        </label>
+        <label>
+          <input type="radio" name="rating" value="3">
+          <span>3</span>
+          <small>Good</small>
+        </label>
+        <label>
+          <input type="radio" name="rating" value="4">
+          <span>4</span>
+          <small>Very Good</small>
+        </label>
+        <label>
+          <input type="radio" name="rating" value="5">
+          <span>5</span>
+          <small>Excellent</small>
+        </label>
+      </fieldset>
+
+      <div class="formal-feedback-row textarea-row">
+        <label for="comments">5. Comments *</label>
+        <textarea id="comments" placeholder="Share your feedback about our service" required></textarea>
+      </div>
+
+      <div class="formal-feedback-row textarea-row">
+        <label for="recommendations">6. Recommendations</label>
+        <textarea id="recommendations" placeholder="How can we improve?"></textarea>
+      </div>
+
+      <div class="formal-feedback-actions">
         <button type="submit">Submit Feedback</button>
       </div>
     </form>
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260809-revenue-operational-label-v158"></script>
+<script type="module" src="js/app.js?v=20260809-formal-client-feedback-v159"></script>
 
 </body>
 </html>
