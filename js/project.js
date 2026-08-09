@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-cctv-materials-toggle-v170";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-progress-files-only-v171";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -333,8 +333,26 @@ function applyStoredProjectFileComments(files = []) {
   });
 }
 
+function isProgressUploadFile(file = {}) {
+  const fileText = [
+    file.file_name,
+    file.file_url,
+    file.storage_path,
+    file.path,
+    file.bucket,
+    file.file_type,
+    file.file_category,
+    file.upload_type
+  ]
+    .map(value => String(value || "").toLowerCase())
+    .join(" ");
+
+  return !/(purchase[-_\s]?order|purchase-orders|po[_\s-]?\d|_po_|\/po[-_])/i.test(fileText);
+}
+
 function getPprPhotos(projectFiles = []) {
   return projectFiles
+    .filter(isProgressUploadFile)
     .filter(file => isImageFile(file.file_name || "", file.file_url || ""))
     .filter(file => file.is_visible_in_report !== false)
     .sort((a, b) => {
@@ -5609,7 +5627,7 @@ async function loadProgressFiles(projectId) {
     .select("*")
     .eq("project_id", projectId)
     .order("uploaded_at", { ascending: false });
-  const filesWithComments = applyStoredProjectFileComments(files || []);
+  const filesWithComments = applyStoredProjectFileComments(files || []).filter(isProgressUploadFile);
 
   uploadedProgressFiles.innerHTML = filesWithComments.length
     ? filesWithComments.map(file => `
