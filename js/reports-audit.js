@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-feedback-project-title-v174";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260809-par-merged-info-v175";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

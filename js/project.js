@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-feedback-project-title-v174";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-merged-info-v175";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -5367,7 +5367,7 @@ window.generatePPR = async function(id) {
   `);
 
   pages.push(`
-    <section class="ppr-page">
+    <section class="ppr-page combined-project-page">
       <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>${reportMeta.documentTitle} - ${safePprText(project.project_code)}</span></div></header>
       <h2>Executive Project Dashboard</h2>
       <div class="kpi-grid">
@@ -5380,12 +5380,6 @@ window.generatePPR = async function(id) {
         <h3>Executive Summary</h3>
         <p>${getPprSectionText(pprConfig.executiveSummary || project.remarks)}</p>
       </div>
-    </section>
-  `);
-
-  pages.push(`
-    <section class="ppr-page">
-      <header class="ppr-header"><img src="${assetUrl("assets/logo.jpg")}" alt="LEMYU logo" onerror="this.style.display='none'"><div><strong>FinSight</strong><span>${reportMeta.documentTitle} - ${safePprText(project.project_code)}</span></div></header>
       <h2>Project Information and Scope</h2>
       <div class="two-col">
         <div class="section-card">
@@ -5521,6 +5515,16 @@ window.generatePPR = async function(id) {
         .kpi-grid{grid-template-columns:repeat(3,1fr);margin-bottom:12px;}
         .kpi-card{break-inside:avoid;min-height:72px;}
         .kpi-card strong{font-size:16px;}
+        .combined-project-page{padding-top:12mm;}
+        .combined-project-page h2{margin:9px 0 8px;font-size:16px;}
+        .combined-project-page .kpi-grid{grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px;}
+        .combined-project-page .kpi-card{min-height:58px;padding:8px;}
+        .combined-project-page .kpi-card strong{font-size:13px;}
+        .combined-project-page .section-card{padding:8px;margin-bottom:7px;}
+        .combined-project-page .two-col{gap:7px;}
+        .combined-project-page .info-row{padding:4px 0;font-size:8.6px;}
+        .combined-project-page .scope-list{font-size:9px;line-height:1.35;}
+        .combined-project-page p{font-size:9px;line-height:1.32;}
         .progress-wrap{height:8px;background:#E2E8F0;border-radius:999px;margin-top:8px;overflow:hidden;}
         .progress-fill{height:100%;background:#168C8C;border-radius:999px;}
         .progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
