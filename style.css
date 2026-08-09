@@ -2659,6 +2659,100 @@ tbody tr:hover{
   font-weight:800;
 }
 
+.revenue-table-wrap{
+  overflow-x:hidden;
+}
+
+.revenue-list-toolbar{
+  grid-template-columns:minmax(180px,1.2fr) repeat(5,minmax(130px,1fr));
+}
+
+.revenue-breakdown-table{
+  width:100%;
+  table-layout:fixed;
+}
+
+.revenue-breakdown-table th,
+.revenue-breakdown-table td{
+  padding:9px 8px;
+  font-size:11px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+
+.revenue-breakdown-table th{
+  font-size:10px;
+  letter-spacing:.04em;
+}
+
+.revenue-breakdown-table th:nth-child(1),
+.revenue-breakdown-table td:nth-child(1){
+  width:10%;
+}
+
+.revenue-breakdown-table th:nth-child(2),
+.revenue-breakdown-table td:nth-child(2){
+  width:9%;
+}
+
+.revenue-breakdown-table th:nth-child(3),
+.revenue-breakdown-table th:nth-child(4),
+.revenue-breakdown-table th:nth-child(5),
+.revenue-breakdown-table th:nth-child(6),
+.revenue-breakdown-table th:nth-child(8),
+.revenue-breakdown-table th:nth-child(9),
+.revenue-breakdown-table th:nth-child(10),
+.revenue-breakdown-table th:nth-child(11),
+.revenue-breakdown-table th:nth-child(12),
+.revenue-breakdown-table th:nth-child(13),
+.revenue-breakdown-table th:nth-child(14),
+.revenue-breakdown-table td:nth-child(3),
+.revenue-breakdown-table td:nth-child(4),
+.revenue-breakdown-table td:nth-child(5),
+.revenue-breakdown-table td:nth-child(6),
+.revenue-breakdown-table td:nth-child(8),
+.revenue-breakdown-table td:nth-child(9),
+.revenue-breakdown-table td:nth-child(10),
+.revenue-breakdown-table td:nth-child(11),
+.revenue-breakdown-table td:nth-child(12),
+.revenue-breakdown-table td:nth-child(13),
+.revenue-breakdown-table td:nth-child(14){
+  width:7%;
+}
+
+.revenue-breakdown-table th:nth-child(7),
+.revenue-breakdown-table td:nth-child(7){
+  width:12%;
+}
+
+.revenue-breakdown-table .inline-edit{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:5px;
+  min-width:0;
+  align-items:center;
+}
+
+.revenue-breakdown-table .tax-input{
+  width:100%;
+  min-width:0;
+  height:32px;
+  padding:6px 7px;
+  font-size:11px;
+}
+
+.revenue-breakdown-table .input-suffix{
+  font-size:11px;
+}
+
+.revenue-breakdown-table .inline-edit button{
+  grid-column:1 / -1;
+  width:100%;
+  min-height:30px;
+  padding:6px 8px;
+  font-size:11px;
+}
+
 .modal{
   display:none;
   position:fixed;
@@ -3196,6 +3290,18 @@ tbody tr:hover{
 }
 
 @media(max-width:1100px){
+  .revenue-list-toolbar{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .revenue-table-wrap{
+    overflow-x:auto;
+  }
+
+  .revenue-breakdown-table{
+    min-width:980px;
+  }
+
   .grid,
   .dark-grid,
   .form-grid{

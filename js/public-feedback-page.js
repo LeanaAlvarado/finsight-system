@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-editable-serials-v149";
+import { insertWithOptionalColumns, number } from "./supabase.js?v=20260809-revenue-fit-table-v150";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
