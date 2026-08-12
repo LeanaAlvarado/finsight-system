@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260809-par-page2-fill-v178";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260812-contract-modal-fix-v179";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

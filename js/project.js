@@ -1,7 +1,9 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260809-par-page2-fill-v178";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260812-contract-modal-fix-v179";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
+const smartContractModal = document.getElementById("smartContractModal");
+const smartContractContent = document.getElementById("smartContractContent");
 
 let editingId = null;
 let editingProjectCode = "";
@@ -2203,16 +2205,26 @@ async function getOrCreateProjectContract(projectId) {
 }
 
 window.viewProjectContract = async function(projectId) {
-  const record = await getOrCreateProjectContract(projectId);
-  if (!record) return;
-  window.viewSmartContract(record.id);
+  try {
+    const record = await getOrCreateProjectContract(projectId);
+    if (!record) return;
+    window.viewSmartContract(record.id);
+  } catch (error) {
+    console.error("Generate Contract failed:", error);
+    alert("Generate Contract failed: " + (error.message || error));
+  }
 };
 
 window.printProjectContract = async function(projectId) {
-  const record = await getOrCreateProjectContract(projectId);
-  if (!record) return;
-  activeSmartContract = record;
-  window.printSmartContract();
+  try {
+    const record = await getOrCreateProjectContract(projectId);
+    if (!record) return;
+    activeSmartContract = record;
+    window.printSmartContract();
+  } catch (error) {
+    console.error("Print Contract failed:", error);
+    alert("Print Contract failed: " + (error.message || error));
+  }
 };
 
 window.viewSmartContract = function(contractId) {
