@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260812-contract-modal-fix-v179";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260812-contract-null-status-v180";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

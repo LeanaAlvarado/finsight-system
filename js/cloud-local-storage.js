@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260812-contract-modal-fix-v179";
+import { supabase } from "./supabase.js?v=20260812-contract-null-status-v180";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

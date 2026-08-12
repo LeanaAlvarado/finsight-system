@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260812-contract-modal-fix-v179";
+import { supabase } from "./supabase.js?v=20260812-contract-null-status-v180";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

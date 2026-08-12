@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260812-contract-modal-fix-v179";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260812-contract-null-status-v180";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260812-contract-modal-fix-v179";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260812-contract-null-status-v180";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

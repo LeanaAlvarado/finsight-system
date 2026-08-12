@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260812-contract-modal-fix-v179";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260812-contract-null-status-v180";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1922,7 +1922,8 @@ function getProjectTaxAmount(project) {
 }
 
 function isLockedContract(record = {}) {
-  return ["finalized", "signed"].includes(String(record.status || "").toLowerCase());
+  const safeRecord = record || {};
+  return ["finalized", "signed"].includes(String(safeRecord.status || "").toLowerCase());
 }
 
 async function buildProjectContractRecord(project, existingRecord = null) {
