@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-budget-view-all-v190";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-financial-summary-chart-v191";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -1240,10 +1240,6 @@ async function loadDashboard(){
   setText("inventoryCount", projectMaterials.length);
   setText("inventoryPanelValue", peso(projectMaterialCost));
   setText("inventoryPanelCount", projectMaterials.length);
-  setText("projectMini", projects.length);
-  setText("revenueSmall", peso(revenue));
-  setText("expenseSmall", peso(totalCost));
-  setText("profitSmall", peso(profit));
 
   if (dashboardChart) {
     dashboardChart.destroy();

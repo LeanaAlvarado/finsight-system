@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260813-budget-view-all-v190">
+<link rel="stylesheet" href="style.css?v=20260813-financial-summary-chart-v191">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -125,7 +125,7 @@
     <div class="card dashboard-panel chart-card overview-panel">
       <div class="card-head">
         <div>
-          <h3>Financial Overview</h3>
+          <h3>Financial Summary</h3>
           <p class="muted">Revenue and expenses based on current project records.</p>
         </div>
         <select class="search compact-select" aria-label="Chart period">
@@ -195,33 +195,6 @@
           <div id="inventoryProjectList" class="inventory-project-list"></div>
         </div>
         <button type="button" class="inventory-report-btn" onclick="generateProjectMaterialsReport()">Generate Report</button>
-      </div>
-    </div>
-
-    <div class="card dashboard-panel summary-card summary-panel">
-      <div class="card-head">
-        <div>
-          <h3>Financial Summary</h3>
-          <p class="muted">Condensed view of connected records.</p>
-        </div>
-      </div>
-      <div class="summary-list">
-        <div class="summary-row">
-          <small>Project Count</small>
-          <strong id="projectMini">0</strong>
-        </div>
-        <div class="summary-row">
-          <small>Revenue</small>
-          <strong id="revenueSmall">PHP 0.00</strong>
-        </div>
-        <div class="summary-row">
-          <small>Total Cost</small>
-          <strong id="expenseSmall">PHP 0.00</strong>
-        </div>
-        <div class="summary-row">
-          <small>Profit</small>
-          <strong id="profitSmall">PHP 0.00</strong>
-        </div>
       </div>
     </div>
 
@@ -295,7 +268,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260813-budget-view-all-v190"></script>
+<script type="module" src="js/app.js?v=20260813-financial-summary-chart-v191"></script>
 
 
 </body>

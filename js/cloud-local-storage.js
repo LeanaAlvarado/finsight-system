@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260813-budget-view-all-v190";
+import { supabase } from "./supabase.js?v=20260813-financial-summary-chart-v191";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

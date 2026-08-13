@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260813-budget-view-all-v190";
+import { supabase } from "./supabase.js?v=20260813-financial-summary-chart-v191";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";
