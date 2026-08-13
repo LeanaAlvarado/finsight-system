@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260813-collection-list-first-v198";
+import { supabase } from "./supabase.js?v=20260813-financial-status-filter-v199";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

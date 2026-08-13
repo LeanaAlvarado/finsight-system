@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-collection-list-first-v198";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-financial-status-filter-v199";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

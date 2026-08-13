@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-collection-list-first-v198";
+import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-financial-status-filter-v199";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
@@ -20,6 +20,8 @@ const revenueListState = {
   projectStatus: "all",
   sort: "newest"
 };
+
+const FINANCIAL_PROJECT_STATUSES = new Set(["approved", "ongoing", "completed", "complete"]);
 
 function applyRevenueRouteState() {
   const params = new URLSearchParams(window.location.search);
@@ -115,6 +117,10 @@ function normalizeMatchValue(value = "") {
   return String(value || "").trim().toLowerCase();
 }
 
+function isFinancialProject(project = {}) {
+  return FINANCIAL_PROJECT_STATUSES.has(normalizeMatchValue(project.status || project.project_status || project.approval_status));
+}
+
 function recordBelongsToProject(record = {}, project = {}) {
   const recordProjectId = normalizeMatchValue(record.project_id);
   const projectId = normalizeMatchValue(project.id);
@@ -206,6 +212,7 @@ function isWithinRevenueDateFilter(project = {}) {
 function getFilteredRevenueRows() {
   const search = revenueListState.search.trim().toLowerCase();
   const rows = revenueProjects
+    .filter(isFinancialProject)
     .map(project => getProjectFinancials(project))
     .filter(row => {
       if (!search) return true;
@@ -386,7 +393,7 @@ async function loadRevenue({ silent = false } = {}) {
   let totalExpenseVal = 0;
   let totalPayrollVal = 0;
 
-  revenueProjects.forEach(project => {
+  revenueProjects.filter(isFinancialProject).forEach(project => {
     const row = getProjectFinancials(project);
     totalContractVal += row.contract;
     totalBudgetVal += row.budget;

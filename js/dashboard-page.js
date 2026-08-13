@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-list-first-v198";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-financial-status-filter-v199";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -16,6 +16,7 @@ const ALERT_OVER_BUDGET_THRESHOLD = 100;
 const ALERT_PREVIEW_LIMIT = 5;
 const ACTIVE_ALERT_STATUSES = new Set(["Active", "Viewed"]);
 const MATERIAL_PROJECT_STATUSES = new Set(["approved", "completed", "complete"]);
+const FINANCIAL_PROJECT_STATUSES = new Set(["approved", "ongoing", "completed", "complete"]);
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
 
 function getCurrentRole() {
@@ -147,6 +148,14 @@ function getProjectRecordStatus(project = {}) {
 
 function isMaterialCountedProject(project = {}) {
   return MATERIAL_PROJECT_STATUSES.has(getProjectRecordStatus(project));
+}
+
+function isFinancialProject(project = {}) {
+  return FINANCIAL_PROJECT_STATUSES.has(getProjectRecordStatus(project));
+}
+
+function recordBelongsToProjects(record = {}, projects = []) {
+  return projects.some(project => recordBelongsToProject(record, project));
 }
 
 function getProjectQuotationType(project = {}) {
@@ -1281,15 +1290,19 @@ async function loadDashboard(){
   }
 
   const savedCostAlerts = canViewCostOverrunAlerts() ? await loadSavedCostAlerts() : [];
+  const financialProjects = projects.filter(isFinancialProject);
+  const financialExpenses = expenses.filter(expense => recordBelongsToProjects(expense, financialProjects));
+  const financialPayroll = payroll.filter(item => recordBelongsToProjects(item, financialProjects));
+
   latestCostAlerts = canViewCostOverrunAlerts()
-    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(projects, expenses, savedCostAlerts, payroll), savedCostAlerts)
+    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(financialProjects, financialExpenses, savedCostAlerts, financialPayroll), savedCostAlerts)
     : [];
 
-  const revenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
-  const projectMaterials = getApprovedCompletedCctvQuotationMaterials(projects, inventory);
+  const revenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
+  const projectMaterials = getApprovedCompletedCctvQuotationMaterials(financialProjects, inventory);
   const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
-  const projectAnalytics = getProjectAnalytics(projects, expenses, payroll, projectMaterials);
-  latestDashboardProjects = projects;
+  const projectAnalytics = getProjectAnalytics(financialProjects, financialExpenses, financialPayroll, projectMaterials);
+  latestDashboardProjects = financialProjects;
   latestProjectMaterials = projectMaterials;
   const totalCost = projectAnalytics.reduce((sum, item) => sum + number(item.totalCost), 0);
   const profit = revenue - totalCost;
@@ -1302,13 +1315,13 @@ async function loadDashboard(){
   setText("inventoryCount", projectMaterials.length);
   setText("inventoryPanelValue", peso(projectMaterialCost));
   setText("inventoryPanelCount", projectMaterials.length);
-  renderCollectionStatus(projects);
+  renderCollectionStatus(financialProjects);
 
   if (dashboardChart) {
     dashboardChart.destroy();
   }
 
-  const trend = getMonthlyTrend(projects, expenses, payroll);
+  const trend = getMonthlyTrend(financialProjects, financialExpenses, financialPayroll);
   const trendTotals = getTrendTotals(trend);
   setText("chartRevenueTotal", peso(trendTotals.revenue));
   setText("chartExpenseTotal", peso(trendTotals.expenses));
@@ -1423,7 +1436,7 @@ async function loadDashboard(){
     }
   });
 
-  renderBusinessIntelligence(projects, expenses, payroll, projectMaterials, revenue, latestCostAlerts);
+  renderBusinessIntelligence(financialProjects, financialExpenses, financialPayroll, projectMaterials, revenue, latestCostAlerts);
 }
 
 function refreshDashboardNow() {
