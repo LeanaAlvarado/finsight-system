@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-portfolio-budget-use-v187";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-remove-bi-view-reports-v188";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-portfolio-budget-use-v187";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-remove-bi-view-reports-v188";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

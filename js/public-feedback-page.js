@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-portfolio-budget-use-v187";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-remove-bi-view-reports-v188";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
