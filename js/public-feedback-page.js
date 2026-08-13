@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-collection-unpaid-list-v200";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-remove-portfolio-risk-v201";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

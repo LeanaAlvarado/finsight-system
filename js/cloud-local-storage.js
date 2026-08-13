@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260813-collection-unpaid-list-v200";
+import { supabase } from "./supabase.js?v=20260813-remove-portfolio-risk-v201";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

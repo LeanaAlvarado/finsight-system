@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-unpaid-list-v200";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-remove-portfolio-risk-v201";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -1088,7 +1088,6 @@ function renderBusinessInsights(projectAnalytics, categoryTotals, totals) {
   const bestProject = sortedProjects[0];
   const lowestProject = [...projectAnalytics].sort((a, b) => a.margin - b.margin)[0];
   const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
-  const riskCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label !== "Safe").length;
   const insights = [];
 
   if (bestProject) {
@@ -1111,13 +1110,6 @@ function renderBusinessInsights(projectAnalytics, categoryTotals, totals) {
       text: `${lowestProject.label} has a ${lowestProject.margin.toFixed(2)}% margin and should be reviewed.`
     });
   }
-
-  insights.push({
-    title: "Portfolio risk",
-    text: riskCount
-      ? `${riskCount} project${riskCount === 1 ? "" : "s"} are near or above the contract budget limit.`
-      : "No project is currently near its contract budget limit."
-  });
 
   if (totals.revenue > 0) {
     insights.push({

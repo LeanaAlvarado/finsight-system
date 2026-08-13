@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260813-collection-unpaid-list-v200";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260813-remove-portfolio-risk-v201";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
