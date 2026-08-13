@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-remove-bi-view-reports-v188";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-budget-utilization-card-v189";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -398,33 +398,32 @@ function renderProfitabilityTable(projectAnalytics) {
   }).join("");
 }
 
-function renderTopProfitabilityList(projectAnalytics) {
-  const list = document.getElementById("topProfitabilityList");
+function renderBudgetUtilizationList(projectAnalytics) {
+  const list = document.getElementById("budgetUtilizationList");
   if (!list) return;
 
   const rankedProjects = [...projectAnalytics]
-    .filter(item => item.revenue > 0)
-    .sort((a, b) => b.profit - a.profit)
+    .filter(item => item.budget > 0)
+    .sort((a, b) => b.budgetUtilization - a.budgetUtilization)
     .slice(0, 5);
-  const maxProfit = Math.max(...rankedProjects.map(item => Math.max(item.profit, 0)), 1);
 
   if (!rankedProjects.length) {
-    list.innerHTML = `<div class="category-breakdown-empty">No profitability records available.</div>`;
+    list.innerHTML = `<div class="category-breakdown-empty">No project budget records available.</div>`;
     return;
   }
 
   list.innerHTML = rankedProjects.map(item => {
-    const width = Math.max((Math.max(item.profit, 0) / maxProfit) * 100, 4);
+    const width = Math.min(Math.max(item.budgetUtilization, 4), 100);
     return `
       <div class="compact-profit-row">
         <div class="compact-profit-name">
           <strong>${escapeHtml(item.label)}</strong>
-          <span>${peso(item.profit)}</span>
+          <span>${peso(item.budgetRemaining)} remaining</span>
         </div>
         <div class="compact-profit-bar">
           <span style="width:${width.toFixed(2)}%"></span>
         </div>
-        <div class="compact-profit-margin">${item.margin.toFixed(1)}%</div>
+        <div class="compact-profit-margin">${item.budgetUtilization.toFixed(1)}%</div>
       </div>
     `;
   }).join("");
@@ -1168,7 +1167,7 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   renderExpenseCategoryChart(categoryTotals);
   renderCategoryBreakdownList(categoryTotals);
   renderProfitabilityTable(projectAnalytics);
-  renderTopProfitabilityList(projectAnalytics);
+  renderBudgetUtilizationList(projectAnalytics);
   renderInventoryProjectList(projects, projectMaterials);
   renderCostAlerts(costAlerts);
   renderCostAlertNotifications(costAlerts);

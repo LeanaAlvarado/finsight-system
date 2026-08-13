@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-remove-bi-view-reports-v188";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-budget-utilization-card-v189";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([
