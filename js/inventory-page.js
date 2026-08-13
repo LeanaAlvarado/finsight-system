@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
+import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260813-portfolio-budget-use-v187";
 
 const INVENTORY_UPLOAD_BUCKETS = ["contracts", "progress-files", "inventory", "materials"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";

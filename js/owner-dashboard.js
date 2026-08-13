@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-portfolio-budget-use-v187";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

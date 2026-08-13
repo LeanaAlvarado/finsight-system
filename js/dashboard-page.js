@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-portfolio-budget-use-v187";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -1152,15 +1152,17 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   const overBudgetCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label === "Over Budget").length;
   const budgetedProjects = projectAnalytics.filter(item => number(item.budget) > 0);
   const totalRemainingBudget = budgetedProjects.reduce((sum, item) => sum + number(item.budgetRemaining), 0);
-  const averageBudgetUtilization = projectAnalytics.length
-    ? projectAnalytics.reduce((sum, item) => sum + number(item.budgetUtilization), 0) / projectAnalytics.length
+  const totalProjectBudget = budgetedProjects.reduce((sum, item) => sum + number(item.budget), 0);
+  const totalBudgetUsed = budgetedProjects.reduce((sum, item) => sum + number(item.budgetSpendWithoutMaterials), 0);
+  const portfolioBudgetUtilization = totalProjectBudget > 0
+    ? (totalBudgetUsed / totalProjectBudget) * 100
     : 0;
 
   setText("profitMargin", `${margin.toFixed(2)}%`);
   setText("riskProjectCount", riskCount);
   setText("bestProjectProfit", peso(totalRemainingBudget));
   setText("bestProjectName", budgetedProjects.length ? `Across ${budgetedProjects.length} budgeted projects.` : "No project budget recorded.");
-  setText("topCostDriver", `${averageBudgetUtilization.toFixed(2)}%`);
+  setText("topCostDriver", `${portfolioBudgetUtilization.toFixed(2)}%`);
   setText("topCostDriverAmount", `${overBudgetCount} over budget`);
 
   renderExpenseCategoryChart(categoryTotals);
