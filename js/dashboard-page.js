@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-financial-summary-chart-v191";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-financial-overview-title-v192";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

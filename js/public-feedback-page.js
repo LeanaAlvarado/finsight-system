@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-financial-summary-chart-v191";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-financial-overview-title-v192";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

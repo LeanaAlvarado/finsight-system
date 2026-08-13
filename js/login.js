@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260813-financial-summary-chart-v191";
+import { supabase } from "./supabase.js?v=20260813-financial-overview-title-v192";
 import {
   clearLoginLockout,
   getLockout,
