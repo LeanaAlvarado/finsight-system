@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-financial-overview-title-v192";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-collection-status-card-v193";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

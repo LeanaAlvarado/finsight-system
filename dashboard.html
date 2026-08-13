@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260813-financial-overview-title-v192">
+<link rel="stylesheet" href="style.css?v=20260813-collection-status-card-v193">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -198,6 +198,33 @@
       </div>
     </div>
 
+    <div class="card dashboard-panel summary-card summary-panel">
+      <div class="card-head">
+        <div>
+          <h3>Collection Status</h3>
+          <p class="muted">Client payments and remaining collectibles.</p>
+        </div>
+      </div>
+      <div class="summary-list">
+        <div class="summary-row">
+          <small>Total Contract Amount</small>
+          <strong id="collectionContractTotal">PHP 0.00</strong>
+        </div>
+        <div class="summary-row">
+          <small>Amount Paid</small>
+          <strong id="collectionPaidTotal">PHP 0.00</strong>
+        </div>
+        <div class="summary-row">
+          <small>Remaining Collectibles</small>
+          <strong id="collectionBalanceTotal">PHP 0.00</strong>
+        </div>
+        <div class="summary-row">
+          <small>Projects with Balance</small>
+          <strong id="collectionOpenProjects">0</strong>
+        </div>
+      </div>
+    </div>
+
     <div class="card dashboard-panel insight-panel insights-panel">
       <div class="card-head">
         <div>
@@ -268,7 +295,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260813-financial-overview-title-v192"></script>
+<script type="module" src="js/app.js?v=20260813-collection-status-card-v193"></script>
 
 
 </body>

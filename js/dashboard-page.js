@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-financial-overview-title-v192";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-status-card-v193";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -175,6 +175,44 @@ function getTaxAmount(project) {
     : number(project.tax_amount);
 
   return contract * (taxPercent / 100);
+}
+
+function getProjectCollectionPaid(project = {}) {
+  const contract = Math.max(number(project.contract_amount), 0);
+  if (!contract) return 0;
+
+  const directPaid = number(
+    project.amount_paid
+    ?? project.paid_amount
+    ?? project.payment_amount
+    ?? project.billing_down_payment_amount
+    ?? project.down_payment
+  );
+  const firstPercent = number(project.billing_down_payment_percent);
+  const progressPercent = number(project.billing_progress_percent);
+  const firstPayment = firstPercent > 0
+    ? contract * (firstPercent / 100)
+    : directPaid;
+  const progressPayment = progressPercent > 0
+    ? contract * (progressPercent / 100)
+    : 0;
+
+  return Math.min(Math.max(firstPayment + progressPayment, 0), contract);
+}
+
+function renderCollectionStatus(projects = []) {
+  const totalContract = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
+  const totalPaid = projects.reduce((sum, project) => sum + getProjectCollectionPaid(project), 0);
+  const totalBalance = Math.max(totalContract - totalPaid, 0);
+  const projectsWithBalance = projects.filter(project => {
+    const contract = number(project.contract_amount);
+    return contract > 0 && Math.max(contract - getProjectCollectionPaid(project), 0) > 0;
+  }).length;
+
+  setText("collectionContractTotal", peso(totalContract));
+  setText("collectionPaidTotal", peso(totalPaid));
+  setText("collectionBalanceTotal", peso(totalBalance));
+  setText("collectionOpenProjects", projectsWithBalance);
 }
 
 function getRecordDate(record = {}) {
@@ -1240,6 +1278,7 @@ async function loadDashboard(){
   setText("inventoryCount", projectMaterials.length);
   setText("inventoryPanelValue", peso(projectMaterialCost));
   setText("inventoryPanelCount", projectMaterials.length);
+  renderCollectionStatus(projects);
 
   if (dashboardChart) {
     dashboardChart.destroy();

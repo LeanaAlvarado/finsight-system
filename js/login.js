@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260813-financial-overview-title-v192";
+import { supabase } from "./supabase.js?v=20260813-collection-status-card-v193";
 import {
   clearLoginLockout,
   getLockout,
