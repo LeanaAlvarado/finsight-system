@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-bi-budget-materials-v183";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

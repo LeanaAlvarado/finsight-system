@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260813-bi-budget-materials-v183";
+import { supabase } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
 import {
   clearLoginLockout,
   getLockout,

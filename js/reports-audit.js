@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-bi-budget-materials-v183";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

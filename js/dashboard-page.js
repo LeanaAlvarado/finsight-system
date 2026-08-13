@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-bi-budget-materials-v183";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -1150,8 +1150,8 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   const overBudgetCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label === "Over Budget").length;
   const budgetedProjects = projectAnalytics.filter(item => number(item.budget) > 0);
   const totalRemainingBudget = budgetedProjects.reduce((sum, item) => sum + number(item.budgetRemaining), 0);
-  const averageBudgetUtilization = budgetedProjects.length
-    ? budgetedProjects.reduce((sum, item) => sum + number(item.budgetUtilization), 0) / budgetedProjects.length
+  const averageBudgetUtilization = projectAnalytics.length
+    ? projectAnalytics.reduce((sum, item) => sum + number(item.budgetUtilization), 0) / projectAnalytics.length
     : 0;
 
   setText("profitMargin", `${margin.toFixed(2)}%`);
