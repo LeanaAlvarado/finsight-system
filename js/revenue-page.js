@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-overview-project-budget-v194";
+import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-revenue-combined-downpayments-v195";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
@@ -95,7 +95,20 @@ function getDownPaymentsMap() {
 }
 
 function getProjectDownPayment(project) {
-  return number(project?.down_payment ?? getDownPaymentsMap()[project?.id] ?? 0);
+  const contract = Math.max(number(project?.contract_amount), 0);
+  if (!contract) return 0;
+
+  const savedFirstPayment = number(project?.down_payment ?? getDownPaymentsMap()[project?.id] ?? 0);
+  const firstPercent = number(project?.billing_down_payment_percent);
+  const secondPercent = number(project?.billing_progress_percent);
+  const firstPayment = firstPercent > 0
+    ? contract * (firstPercent / 100)
+    : savedFirstPayment;
+  const secondPayment = secondPercent > 0
+    ? contract * (secondPercent / 100)
+    : 0;
+
+  return Math.min(Math.max(firstPayment + secondPayment, 0), contract);
 }
 
 function normalizeMatchValue(value = "") {
