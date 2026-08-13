@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-remove-portfolio-risk-v201";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-alert-project-details-v202";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

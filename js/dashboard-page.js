@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-remove-portfolio-risk-v201";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-alert-project-details-v202";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -6,7 +6,6 @@ let dashboardLoadPromise = null;
 let dashboardReloadQueued = false;
 let dashboardRefreshTimer = null;
 let latestCostAlerts = [];
-let showingAllCostAlerts = false;
 let latestDashboardProjects = [];
 let latestProjectMaterials = [];
 
@@ -857,17 +856,10 @@ function renderCostAlerts(alerts) {
         <span>All monitored projects are below 70% contract budget utilization.</span>
       </div>
     `;
-    document.getElementById("viewAllCostAlerts")?.setAttribute("hidden", "");
     return;
   }
 
-  const visibleAlerts = showingAllCostAlerts ? alerts : alerts.slice(0, ALERT_PREVIEW_LIMIT);
-  const viewAllButton = document.getElementById("viewAllCostAlerts");
-
-  if (viewAllButton) {
-    viewAllButton.hidden = alerts.length <= ALERT_PREVIEW_LIMIT;
-    viewAllButton.textContent = showingAllCostAlerts ? "Show preview" : `View all alerts (${alerts.length})`;
-  }
+  const visibleAlerts = alerts.slice(0, ALERT_PREVIEW_LIMIT);
 
   list.innerHTML = visibleAlerts.map(alert => {
     const amountLabel = alert.exceededAmount > 0
@@ -1470,7 +1462,9 @@ window.viewCostAlert = async function(alertId, projectId) {
     sessionStorage.setItem("lemyu_focus_project_id", projectId);
   }
 
-  window.location.href = "projects.html";
+  window.location.href = projectId
+    ? `projects.html?view=${encodeURIComponent(projectId)}`
+    : "projects.html";
 };
 
 showDashboardUser();
@@ -1489,10 +1483,6 @@ document.getElementById("costAlertBell")?.addEventListener("click", async () => 
     await Promise.all(activeAlerts.map(alert => markCostAlertViewed(alert.id)));
     renderCostAlertNotifications(latestCostAlerts);
   }
-});
-document.getElementById("viewAllCostAlerts")?.addEventListener("click", () => {
-  showingAllCostAlerts = !showingAllCostAlerts;
-  renderCostAlerts(latestCostAlerts);
 });
 document.addEventListener("click", event => {
   const wrapper = document.getElementById("costAlertNotification");
