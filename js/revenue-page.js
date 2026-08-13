@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-revenue-combined-downpayments-v195";
+import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-tax-profit-only-v196";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";

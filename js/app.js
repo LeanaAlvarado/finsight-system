@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260813-revenue-combined-downpayments-v195";
+const appVersion = "20260813-tax-profit-only-v196";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-revenue-combined-downpayments-v195";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-tax-profit-only-v196";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -345,8 +345,8 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const budgetRemaining = budget > 0 ? Math.max(budget - budgetSpendWithoutMaterials, 0) : 0;
     const budgetUtilization = budget > 0 ? (budgetSpendWithoutMaterials / budget) * 100 : 0;
     const appliedMaterialCost = budget > 0 ? 0 : materialTotal;
-    const totalCost = budget + tax + appliedMaterialCost;
-    const profit = revenue - totalCost;
+    const totalCost = budget + appliedMaterialCost;
+    const profit = revenue - totalCost - tax;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
     const costRatio = revenue > 0 ? (totalCost / revenue) * 100 : 0;
 

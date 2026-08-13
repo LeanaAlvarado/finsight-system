@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-revenue-combined-downpayments-v195";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-tax-profit-only-v196";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
