@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-status-card-v193";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-overview-project-budget-v194";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -277,7 +277,6 @@ function getMonthlyTrend(projects, expenses, payroll = []) {
   const months = getTrendMonths(projects, expenses, payroll);
   const revenueByMonth = new Map(months.map(month => [month.key, 0]));
   const expensesByMonth = new Map(months.map(month => [month.key, 0]));
-  const expensePieces = getDashboardExpensePieces(expenses, payroll);
 
   projects.forEach(project => {
     const date = new Date(getRecordDate(project));
@@ -285,21 +284,8 @@ function getMonthlyTrend(projects, expenses, payroll = []) {
     if (revenueByMonth.has(key)) {
       revenueByMonth.set(key, revenueByMonth.get(key) + number(project.contract_amount));
     }
-  });
-
-  [...expensePieces.nonPayrollExpenses, ...expensePieces.payrollExpenseFallback].forEach(expense => {
-    const date = new Date(getRecordDate(expense));
-    const key = getMonthKey(date);
     if (expensesByMonth.has(key)) {
-      expensesByMonth.set(key, expensesByMonth.get(key) + number(expense.amount));
-    }
-  });
-
-  payroll.forEach(item => {
-    const date = new Date(item.pay_date || item.date || item.created_at || new Date());
-    const key = getMonthKey(date);
-    if (expensesByMonth.has(key)) {
-      expensesByMonth.set(key, expensesByMonth.get(key) + number(item.salary_amount));
+      expensesByMonth.set(key, expensesByMonth.get(key) + number(project.project_budget));
     }
   });
 
@@ -1305,7 +1291,7 @@ async function loadDashboard(){
           maxBarThickness: 34
         },
         {
-          label: "Expenses",
+          label: "Project Budget",
           data: trend.expenses,
           borderColor: "#9f3a35",
           backgroundColor: "rgba(159,58,53,.68)",
