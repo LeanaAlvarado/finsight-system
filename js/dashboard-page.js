@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-project-update-no-single-v181";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-bi-budget-remaining-v182";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -348,7 +348,7 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
 }
 
 function getBudgetStatusInfo(analysis = {}) {
-  if (analysis.remainingBudget < 0 || analysis.budgetUtilization > ALERT_OVER_BUDGET_THRESHOLD) {
+  if (analysis.budgetRemaining < 0 || analysis.budgetUtilization > ALERT_OVER_BUDGET_THRESHOLD) {
     return { label: "Over Budget", className: "over-budget" };
   }
 
@@ -1148,15 +1148,16 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
   const riskCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label !== "Safe").length;
   const overBudgetCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label === "Over Budget").length;
-  const totalRemainingBudget = projectAnalytics.reduce((sum, item) => sum + number(item.remainingBudget), 0);
-  const averageBudgetUtilization = projectAnalytics.length
-    ? projectAnalytics.reduce((sum, item) => sum + number(item.budgetUtilization), 0) / projectAnalytics.length
+  const budgetedProjects = projectAnalytics.filter(item => number(item.budget) > 0);
+  const totalRemainingBudget = budgetedProjects.reduce((sum, item) => sum + number(item.budgetRemaining), 0);
+  const averageBudgetUtilization = budgetedProjects.length
+    ? budgetedProjects.reduce((sum, item) => sum + number(item.budgetUtilization), 0) / budgetedProjects.length
     : 0;
 
   setText("profitMargin", `${margin.toFixed(2)}%`);
   setText("riskProjectCount", riskCount);
   setText("bestProjectProfit", peso(totalRemainingBudget));
-  setText("bestProjectName", "Across monitored projects.");
+  setText("bestProjectName", budgetedProjects.length ? `Across ${budgetedProjects.length} budgeted projects.` : "No project budget recorded.");
   setText("topCostDriver", `${averageBudgetUtilization.toFixed(2)}%`);
   setText("topCostDriverAmount", `${overBudgetCount} over budget`);
 
