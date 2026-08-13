@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

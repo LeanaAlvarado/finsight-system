@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
+import { supabase } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

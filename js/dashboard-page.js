@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-bi-average-all-projects-v184";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -315,9 +315,10 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const materialTotal = inventory
       .filter(item => recordBelongsToProject(item, project))
       .reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
-    const actualBudgetSpend = expenseTotal + payrollTotal + materialTotal;
+    const budgetSpendWithoutMaterials = expenseTotal + payrollTotal;
+    const actualBudgetSpend = budgetSpendWithoutMaterials + materialTotal;
     const budgetOverrun = budget > 0 ? Math.max(actualBudgetSpend - budget, 0) : actualBudgetSpend;
-    const budgetRemaining = budget > 0 ? Math.max(budget - actualBudgetSpend, 0) : 0;
+    const budgetRemaining = budget > 0 ? Math.max(budget - budgetSpendWithoutMaterials, 0) : 0;
     const budgetUtilization = budget > 0 ? (actualBudgetSpend / budget) * 100 : 0;
     const appliedMaterialCost = budget > 0 ? 0 : materialTotal;
     const totalCost = budget + tax + appliedMaterialCost;
@@ -334,6 +335,7 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
       expenseTotal,
       payrollTotal,
       materialTotal,
+      budgetSpendWithoutMaterials,
       actualBudgetSpend,
       budgetOverrun,
       budgetRemaining,
