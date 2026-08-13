@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-financial-status-filter-v199";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-unpaid-list-v200";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -233,13 +233,18 @@ function renderCollectionStatus(projects = []) {
   if (list) {
     list.innerHTML = projectRows.length
       ? `
+        <div class="collection-project-title">
+          <strong>Projects with Unpaid Balance</strong>
+          <span>${projectRows.length} project${projectRows.length === 1 ? "" : "s"}</span>
+        </div>
         <div class="collection-project-head">
           <span>Project</span>
           <span>Contract</span>
           <span>Paid</span>
           <span>Balance</span>
         </div>
-        ${projectRows.slice(0, 5).map(row => `
+        <div class="collection-project-scroll">
+        ${projectRows.map(row => `
           <div class="collection-project-row">
             <strong>${escapeHtml(row.code)}</strong>
             <span>${compactPeso(row.contract)}</span>
@@ -247,6 +252,7 @@ function renderCollectionStatus(projects = []) {
             <span>${compactPeso(row.balance)}</span>
           </div>
         `).join("")}
+        </div>
       `
       : `<div class="category-breakdown-empty">No projects with remaining balance.</div>`;
   }
