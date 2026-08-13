@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -317,9 +317,9 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
       .reduce((sum, item) => sum + (number(item.qty) * number(item.price)), 0);
     const budgetSpendWithoutMaterials = expenseTotal + payrollTotal;
     const actualBudgetSpend = budgetSpendWithoutMaterials + materialTotal;
-    const budgetOverrun = budget > 0 ? Math.max(actualBudgetSpend - budget, 0) : actualBudgetSpend;
+    const budgetOverrun = budget > 0 ? Math.max(budgetSpendWithoutMaterials - budget, 0) : budgetSpendWithoutMaterials;
     const budgetRemaining = budget > 0 ? Math.max(budget - budgetSpendWithoutMaterials, 0) : 0;
-    const budgetUtilization = budget > 0 ? (actualBudgetSpend / budget) * 100 : 0;
+    const budgetUtilization = budget > 0 ? (budgetSpendWithoutMaterials / budget) * 100 : 0;
     const appliedMaterialCost = budget > 0 ? 0 : materialTotal;
     const totalCost = budget + tax + appliedMaterialCost;
     const profit = revenue - totalCost;

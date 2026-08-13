@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

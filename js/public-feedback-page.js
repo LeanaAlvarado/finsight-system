@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

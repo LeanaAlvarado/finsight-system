@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260813-remaining-budget-no-materials-v185";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260813-budget-status-no-materials-v186";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
