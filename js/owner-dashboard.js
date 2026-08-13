@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-tax-profit-only-v196";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-project-list-v197";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

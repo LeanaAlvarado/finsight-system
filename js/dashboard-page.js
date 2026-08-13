@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-tax-profit-only-v196";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-project-list-v197";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -201,10 +201,48 @@ function getProjectCollectionPaid(project = {}) {
 }
 
 function renderCollectionStatus(projects = []) {
+  const list = document.getElementById("collectionProjectList");
   const totalContract = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const totalPaid = projects.reduce((sum, project) => sum + getProjectCollectionPaid(project), 0);
   const totalBalance = Math.max(totalContract - totalPaid, 0);
-  const projectsWithBalance = projects.filter(project => {
+  const projectRows = projects
+    .map(project => {
+      const contract = number(project.contract_amount);
+      const paid = getProjectCollectionPaid(project);
+      const balance = Math.max(contract - paid, 0);
+      return {
+        code: project.project_code || project.project_title || "Project",
+        contract,
+        paid,
+        balance
+      };
+    })
+    .filter(row => row.contract > 0 && row.balance > 0)
+    .sort((a, b) => b.balance - a.balance);
+  const projectsWithBalance = projectRows.length;
+
+  if (list) {
+    list.innerHTML = projectRows.length
+      ? `
+        <div class="collection-project-head">
+          <span>Project</span>
+          <span>Contract</span>
+          <span>Paid</span>
+          <span>Balance</span>
+        </div>
+        ${projectRows.slice(0, 5).map(row => `
+          <div class="collection-project-row">
+            <strong>${escapeHtml(row.code)}</strong>
+            <span>${compactPeso(row.contract)}</span>
+            <span>${compactPeso(row.paid)}</span>
+            <span>${compactPeso(row.balance)}</span>
+          </div>
+        `).join("")}
+      `
+      : `<div class="category-breakdown-empty">No projects with remaining balance.</div>`;
+  }
+
+  const projectsWithBalanceFallback = projects.filter(project => {
     const contract = number(project.contract_amount);
     return contract > 0 && Math.max(contract - getProjectCollectionPaid(project), 0) > 0;
   }).length;
@@ -212,7 +250,7 @@ function renderCollectionStatus(projects = []) {
   setText("collectionContractTotal", peso(totalContract));
   setText("collectionPaidTotal", peso(totalPaid));
   setText("collectionBalanceTotal", peso(totalBalance));
-  setText("collectionOpenProjects", projectsWithBalance);
+  setText("collectionOpenProjects", projectsWithBalance || projectsWithBalanceFallback);
 }
 
 function getRecordDate(record = {}) {

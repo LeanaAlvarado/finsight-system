@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-tax-profit-only-v196";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-collection-project-list-v197";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

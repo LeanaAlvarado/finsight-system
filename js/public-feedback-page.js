@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-tax-profit-only-v196";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260813-collection-project-list-v197";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
