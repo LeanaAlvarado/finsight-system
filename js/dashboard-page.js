@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260812-contract-null-status-v180";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-project-update-no-single-v181";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

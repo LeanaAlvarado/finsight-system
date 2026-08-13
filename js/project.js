@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260812-contract-null-status-v180";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260813-project-update-no-single-v181";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -858,7 +858,8 @@ function renderOperationsExpenseProjectOptions() {
 }
 
 function isLocalProjectId(id = "") {
-  return String(id || "").startsWith("local-");
+  const value = String(id || "").trim();
+  return !value || value.startsWith("local-") || !isSupabaseUuid(value);
 }
 
 async function getProjectForAction(id, actionLabel = "Project") {
@@ -5074,7 +5075,7 @@ if (editProjectForm) {
     if (isLocalProjectId(editingId)) {
       savedProject = updateLocalProjectMirror(editingId, record);
     } else {
-      const { data, error } = await updateWithOptionalColumns(
+      const { error } = await updateWithOptionalColumns(
         "projects",
         record,
         "id",
@@ -5093,7 +5094,7 @@ if (editProjectForm) {
           "billing_down_payment_percent",
           "billing_progress_percent"
         ],
-        { returnRecord: true }
+        { returnRecord: false }
       );
 
       if (error) {
@@ -5101,7 +5102,7 @@ if (editProjectForm) {
         return;
       }
 
-      savedProject = { ...(data || getProjectById(editingId) || {}), ...record, id: editingId };
+      savedProject = { ...(getProjectById(editingId) || {}), ...record, id: editingId };
       saveLocalProjectMirror(savedProject);
     }
 
