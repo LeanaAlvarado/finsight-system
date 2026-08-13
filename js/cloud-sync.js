@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260813-budget-utilization-card-v189";
+import { supabase } from "./supabase.js?v=20260813-budget-view-all-v190";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

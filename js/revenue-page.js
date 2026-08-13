@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-budget-utilization-card-v189";
+import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260813-budget-view-all-v190";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
@@ -20,6 +20,13 @@ const revenueListState = {
   projectStatus: "all",
   sort: "newest"
 };
+
+function applyRevenueRouteState() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("view") === "budget-utilization") {
+    revenueListState.sort = "budget_remaining_asc";
+  }
+}
 
 function getLocalSavedProjects() {
   try {
@@ -228,6 +235,11 @@ function getFilteredRevenueRows() {
     if (revenueListState.sort === "contract_asc") return a.contract - b.contract || titleA.localeCompare(titleB);
     if (revenueListState.sort === "net_desc") return b.net - a.net || titleA.localeCompare(titleB);
     if (revenueListState.sort === "net_asc") return a.net - b.net || titleA.localeCompare(titleB);
+    if (revenueListState.sort === "budget_remaining_asc") {
+      return a.remainingBudget - b.remainingBudget
+        || b.budgetUtilization - a.budgetUtilization
+        || titleA.localeCompare(titleB);
+    }
     if (revenueListState.sort === "title_asc") return titleA.localeCompare(titleB) || dateB - dateA;
     return dateB - dateA || titleA.localeCompare(titleB);
   });
@@ -462,6 +474,8 @@ function bindRevenueFilters() {
     const element = document.getElementById(id);
     if (!element) return;
 
+    element.value = revenueListState[stateKey];
+
     element.addEventListener(element.type === "search" ? "input" : "change", event => {
       revenueListState[stateKey] = event.target.value || (stateKey === "search" ? "" : "all");
       revenueCurrentPage = 1;
@@ -470,6 +484,7 @@ function bindRevenueFilters() {
   });
 }
 
+applyRevenueRouteState();
 bindRevenueFilters();
 refreshRevenueNow({ silent: false });
 

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260813-budget-utilization-card-v189";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260813-budget-view-all-v190";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");
