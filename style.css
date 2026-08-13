@@ -1610,11 +1610,14 @@ tbody tr:hover{
 .collection-project-list{
   display:grid;
   gap:0;
-  margin-top:10px;
   overflow:hidden;
   border:1px solid var(--line);
   border-radius:var(--radius);
   background:#fff;
+}
+
+.collection-project-list + .summary-list{
+  margin-top:10px;
 }
 
 .collection-project-head,

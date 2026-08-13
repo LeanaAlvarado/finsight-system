@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-project-list-v197";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-collection-list-first-v198";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
