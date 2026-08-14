@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260813-alert-project-details-v202";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-insights-fill-space-v203";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
