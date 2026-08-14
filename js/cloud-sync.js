@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
+import { supabase } from "./supabase.js?v=20260814-cctv-materials-used-v206";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

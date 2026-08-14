@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
+import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-materials-used-v206";
 
 const INVENTORY_UPLOAD_BUCKETS = ["contracts", "progress-files", "inventory", "materials"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
@@ -761,32 +761,41 @@ function getProjectMaterialItems(projects = []) {
   return materials;
 }
 
-function isRevenueLinkedProjectStatus(status = "") {
+function isActiveProjectMaterialStatus(status = "") {
   return ["approved", "completed", "ongoing", "on going", "in progress"].includes(
     String(status || "").trim().toLowerCase()
   );
 }
 
-function getLinkedProjectRevenue(items = [], projects = []) {
-  const linkedProjectCodes = new Set();
+function isCctvProject(project = {}) {
+  return String(project.quotation_type || project.type || project.category || "").toLowerCase().includes("cctv");
+}
 
-  mergeProjectMaterialSources(items, projects).forEach(item => {
+function getCctvMaterialCostUsed(items = [], projects = []) {
+  const activeCctvProjectCodes = new Set(
+    projects
+      .filter(project => isCctvProject(project) && isActiveProjectMaterialStatus(project.status))
+      .map(project => String(project.project_code || "").trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const countedMaterials = new Set();
+  return mergeProjectMaterialSources(items, projects).reduce((sum, item) => {
     const projectCode = String(getItemProjectCode(item) || "").trim().toLowerCase();
-    const qty = toInventoryQuantity(item.qty);
-    if (projectCode && qty > 0) {
-      linkedProjectCodes.add(projectCode);
-    }
-  });
+    if (!projectCode || !activeCctvProjectCodes.has(projectCode)) return sum;
 
-  const countedProjects = new Set();
-  return projects.reduce((sum, project) => {
-    const projectCode = String(project.project_code || "").trim().toLowerCase();
-    const projectKey = String(project.id || projectCode || "").trim().toLowerCase();
-    if (!projectCode || !linkedProjectCodes.has(projectCode) || countedProjects.has(projectKey)) return sum;
-    if (!isRevenueLinkedProjectStatus(project.status)) return sum;
+    const key = [
+      String(item.id || ""),
+      projectCode,
+      String(item.name || "").trim().toLowerCase(),
+      String(item.description || "").trim().toLowerCase(),
+      String(number(item.qty)),
+      String(number(item.price))
+    ].join("|");
+    if (countedMaterials.has(key)) return sum;
 
-    countedProjects.add(projectKey);
-    return sum + number(project.contract_amount);
+    countedMaterials.add(key);
+    return sum + (toInventoryQuantity(item.qty) * number(item.price));
   }, 0);
 }
 
@@ -1200,8 +1209,8 @@ async function loadInventory(){
   setText("totalValue", peso(totalVal));
   setText("lowStock", low);
 
-  const revenue = getLinkedProjectRevenue(items, projects);
-  setText("totalRevenue", peso(revenue));
+  const cctvMaterialCost = getCctvMaterialCostUsed(items, projects);
+  setText("totalRevenue", peso(cctvMaterialCost));
   renderInventoryMaterialsTable(items, projects);
 }
 

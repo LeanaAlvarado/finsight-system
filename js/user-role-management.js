@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-cctv-materials-used-v206";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
