@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260814-report-project-list-v210";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText } from "./supabase.js?v=20260814-dashboard-material-report-list-v211";
 
 const proposalForm = document.getElementById("proposalForm");
 const proposalQuotationItemsBody = document.getElementById("proposalQuotationItemsBody");

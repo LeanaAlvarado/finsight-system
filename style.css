@@ -2426,11 +2426,29 @@ tbody tr:hover{
   overflow-wrap:anywhere;
 }
 
+.inventory-project-row span b{
+  display:block;
+  color:var(--primary);
+  font-size:11px;
+  font-weight:900;
+}
+
 .inventory-project-row strong{
   color:var(--text);
   font-size:12px;
   font-weight:800;
   white-space:nowrap;
+}
+
+.inventory-project-row a{
+  grid-column:1 / -1;
+  color:var(--primary);
+  font-size:11px;
+  font-weight:800;
+}
+
+.inventory-report-projects{
+  align-self:stretch;
 }
 
 .inventory-project-empty{

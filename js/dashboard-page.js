@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-report-project-list-v210";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-dashboard-material-report-list-v211";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -571,13 +571,18 @@ function renderInventoryProjectList(projects, inventory) {
   });
 
   const rankedProjects = [...totals.entries()]
-    .map(([projectCode, total]) => ({
-      label: getInventoryProjectLabel(projects, projectCode),
-      total
-    }))
+    .map(([projectCode, total]) => {
+      const project = projects.find(item => normalizeMatchValue(item.project_code) === normalizeMatchValue(projectCode)) || {};
+      return {
+        project,
+        code: project.project_code || projectCode,
+        label: project.project_title || project.client_name || getInventoryProjectLabel(projects, projectCode),
+        total
+      };
+    })
     .filter(item => item.total > 0)
     .sort((a, b) => b.total - a.total)
-    .slice(0, 3);
+    .slice(0, 6);
 
   if (!rankedProjects.length) {
     list.innerHTML = `<span class="inventory-project-empty">No approved/completed project materials.</span>`;
@@ -586,8 +591,9 @@ function renderInventoryProjectList(projects, inventory) {
 
   list.innerHTML = rankedProjects.map(item => `
     <div class="inventory-project-row">
-      <span>${escapeHtml(item.label)}</span>
+      <span><b>${escapeHtml(item.code || "PROJECT")}</b>${escapeHtml(item.label)}</span>
       <strong>${peso(item.total)}</strong>
+      <a href="projects.html?details=${encodeURIComponent(item.project.id || item.code || "")}">Generated Report</a>
     </div>
   `).join("");
 }

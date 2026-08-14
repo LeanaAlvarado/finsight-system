@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-report-project-list-v210">
+<link rel="stylesheet" href="style.css?v=20260814-dashboard-material-report-list-v211">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -190,11 +190,11 @@
           <small>Used Project Material Cost</small>
           <strong id="inventoryPanelValue">PHP 0.00</strong>
         </div>
-        <div class="inventory-project-block">
-          <small>Approved / Completed CCTV Projects</small>
+        <button type="button" class="inventory-report-btn" onclick="generateProjectMaterialsReport()">Generate Report</button>
+        <div class="inventory-project-block inventory-report-projects">
+          <small>Projects With Generated Report</small>
           <div id="inventoryProjectList" class="inventory-project-list"></div>
         </div>
-        <button type="button" class="inventory-report-btn" onclick="generateProjectMaterialsReport()">Generate Report</button>
       </div>
     </div>
 
@@ -295,7 +295,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260814-report-project-list-v210"></script>
+<script type="module" src="js/app.js?v=20260814-dashboard-material-report-list-v211"></script>
 
 
 </body>
