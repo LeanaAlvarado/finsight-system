@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-dashboard-material-report-list-v211";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-dashboard-all-valid-projects-v212";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-dashboard-material-report-list-v211";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-dashboard-all-valid-projects-v212";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -570,22 +570,22 @@ function renderInventoryProjectList(projects, inventory) {
     totals.set(projectCode, (totals.get(projectCode) || 0) + getInventoryMaterialCost(item));
   });
 
-  const rankedProjects = [...totals.entries()]
-    .map(([projectCode, total]) => {
-      const project = projects.find(item => normalizeMatchValue(item.project_code) === normalizeMatchValue(projectCode)) || {};
+  const rankedProjects = projects
+    .filter(isFinancialProject)
+    .map(project => {
+      const projectCode = String(project.project_code || "").trim();
       return {
         project,
-        code: project.project_code || projectCode,
-        label: project.project_title || project.client_name || getInventoryProjectLabel(projects, projectCode),
-        total
+        code: project.project_code || "PROJECT",
+        label: project.project_title || project.client_name || "Untitled Project",
+        total: totals.get(projectCode) || 0
       };
     })
-    .filter(item => item.total > 0)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 6);
+    .sort((a, b) => String(a.code || "").localeCompare(String(b.code || "")))
+    .slice(0, 8);
 
   if (!rankedProjects.length) {
-    list.innerHTML = `<span class="inventory-project-empty">No approved/completed project materials.</span>`;
+    list.innerHTML = `<span class="inventory-project-empty">No approved, completed, or ongoing projects.</span>`;
     return;
   }
 
