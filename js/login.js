@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { supabase } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 import {
   clearLoginLockout,
   getLockout,

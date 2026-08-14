@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

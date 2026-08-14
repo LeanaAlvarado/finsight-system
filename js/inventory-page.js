@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 
 const INVENTORY_UPLOAD_BUCKETS = ["contracts", "progress-files", "inventory", "materials"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
@@ -761,6 +761,35 @@ function getProjectMaterialItems(projects = []) {
   return materials;
 }
 
+function isRevenueLinkedProjectStatus(status = "") {
+  return ["approved", "completed", "ongoing", "on going", "in progress"].includes(
+    String(status || "").trim().toLowerCase()
+  );
+}
+
+function getLinkedProjectRevenue(items = [], projects = []) {
+  const linkedProjectCodes = new Set();
+
+  mergeProjectMaterialSources(items, projects).forEach(item => {
+    const projectCode = String(getItemProjectCode(item) || "").trim().toLowerCase();
+    const qty = toInventoryQuantity(item.qty);
+    if (projectCode && qty > 0) {
+      linkedProjectCodes.add(projectCode);
+    }
+  });
+
+  const countedProjects = new Set();
+  return projects.reduce((sum, project) => {
+    const projectCode = String(project.project_code || "").trim().toLowerCase();
+    const projectKey = String(project.id || projectCode || "").trim().toLowerCase();
+    if (!projectCode || !linkedProjectCodes.has(projectCode) || countedProjects.has(projectKey)) return sum;
+    if (!isRevenueLinkedProjectStatus(project.status)) return sum;
+
+    countedProjects.add(projectKey);
+    return sum + number(project.contract_amount);
+  }, 0);
+}
+
 function mergeProjectMaterialSources(items = [], projects = []) {
   const merged = [...items];
   const existingKeys = new Set(merged.map(item => [
@@ -1171,7 +1200,7 @@ async function loadInventory(){
   setText("totalValue", peso(totalVal));
   setText("lowStock", low);
 
-  const revenue = projects.reduce((s,p)=>s + number(p.contract_amount),0);
+  const revenue = getLinkedProjectRevenue(items, projects);
   setText("totalRevenue", peso(revenue));
   renderInventoryMaterialsTable(items, projects);
 }

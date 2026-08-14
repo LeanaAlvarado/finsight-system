@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

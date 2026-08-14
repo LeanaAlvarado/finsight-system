@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

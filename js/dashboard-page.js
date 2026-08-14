@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

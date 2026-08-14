@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-alert-details-route-v204";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-inventory-linked-revenue-v205";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
