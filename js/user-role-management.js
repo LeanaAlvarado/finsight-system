@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-reports-summary-activity-v208";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-reports-bi-aligned-v209";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

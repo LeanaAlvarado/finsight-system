@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-reports-summary-activity-v208";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-reports-bi-aligned-v209";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

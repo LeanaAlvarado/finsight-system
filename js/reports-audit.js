@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-summary-activity-v208";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-bi-aligned-v209";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
@@ -403,10 +403,11 @@ function renderReports() {
   const operationsOnly = isOperationsScope();
 
   const totalRevenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
+  const totalProjectCost = financialProjects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const totalExpenses = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
   const totalPayroll = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const expenseRecords = expenses.length + payroll.length;
-  const netResult = totalRevenue - totalExpenses - totalPayroll;
+  const netResult = totalRevenue - totalProjectCost;
   const netMargin = totalRevenue ? (netResult / totalRevenue) * 100 : 0;
 
   auditEvents = buildAuditEvents(projects, expenses, payroll, inventory, feedback);
@@ -416,7 +417,7 @@ function renderReports() {
   setText("expenseReportCount", operationsOnly ? "-" : expenseRecords);
   setText("auditCount", canViewAuditLogs() ? auditEvents.length : "-");
   setText("reportRevenue", operationsOnly ? "-" : peso(totalRevenue));
-  setText("reportExpenses", operationsOnly ? "-" : peso(totalExpenses + totalPayroll));
+  setText("reportExpenses", operationsOnly ? "-" : peso(totalProjectCost));
   setText("reportProfit", operationsOnly ? "-" : peso(netResult));
   setText("reportMargin", operationsOnly ? "-" : `${netMargin.toFixed(2)}%`);
   setText("reportFeedback", operationsOnly ? "-" : feedback.length);
