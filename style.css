@@ -1487,6 +1487,91 @@ tbody tr:hover{
   white-space:nowrap;
 }
 
+.report-projects-panel{
+  display:grid;
+  gap:10px;
+  margin-top:14px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:#f8fafc;
+}
+
+.report-projects-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.report-projects-head small{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.report-projects-head strong{
+  color:var(--primary);
+  font-size:12px;
+}
+
+.report-project-list{
+  display:grid;
+  gap:8px;
+}
+
+.report-project-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 82px 108px 116px;
+  gap:8px;
+  align-items:center;
+  padding:9px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  font-size:12px;
+}
+
+.report-project-row div{
+  min-width:0;
+}
+
+.report-project-row strong,
+.report-project-row span{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.report-project-row span{
+  margin-top:2px;
+  color:var(--muted);
+}
+
+.report-project-row em{
+  justify-self:start;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#e7f7ee;
+  color:#04743b;
+  font-style:normal;
+  font-weight:800;
+  text-transform:capitalize;
+}
+
+.report-project-row b{
+  font-size:12px;
+}
+
+.report-project-row a{
+  justify-self:end;
+  color:var(--primary);
+  font-weight:800;
+}
+
 .dashboard-section{
   display:grid;
   gap:14px;
@@ -3823,6 +3908,15 @@ tbody tr:hover{
 
   .custom-coverage-controls{
     grid-template-columns:1fr;
+  }
+
+  .report-project-row{
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+
+  .report-project-row a{
+    justify-self:start;
   }
 
   .modal-header,

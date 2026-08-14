@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports and Audit Logs</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-reports-bi-aligned-v209">
+<link rel="stylesheet" href="style.css?v=20260814-report-project-list-v210">
 </head>
 
 <body>
@@ -104,6 +104,16 @@
       <div class="form-actions screen-only">
         <button type="button" id="printReportBtn">Print Report</button>
       </div>
+
+      <div class="report-projects-panel screen-only">
+        <div class="report-projects-head">
+          <small>Projects With Generated Report</small>
+          <strong id="reportProjectCountText">0 projects</strong>
+        </div>
+        <div id="reportProjectList" class="report-project-list">
+          <p class="muted">No approved, ongoing, or completed projects in this coverage.</p>
+        </div>
+      </div>
     </section>
 
     <section class="card screen-only">
@@ -196,7 +206,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260814-reports-bi-aligned-v209"></script>
+<script type="module" src="js/app.js?v=20260814-report-project-list-v210"></script>
 
 </body>
 </html>

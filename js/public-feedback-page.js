@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-reports-bi-aligned-v209";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-report-project-list-v210";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

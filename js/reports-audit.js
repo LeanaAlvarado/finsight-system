@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-bi-aligned-v209";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-report-project-list-v210";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
@@ -393,6 +393,38 @@ function renderLatestActivity(events = []) {
     : `<li>No recent activity yet.</li>`;
 }
 
+function getProjectReportLink(project = {}) {
+  const projectId = project.id || project.project_code || "";
+  return projectId
+    ? `projects.html?details=${encodeURIComponent(projectId)}`
+    : "projects.html";
+}
+
+function renderReportProjectList(projects = []) {
+  const list = document.getElementById("reportProjectList");
+  const count = document.getElementById("reportProjectCountText");
+  if (!list || !count) return;
+
+  const sortedProjects = projects
+    .slice()
+    .sort((a, b) => String(a.project_code || "").localeCompare(String(b.project_code || "")));
+
+  count.textContent = `${sortedProjects.length} project${sortedProjects.length === 1 ? "" : "s"}`;
+  list.innerHTML = sortedProjects.length
+    ? sortedProjects.map(project => `
+      <div class="report-project-row">
+        <div>
+          <strong>${escapeHtml(project.project_code || "No Code")}</strong>
+          <span>${escapeHtml(project.project_title || project.client_name || "Untitled Project")}</span>
+        </div>
+        <em>${escapeHtml(project.status || "No Status")}</em>
+        <b>${peso(project.contract_amount)}</b>
+        <a href="${escapeHtml(getProjectReportLink(project))}">Generated Report</a>
+      </div>
+    `).join("")
+    : `<p class="muted">No approved, ongoing, or completed projects in this coverage.</p>`;
+}
+
 function renderReports() {
   const projects = filterByCoverage(reportRecords.projects);
   const financialProjects = projects.filter(project => isReportFinancialStatus(project.status));
@@ -426,6 +458,7 @@ function renderReports() {
   setText("printGeneratedText", `Generated: ${new Date().toLocaleString("en-PH")}`);
 
   renderLatestActivity(auditEvents);
+  renderReportProjectList(financialProjects);
   renderAuditTable();
 }
 
