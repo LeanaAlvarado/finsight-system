@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
+import { supabase } from "./supabase.js?v=20260814-separate-active-projects-v214";
 import {
   clearLoginLockout,
   getLockout,

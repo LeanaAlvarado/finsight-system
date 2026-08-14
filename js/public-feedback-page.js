@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-separate-active-projects-v214";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

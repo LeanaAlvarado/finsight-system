@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-separate-active-projects-v214";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -570,22 +570,21 @@ function renderInventoryProjectList(projects, inventory) {
     totals.set(projectCode, (totals.get(projectCode) || 0) + getInventoryMaterialCost(item));
   });
 
-  const rankedProjects = projects
-    .filter(isFinancialProject)
-    .map(project => {
-      const projectCode = String(project.project_code || "").trim();
+  const rankedProjects = [...totals.entries()]
+    .map(([projectCode, total]) => {
+      const project = projects.find(item => normalizeMatchValue(item.project_code) === normalizeMatchValue(projectCode)) || {};
       return {
-        project,
-        code: project.project_code || "PROJECT",
-        label: project.project_title || project.client_name || "Untitled Project",
-        total: totals.get(projectCode) || 0
+        code: project.project_code || projectCode,
+        label: project.project_title || project.client_name || getInventoryProjectLabel(projects, projectCode),
+        total
       };
     })
-    .sort((a, b) => String(a.code || "").localeCompare(String(b.code || "")))
-    .slice(0, 8);
+    .filter(item => item.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 4);
 
   if (!rankedProjects.length) {
-    list.innerHTML = `<span class="inventory-project-empty">No approved, completed, or ongoing projects.</span>`;
+    list.innerHTML = `<span class="inventory-project-empty">No approved/completed CCTV project materials.</span>`;
     return;
   }
 
@@ -593,6 +592,31 @@ function renderInventoryProjectList(projects, inventory) {
     <div class="inventory-project-row">
       <span><b>${escapeHtml(item.code || "PROJECT")}</b>${escapeHtml(item.label)}</span>
       <strong>${peso(item.total)}</strong>
+    </div>
+  `).join("");
+}
+
+function renderActiveProjectList(projects = []) {
+  const list = document.getElementById("activeProjectList");
+  if (!list) return;
+
+  const activeProjects = projects
+    .filter(isFinancialProject)
+    .sort((a, b) => String(a.project_code || "").localeCompare(String(b.project_code || "")));
+
+  if (!activeProjects.length) {
+    list.innerHTML = `<p class="muted">No approved, completed, or ongoing projects available.</p>`;
+    return;
+  }
+
+  list.innerHTML = activeProjects.map(project => `
+    <div class="active-project-row">
+      <div>
+        <strong>${escapeHtml(project.project_code || "PROJECT")}</strong>
+        <span>${escapeHtml(project.project_title || project.client_name || "Untitled Project")}</span>
+      </div>
+      <em>${escapeHtml(project.status || "Active")}</em>
+      <a href="projects.html?details=${encodeURIComponent(project.id || project.project_code || "")}">Generated Report</a>
     </div>
   `).join("");
 }
@@ -1235,6 +1259,7 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   renderProfitabilityTable(projectAnalytics);
   renderBudgetUtilizationList(projectAnalytics);
   renderInventoryProjectList(projects, projectMaterials);
+  renderActiveProjectList(projects);
   renderCostAlerts(costAlerts);
   renderCostAlertNotifications(costAlerts);
   renderBusinessInsights(projectAnalytics, categoryTotals, {

@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260814-separate-active-projects-v214";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([

@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-separate-active-projects-v214";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");

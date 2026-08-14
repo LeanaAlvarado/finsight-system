@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-active-projects-panel-ui-v213">
+<link rel="stylesheet" href="style.css?v=20260814-separate-active-projects-v214">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -191,11 +191,21 @@
           <strong id="inventoryPanelValue">PHP 0.00</strong>
         </div>
         <div class="inventory-project-block inventory-report-projects">
-          <small>Active Projects</small>
+          <small>Approved / Completed CCTV Projects</small>
           <div id="inventoryProjectList" class="inventory-project-list"></div>
         </div>
         <button type="button" class="inventory-report-btn" onclick="generateProjectMaterialsReport()">Generate Report</button>
       </div>
+    </div>
+
+    <div class="card dashboard-panel active-projects-panel">
+      <div class="card-head">
+        <div>
+          <h3>Active Projects List</h3>
+          <p class="muted">Approved, completed, and ongoing projects with generated report access.</p>
+        </div>
+      </div>
+      <div id="activeProjectList" class="active-project-list"></div>
     </div>
 
     <div class="card dashboard-panel summary-card summary-panel">
@@ -295,7 +305,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260814-active-projects-panel-ui-v213"></script>
+<script type="module" src="js/app.js?v=20260814-separate-active-projects-v214"></script>
 
 
 </body>
