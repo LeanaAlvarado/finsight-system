@@ -2387,6 +2387,8 @@ tbody tr:hover{
   align-items:start;
   justify-content:stretch;
   gap:8px;
+  max-height:260px;
+  overflow:auto;
 }
 
 .inventory-panel-stats small{
@@ -2412,10 +2414,16 @@ tbody tr:hover{
 
 .inventory-project-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  align-items:center;
+  grid-template-columns:minmax(0,1fr) minmax(72px,auto);
+  align-items:start;
   gap:10px;
   min-width:0;
+  padding:7px 0;
+  border-top:1px solid #e4edf5;
+}
+
+.inventory-project-row:first-child{
+  border-top:0;
 }
 
 .inventory-project-row span{
@@ -2438,13 +2446,6 @@ tbody tr:hover{
   font-size:12px;
   font-weight:800;
   white-space:nowrap;
-}
-
-.inventory-project-row a{
-  grid-column:1 / -1;
-  color:var(--primary);
-  font-size:11px;
-  font-weight:800;
 }
 
 .inventory-report-projects{

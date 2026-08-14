@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-dashboard-all-valid-projects-v212";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

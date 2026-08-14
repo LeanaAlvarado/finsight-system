@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-dashboard-all-valid-projects-v212";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -593,7 +593,6 @@ function renderInventoryProjectList(projects, inventory) {
     <div class="inventory-project-row">
       <span><b>${escapeHtml(item.code || "PROJECT")}</b>${escapeHtml(item.label)}</span>
       <strong>${peso(item.total)}</strong>
-      <a href="projects.html?details=${encodeURIComponent(item.project.id || item.code || "")}">Generated Report</a>
     </div>
   `).join("");
 }

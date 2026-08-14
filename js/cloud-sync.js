@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260814-dashboard-all-valid-projects-v212";
+import { supabase } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

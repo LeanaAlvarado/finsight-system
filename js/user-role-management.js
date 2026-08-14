@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-dashboard-all-valid-projects-v212";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-active-projects-panel-ui-v213";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
