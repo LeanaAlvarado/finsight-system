@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-single-active-report-v215";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-merge-local-projects-v216";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
@@ -27,6 +27,38 @@ const auditListState = {
   action: "all",
   sort: "newest"
 };
+
+function readLocalJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeMatchValue(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
+function mergeCurrentRecords(cloudRecords = [], localKey, keyFields) {
+  const merged = [...(cloudRecords || [])];
+  const localRecords = readLocalJson(localKey, []);
+  if (!Array.isArray(localRecords)) return merged;
+
+  localRecords.forEach(localRecord => {
+    const exists = merged.some(cloudRecord => keyFields.some(field => {
+      const localValue = normalizeMatchValue(localRecord?.[field]);
+      const cloudValue = normalizeMatchValue(cloudRecord?.[field]);
+      return localValue && cloudValue && localValue === cloudValue;
+    }));
+
+    if (!exists) {
+      merged.push(localRecord);
+    }
+  });
+
+  return merged;
+}
 
 function getRecordDate(record) {
   return record.created_at || record.uploaded_at || record.date || record.expense_date || record.pay_date || "";
@@ -166,7 +198,7 @@ function filterByCoverage(records = []) {
 }
 
 function isReportFinancialStatus(status = "") {
-  return ["approved", "completed", "ongoing", "on going", "in progress"].includes(
+  return ["approved", "completed", "complete", "ongoing", "on going", "in progress"].includes(
     String(status || "").trim().toLowerCase()
   );
 }
@@ -479,7 +511,7 @@ async function loadReports() {
   reportsLoadError = loadError?.message || "";
 
   reportRecords = {
-    projects: projectResult.error ? [] : projectResult.data,
+    projects: mergeCurrentRecords(projectResult.error ? [] : projectResult.data, "lemyu_saved_projects", ["id", "project_code"]),
     expenses: expenseResult.error ? [] : expenseResult.data,
     payroll: payrollResult.error ? [] : payrollResult.data,
     inventory: inventoryResult.error ? [] : inventoryResult.data,

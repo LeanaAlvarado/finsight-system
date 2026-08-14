@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-single-active-report-v215";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-reports-merge-local-projects-v216";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260814-single-active-report-v215";
+const appVersion = "20260814-reports-merge-local-projects-v216";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",
