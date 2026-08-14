@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260814-cctv-project-assignment-v207";
+import { supabase } from "./supabase.js?v=20260814-reports-summary-activity-v208";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

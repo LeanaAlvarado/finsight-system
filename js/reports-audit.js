@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-cctv-project-assignment-v207";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-summary-activity-v208";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
@@ -163,6 +163,12 @@ function isWithinCoverage(record) {
 
 function filterByCoverage(records = []) {
   return records.filter(record => isWithinCoverage(record));
+}
+
+function isReportFinancialStatus(status = "") {
+  return ["approved", "completed", "ongoing", "on going", "in progress"].includes(
+    String(status || "").trim().toLowerCase()
+  );
 }
 
 function applyOperationsReportScope() {
@@ -365,33 +371,60 @@ function renderAuditTable() {
   renderAuditPagination(totalItems);
 }
 
+function renderLatestActivity(events = []) {
+  const list = document.getElementById("latestActivityList");
+  const count = document.getElementById("latestActivityCount");
+  if (!list || !count) return;
+
+  const latestEvents = events
+    .slice()
+    .sort((a, b) => new Date(b.dateValue || 0) - new Date(a.dateValue || 0))
+    .slice(0, 5);
+
+  count.textContent = `${latestEvents.length} recent event${latestEvents.length === 1 ? "" : "s"}`;
+  list.innerHTML = latestEvents.length
+    ? latestEvents.map(event => `
+      <li>
+        <span>${formatDate(event.dateValue)}</span>
+        <strong>${escapeHtml(event.moduleName)}</strong>
+        <em>${escapeHtml(event.reference)}</em>
+      </li>
+    `).join("")
+    : `<li>No recent activity yet.</li>`;
+}
+
 function renderReports() {
   const projects = filterByCoverage(reportRecords.projects);
+  const financialProjects = projects.filter(project => isReportFinancialStatus(project.status));
   const expenses = filterByCoverage(reportRecords.expenses);
   const payroll = filterByCoverage(reportRecords.payroll);
   const inventory = filterByCoverage(reportRecords.inventory);
   const feedback = filterByCoverage(reportRecords.feedback);
   const operationsOnly = isOperationsScope();
 
-  const totalRevenue = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
+  const totalRevenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const totalExpenses = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
   const totalPayroll = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const expenseRecords = expenses.length + payroll.length;
+  const netResult = totalRevenue - totalExpenses - totalPayroll;
+  const netMargin = totalRevenue ? (netResult / totalRevenue) * 100 : 0;
 
   auditEvents = buildAuditEvents(projects, expenses, payroll, inventory, feedback);
 
-  setText("projectReportCount", projects.length);
+  setText("projectReportCount", financialProjects.length);
   setText("financialScope", operationsOnly ? "-" : peso(totalRevenue));
   setText("expenseReportCount", operationsOnly ? "-" : expenseRecords);
   setText("auditCount", canViewAuditLogs() ? auditEvents.length : "-");
   setText("reportRevenue", operationsOnly ? "-" : peso(totalRevenue));
   setText("reportExpenses", operationsOnly ? "-" : peso(totalExpenses + totalPayroll));
-  setText("reportProfit", operationsOnly ? "-" : peso(totalRevenue - totalExpenses - totalPayroll));
+  setText("reportProfit", operationsOnly ? "-" : peso(netResult));
+  setText("reportMargin", operationsOnly ? "-" : `${netMargin.toFixed(2)}%`);
   setText("reportFeedback", operationsOnly ? "-" : feedback.length);
   setText("reportCoverageSummary", getCoverageText());
   setText("printCoverageText", getPrintCoverageText());
   setText("printGeneratedText", `Generated: ${new Date().toLocaleString("en-PH")}`);
 
+  renderLatestActivity(auditEvents);
   renderAuditTable();
 }
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports and Audit Logs</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-cctv-project-assignment-v207">
+<link rel="stylesheet" href="style.css?v=20260814-reports-summary-activity-v208">
 </head>
 
 <body>
@@ -57,9 +57,9 @@
       <p>Total monitored projects.</p>
     </div>
     <div class="card kpi">
-      <small>Financial Scope</small>
+      <small>Contract Value Covered</small>
       <h2 id="financialScope">PHP 0.00</h2>
-      <p>Contract value under monitoring.</p>
+      <p>Approved, ongoing, and completed contracts.</p>
     </div>
     <div class="card kpi">
       <small>Expense Records</small>
@@ -90,6 +90,10 @@
         <div class="mini-card">
           <small>Estimated Profit</small>
           <h3 id="reportProfit">PHP 0.00</h3>
+        </div>
+        <div class="mini-card">
+          <small>Net Result Margin</small>
+          <h3 id="reportMargin">0.00%</h3>
         </div>
         <div class="mini-card">
           <small>Client Feedback</small>
@@ -127,6 +131,16 @@
         </div>
         <button type="button" id="applyCoverageBtn">Apply</button>
         <button type="button" id="clearCoverageBtn">Reset</button>
+      </div>
+
+      <div class="latest-activity-card">
+        <div>
+          <small>Latest Activity</small>
+          <strong id="latestActivityCount">0 recent events</strong>
+        </div>
+        <ul id="latestActivityList">
+          <li>No recent activity yet.</li>
+        </ul>
       </div>
     </section>
   </section>
@@ -182,7 +196,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260814-cctv-project-assignment-v207"></script>
+<script type="module" src="js/app.js?v=20260814-reports-summary-activity-v208"></script>
 
 </body>
 </html>

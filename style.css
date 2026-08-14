@@ -1424,6 +1424,69 @@ tbody tr:hover{
   font-size:17px;
 }
 
+.latest-activity-card{
+  display:grid;
+  gap:10px;
+  margin-top:16px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:#f8fafc;
+}
+
+.latest-activity-card small{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.latest-activity-card strong{
+  display:block;
+  margin-top:4px;
+  color:var(--text);
+  font-size:13px;
+}
+
+.latest-activity-card ul{
+  display:grid;
+  gap:8px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.latest-activity-card li{
+  display:grid;
+  grid-template-columns:82px minmax(110px,.8fr) minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+  padding-top:8px;
+  border-top:1px solid var(--line);
+  color:var(--muted);
+  font-size:12px;
+}
+
+.latest-activity-card li span{
+  font-weight:700;
+}
+
+.latest-activity-card li strong{
+  margin:0;
+  color:var(--primary);
+  font-size:12px;
+}
+
+.latest-activity-card li em{
+  min-width:0;
+  color:var(--text);
+  font-style:normal;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
 .dashboard-section{
   display:grid;
   gap:14px;
