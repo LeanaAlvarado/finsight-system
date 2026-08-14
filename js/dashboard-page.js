@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-insights-fill-space-v203";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260814-alert-details-route-v204";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -1463,7 +1463,7 @@ window.viewCostAlert = async function(alertId, projectId) {
   }
 
   window.location.href = projectId
-    ? `projects.html?view=${encodeURIComponent(projectId)}`
+    ? `projects.html?details=${encodeURIComponent(projectId)}`
     : "projects.html";
 };
 

@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260814-insights-fill-space-v203";
+const appVersion = "20260814-alert-details-route-v204";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

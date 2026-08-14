@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260814-insights-fill-space-v203";
+import { supabase } from "./supabase.js?v=20260814-alert-details-route-v204";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

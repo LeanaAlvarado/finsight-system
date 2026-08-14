@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-insights-fill-space-v203";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260814-alert-details-route-v204";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-insights-fill-space-v203";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-alert-details-route-v204";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -35,7 +35,11 @@ const projectListState = {
   sort: "newest"
 };
 const PROJECT_LIST_STATE_KEY = "lemyu_project_monitoring_list_state";
-let pendingDetailProjectId = new URLSearchParams(window.location.search).get("view") || "";
+function getProjectDetailsRouteId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("details") || "";
+}
+let pendingDetailProjectId = getProjectDetailsRouteId() || new URLSearchParams(window.location.search).get("view") || "";
 let projectLoadRequestId = 0;
 
 function getProjectListStateSnapshot() {
@@ -4416,8 +4420,9 @@ async function loadProjects() {
 
   if (pendingDetailProjectId) {
     const projectId = pendingDetailProjectId;
+    const detailOnly = Boolean(getProjectDetailsRouteId());
     pendingDetailProjectId = "";
-    window.viewProject(projectId, { skipStateSave: true });
+    window.viewProject(projectId, { skipStateSave: true, detailOnly });
   }
 }
 
@@ -4428,9 +4433,10 @@ window.addEventListener("storage", event => {
 });
 window.addEventListener("lemyu:data-sync-complete", loadProjects);
 window.addEventListener("popstate", () => {
-  const projectId = new URLSearchParams(window.location.search).get("view");
+  const detailProjectId = getProjectDetailsRouteId();
+  const projectId = detailProjectId || new URLSearchParams(window.location.search).get("view");
   if (projectId) {
-    window.viewProject(projectId, { skipStateSave: true });
+    window.viewProject(projectId, { skipStateSave: true, detailOnly: Boolean(detailProjectId) });
   } else {
     window.backToProjectList();
   }
@@ -4677,7 +4683,7 @@ window.viewProject = async function(id, options = {}) {
     return;
   }
 
-  if (isFinanceScope()) {
+  if (isFinanceScope() || options.detailOnly) {
     const [{ data: expenses = [] }, { data: payroll = [] }] = await Promise.all([
       supabase.from("expenses").select("*").eq("project_id", id),
       supabase.from("payroll").select("*").eq("project_id", id)
