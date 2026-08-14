@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-cctv-materials-used-v206";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-cctv-project-assignment-v207";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

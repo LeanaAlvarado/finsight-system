@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-materials-used-v206";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-project-assignment-v207";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

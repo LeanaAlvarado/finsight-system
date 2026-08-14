@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-materials-used-v206";
+import { supabase, peso, escapeHtml, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-project-assignment-v207";
 
 const INVENTORY_UPLOAD_BUCKETS = ["contracts", "progress-files", "inventory", "materials"];
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
@@ -834,7 +834,8 @@ function setInventoryProjectOptions(projects = []) {
   if (!projectSelect) return;
 
   const currentValue = projectSelect.value;
-  projectSelect.innerHTML = `<option value="">Unassigned / General Material</option>` + projects
+  const cctvProjects = projects.filter(isCctvProject);
+  projectSelect.innerHTML = `<option value="">Unassigned / General Material</option>` + cctvProjects
     .map(project => `
       <option value="${escapeHtml(project.project_code || "")}">
         ${escapeHtml(project.project_code || "")} - ${escapeHtml(project.project_title || project.client_name || "Untitled Project")}

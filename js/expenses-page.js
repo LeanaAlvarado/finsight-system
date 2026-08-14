@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-materials-used-v206";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260814-cctv-project-assignment-v207";
 
 let projectRecords = [];
 let expenseRecords = [];
