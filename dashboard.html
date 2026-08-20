@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-reports-active-list-v217">
+<link rel="stylesheet" href="style.css?v=20260820-bi-reports-redesign-v218">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -43,7 +43,7 @@
     <div class="dashboard-title-block">
       <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
       <h1>Business Intelligence Dashboard</h1>
-      <p>Financial management, project performance, and business intelligence overview.</p>
+      <p>Executive KPIs, trends, budget alerts, and decision-support insights for Owner/Manager review.</p>
     </div>
     <div class="dashboard-toolbar-actions">
       <div class="notification-wrap" id="costAlertNotification" hidden>
@@ -59,7 +59,6 @@
           <div id="costAlertDropdownList" class="notification-list"></div>
         </div>
       </div>
-      <button type="button" onclick="window.print()">Print BI Report</button>
       <div class="signed-user compact-user" aria-label="Current user">
         <small>Current Account</small>
         <div class="signed-user-row">
@@ -102,22 +101,31 @@
       <p>Revenue less expenses</p>
     </div>
 
+    <div class="card kpi metric-card metric-profit">
+      <div class="metric-top">
+        <span class="metric-icon">%</span>
+        <small>Profit Margin</small>
+      </div>
+      <h2 id="profitMarginKpi">0.00%</h2>
+      <p>Net profit compared with revenue</p>
+    </div>
+
     <div class="card kpi metric-card metric-projects">
       <div class="metric-top">
         <span class="metric-icon">PR</span>
         <small>Active Projects</small>
       </div>
       <h2 id="projectCount">0</h2>
-      <p>Monitored project records</p>
+      <p>Approved, ongoing, and completed projects</p>
     </div>
 
-    <div class="card kpi metric-card metric-inventory">
+    <div class="card kpi metric-card metric-risk">
       <div class="metric-top">
-        <span class="metric-icon">I</span>
-        <small>Used Materials</small>
+        <span class="metric-icon">!</span>
+        <small>Critical Projects</small>
       </div>
-      <h2 id="inventoryValue">0</h2>
-      <p><span id="inventoryCount">0</span> project material records</p>
+      <h2 id="criticalProjectCount">0</h2>
+      <p>Near or over project budget</p>
     </div>
   </section>
 
@@ -191,10 +199,9 @@
           <strong id="inventoryPanelValue">PHP 0.00</strong>
         </div>
         <div class="inventory-project-block inventory-report-projects">
-          <small>Approved / Completed CCTV Projects</small>
+          <small>Approved / Ongoing / Completed CCTV Projects</small>
           <div id="inventoryProjectList" class="inventory-project-list"></div>
         </div>
-        <button type="button" class="inventory-report-btn" onclick="generateProjectMaterialsReport()">Generate Report</button>
       </div>
     </div>
 
@@ -229,7 +236,7 @@
     <div class="card dashboard-panel insight-panel insights-panel">
       <div class="card-head">
         <div>
-          <h3>Business Intelligence Insights</h3>
+          <h3>Attention Required</h3>
           <p class="muted">Decision-support messages from current records.</p>
         </div>
       </div>
@@ -295,7 +302,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260814-reports-active-list-v217"></script>
+<script type="module" src="js/app.js?v=20260820-bi-reports-redesign-v218"></script>
 
 
 </body>

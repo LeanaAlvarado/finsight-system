@@ -1411,6 +1411,57 @@ tbody tr:hover{
   padding:8px 12px;
 }
 
+.report-catalog{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.report-catalog-card{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:160px;
+}
+
+.report-catalog-card small{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.report-catalog-card h3{
+  margin:0;
+  font-size:15px;
+}
+
+.report-catalog-card p{
+  flex:1;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+
+.report-catalog-card button,
+.report-catalog-card a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:36px;
+  margin-top:auto;
+  padding:9px 12px;
+  border:0;
+  border-radius:6px;
+  background:var(--primary);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  text-decoration:none;
+}
+
 .mini-card small{
   display:block;
   color:var(--muted);
@@ -1634,7 +1685,7 @@ tbody tr:hover{
 
 .dashboard-kpi-grid{
   display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(6,minmax(0,1fr));
   gap:12px;
 }
 
@@ -3757,6 +3808,10 @@ tbody tr:hover{
   }
 
   .dashboard-kpi-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .report-catalog{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 
@@ -3837,6 +3892,7 @@ tbody tr:hover{
   .grid,
   .dashboard-kpi-grid,
   .dashboard-board,
+  .report-catalog,
   .grid2,
   .dark-grid,
   .form-grid,

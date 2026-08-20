@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-reports-active-list-v217";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-bi-reports-redesign-v218";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260814-reports-active-list-v217";
+import { supabase } from "./supabase.js?v=20260820-bi-reports-redesign-v218";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

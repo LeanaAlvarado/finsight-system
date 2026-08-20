@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports and Audit Logs</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-reports-active-list-v217">
+<link rel="stylesheet" href="style.css?v=20260820-bi-reports-redesign-v218">
 </head>
 
 <body>
@@ -73,6 +73,36 @@
     </div>
   </section>
 
+  <section class="report-catalog screen-only" aria-label="Formal report categories">
+    <article class="card report-catalog-card">
+      <small>Financial Reports</small>
+      <h3>Management Summary</h3>
+      <p>Revenue, estimated project cost, profit, margin, and feedback count for the selected coverage.</p>
+      <button type="button" id="printReportBtn">Print Summary Report</button>
+    </article>
+
+    <article class="card report-catalog-card">
+      <small>Project Reports</small>
+      <h3>Active Projects</h3>
+      <p>Approved, ongoing, and completed projects with contract values.</p>
+      <button type="button" onclick="generateReportsActiveProjectsReport()">Generate Active Projects Report</button>
+    </article>
+
+    <article class="card report-catalog-card">
+      <small>Inventory Reports</small>
+      <h3>Material Usage</h3>
+      <p>CCTV materials used by approved, ongoing, and completed projects.</p>
+      <button type="button" onclick="generateReportsProjectMaterialsReport()">Generate Material Usage Report</button>
+    </article>
+
+    <article class="card report-catalog-card">
+      <small>Audit Reports</small>
+      <h3>Activity Logs</h3>
+      <p>Traceable system activity from project, finance, inventory, and feedback records.</p>
+      <a href="#auditLogSection">View Audit Log</a>
+    </article>
+  </section>
+
   <section class="grid2">
     <section class="card printable-report-section">
       <h3><span class="num">01</span> Management Report Summary</h3>
@@ -101,10 +131,6 @@
         </div>
       </div>
 
-      <div class="form-actions screen-only">
-        <button type="button" id="printReportBtn">Print Report</button>
-      </div>
-
       <div class="report-projects-panel screen-only">
         <div class="report-projects-head">
           <small>Active Projects</small>
@@ -113,7 +139,6 @@
         <div id="reportProjectList" class="report-project-list">
           <p class="muted">No approved, ongoing, or completed projects in this coverage.</p>
         </div>
-        <button type="button" class="inventory-report-btn" onclick="generateReportsActiveProjectsReport()">Generate Report</button>
       </div>
     </section>
 
@@ -207,7 +232,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260814-reports-active-list-v217"></script>
+<script type="module" src="js/app.js?v=20260820-bi-reports-redesign-v218"></script>
 
 </body>
 </html>
