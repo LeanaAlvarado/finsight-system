@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-reports-merge-local-projects-v216";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260814-reports-active-list-v217";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

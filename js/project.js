@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-reports-merge-local-projects-v216";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260814-reports-active-list-v217";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

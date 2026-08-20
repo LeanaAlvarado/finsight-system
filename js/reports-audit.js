@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-merge-local-projects-v216";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260814-reports-active-list-v217";
 
 const AUDIT_PAGE_SIZE = 10;
 const auditTable = document.getElementById("auditTable");
@@ -425,13 +425,6 @@ function renderLatestActivity(events = []) {
     : `<li>No recent activity yet.</li>`;
 }
 
-function getProjectReportLink(project = {}) {
-  const projectId = project.id || project.project_code || "";
-  return projectId
-    ? `projects.html?details=${encodeURIComponent(projectId)}`
-    : "projects.html";
-}
-
 function renderReportProjectList(projects = []) {
   const list = document.getElementById("reportProjectList");
   const count = document.getElementById("reportProjectCountText");
@@ -450,12 +443,100 @@ function renderReportProjectList(projects = []) {
           <span>${escapeHtml(project.project_title || project.client_name || "Untitled Project")}</span>
         </div>
         <em>${escapeHtml(project.status || "No Status")}</em>
-        <b>${peso(project.contract_amount)}</b>
-        <a href="${escapeHtml(getProjectReportLink(project))}">Generated Report</a>
       </div>
     `).join("")
     : `<p class="muted">No approved, ongoing, or completed projects in this coverage.</p>`;
 }
+
+window.generateReportsActiveProjectsReport = function() {
+  const activeProjects = filterByCoverage(reportRecords.projects)
+    .filter(project => isReportFinancialStatus(project.status))
+    .sort((a, b) => String(a.project_code || "").localeCompare(String(b.project_code || "")));
+  const generatedDate = new Date();
+  const reportWindow = window.open("", "_blank");
+
+  if (!reportWindow) {
+    alert("Please allow pop-ups to generate the Active Projects report.");
+    return;
+  }
+
+  const totalContract = activeProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
+  const rows = activeProjects.length
+    ? activeProjects.map((project, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${escapeHtml(project.project_code || "-")}</td>
+        <td>${escapeHtml(project.project_title || project.client_name || "Untitled Project")}</td>
+        <td>${escapeHtml(project.client_name || project.company_name || "-")}</td>
+        <td>${escapeHtml(project.status || "Active")}</td>
+        <td>${peso(project.contract_amount)}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="6" style="text-align:center;">No approved, ongoing, or completed projects in this coverage.</td></tr>`;
+
+  reportWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Active_Projects_Report_${generatedDate.toISOString().slice(0, 10)}</title>
+      <style>
+        @page{size:A4;margin:14mm;}
+        *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+        body{font-family:Arial,sans-serif;color:#071f3d;margin:0;background:#f4f7fb;}
+        .report-page{max-width:960px;margin:0 auto;padding:28px;background:#fff;min-height:100vh;}
+        .actions{text-align:right;margin-bottom:14px;}
+        button{border:0;border-radius:6px;background:#174f80;color:#fff;padding:9px 14px;font-weight:800;}
+        .report-top{display:flex;justify-content:space-between;gap:18px;border-bottom:2px solid #0f5f66;padding-bottom:16px;margin-bottom:18px;}
+        small{display:block;color:#51657d;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
+        h1{margin:4px 0 6px;font-size:24px;}
+        p{margin:0;color:#42566f;font-size:12px;line-height:1.45;}
+        .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:18px 0;}
+        .metric{border:1px solid #c9d7e6;border-radius:6px;padding:12px;background:#f8fbff;}
+        .metric strong{display:block;margin-top:6px;font-size:18px;}
+        table{width:100%;border-collapse:collapse;font-size:11px;margin-top:14px;}
+        th,td{border:1px solid #d9e3ee;padding:8px;text-align:left;vertical-align:top;}
+        th{background:#0f5f66;color:#fff;text-transform:uppercase;font-size:10px;letter-spacing:.04em;}
+        td:nth-child(1),td:nth-child(6){text-align:right;white-space:nowrap;}
+        @media print{body{background:#fff}.actions{display:none}.report-page{max-width:none;padding:0;}}
+      </style>
+    </head>
+    <body>
+      <div class="report-page">
+        <div class="actions"><button onclick="window.print()">Print</button></div>
+        <div class="report-top">
+          <div>
+            <small>LEMYU FIBER OPTIC INSTALLATION AND SERVICES</small>
+            <h1>Active Projects Report</h1>
+            <p>Approved, ongoing, and completed project records from the selected report coverage.</p>
+          </div>
+          <div>
+            <small>Generated Date</small>
+            <p>${generatedDate.toLocaleString("en-PH")}</p>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><small>Total Active Projects</small><strong>${activeProjects.length}</strong></div>
+          <div class="metric"><small>Total Contract Amount</small><strong>${peso(totalContract)}</strong></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Project Code</th>
+              <th>Project Title</th>
+              <th>Client</th>
+              <th>Status</th>
+              <th>Contract Amount</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </body>
+    </html>
+  `);
+  reportWindow.document.close();
+};
 
 function renderReports() {
   const projects = filterByCoverage(reportRecords.projects);

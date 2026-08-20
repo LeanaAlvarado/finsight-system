@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports and Audit Logs</title>
 
-<link rel="stylesheet" href="style.css?v=20260814-reports-merge-local-projects-v216">
+<link rel="stylesheet" href="style.css?v=20260814-reports-active-list-v217">
 </head>
 
 <body>
@@ -107,12 +107,13 @@
 
       <div class="report-projects-panel screen-only">
         <div class="report-projects-head">
-          <small>Projects With Generated Report</small>
+          <small>Active Projects</small>
           <strong id="reportProjectCountText">0 projects</strong>
         </div>
         <div id="reportProjectList" class="report-project-list">
           <p class="muted">No approved, ongoing, or completed projects in this coverage.</p>
         </div>
+        <button type="button" class="inventory-report-btn" onclick="generateReportsActiveProjectsReport()">Generate Report</button>
       </div>
     </section>
 
@@ -206,7 +207,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260814-reports-merge-local-projects-v216"></script>
+<script type="module" src="js/app.js?v=20260814-reports-active-list-v217"></script>
 
 </body>
 </html>

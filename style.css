@@ -1523,7 +1523,7 @@ tbody tr:hover{
 
 .report-project-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) 82px 108px 116px;
+  grid-template-columns:minmax(0,1fr) auto;
   gap:8px;
   align-items:center;
   padding:9px;
@@ -1560,16 +1560,6 @@ tbody tr:hover{
   font-style:normal;
   font-weight:800;
   text-transform:capitalize;
-}
-
-.report-project-row b{
-  font-size:12px;
-}
-
-.report-project-row a{
-  justify-self:end;
-  color:var(--primary);
-  font-weight:800;
 }
 
 .dashboard-section{
@@ -1654,7 +1644,6 @@ tbody tr:hover{
   grid-template-areas:
     "overview overview expense ranking"
     "summary insights insights inventory"
-    "summary insights insights active"
     "table table table alerts";
   align-items:stretch;
   gap:12px;
@@ -1686,13 +1675,6 @@ tbody tr:hover{
 .inventory-panel{
   grid-area:inventory;
   align-self:stretch;
-}
-
-.active-projects-panel{
-  grid-area:active;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
 }
 
 .summary-panel{
@@ -2458,61 +2440,6 @@ tbody tr:hover{
 
 .inventory-report-projects{
   align-self:stretch;
-}
-
-.active-project-list{
-  display:grid;
-  gap:8px;
-  max-height:260px;
-  overflow:auto;
-}
-
-.active-project-row{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:8px 10px;
-  align-items:start;
-  padding:9px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  background:#fff;
-}
-
-.active-project-row div{
-  min-width:0;
-}
-
-.active-project-row strong,
-.active-project-row span{
-  display:block;
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-
-.active-project-row strong{
-  color:var(--primary);
-  font-size:11px;
-  font-weight:900;
-}
-
-.active-project-row span{
-  margin-top:2px;
-  color:var(--text);
-  font-size:12px;
-  font-weight:700;
-}
-
-.active-project-row em{
-  padding:4px 8px;
-  border-radius:999px;
-  background:#e7f7ee;
-  color:#04743b;
-  font-size:10px;
-  font-style:normal;
-  font-weight:900;
-  text-transform:capitalize;
 }
 
 .inventory-project-empty{
@@ -3839,7 +3766,6 @@ tbody tr:hover{
       "overview overview"
       "expense ranking"
       "summary inventory"
-      "summary active"
       "insights insights"
       "alerts alerts"
       "table table";
@@ -3927,7 +3853,6 @@ tbody tr:hover{
       "expense"
       "ranking"
       "inventory"
-      "active"
       "summary"
       "insights"
       "alerts"
