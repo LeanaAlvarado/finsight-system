@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-bi-bottom-align-v225";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

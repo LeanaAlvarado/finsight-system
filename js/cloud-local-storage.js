@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260820-bi-bottom-align-v225";
+import { supabase } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

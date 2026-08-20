@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260820-bi-bottom-align-v225";
+import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
@@ -186,6 +186,13 @@ function getProjectFinancials(project = {}) {
   };
 }
 
+function getBudgetUsageTone(row = {}) {
+  if (!row.budget || row.budget <= 0) return "neutral";
+  if (row.budgetUtilization >= 90 || row.remainingBudget < 0) return "critical";
+  if (row.budgetUtilization >= 80) return "warning";
+  return "good";
+}
+
 function isWithinRevenueDateFilter(project = {}) {
   const dateFilter = revenueListState.date;
   if (dateFilter === "all") return true;
@@ -332,7 +339,10 @@ function renderRevenueTable() {
     return;
   }
 
-  revenueTable.innerHTML = pageRows.map(row => `
+  revenueTable.innerHTML = pageRows.map(row => {
+    const budgetTone = getBudgetUsageTone(row);
+    const utilizationText = row.budget > 0 ? `${row.budgetUtilization.toFixed(2)}%` : "0.00%";
+    return `
     <tr>
       <td>${escapeHtml(row.project.project_title || "-")}</td>
       <td>${escapeHtml(row.project.client_name || "-")}</td>
@@ -351,11 +361,12 @@ function renderRevenueTable() {
       <td>${peso(row.projectExpenses)}</td>
       <td>${peso(row.projectPayroll)}</td>
       <td>${peso(row.budgetUsed)}</td>
-      <td class="${row.remainingBudget >= 0 ? "good" : "bad"}">${peso(row.remainingBudget)}</td>
-      <td>${row.budget > 0 ? `${row.budgetUtilization.toFixed(2)}%` : "0.00%"}</td>
+      <td class="budget-cell budget-${budgetTone}">${peso(row.remainingBudget)}</td>
+      <td class="budget-cell budget-${budgetTone}">${utilizationText}</td>
       <td class="${row.net >= 0 ? "good" : "bad"}">${peso(row.net)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   renderRevenuePagination(totalItems);
 }

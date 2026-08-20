@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260820-bi-bottom-align-v225";
+import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const AUDIT_PAGE_SIZE = 10;
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";

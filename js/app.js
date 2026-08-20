@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260820-bi-bottom-align-v225";
+const appVersion = "20260820-budget-warning-v226";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-bottom-align-v225";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

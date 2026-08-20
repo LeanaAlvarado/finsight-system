@@ -3501,6 +3501,28 @@ tbody tr:hover{
   word-break:normal;
 }
 
+.revenue-breakdown-table .budget-cell{
+  font-weight:900;
+}
+
+.revenue-breakdown-table .budget-good{
+  color:#00863d;
+}
+
+.revenue-breakdown-table .budget-warning{
+  color:#b45309;
+  background:#fff7ed;
+}
+
+.revenue-breakdown-table .budget-critical{
+  color:#b42318;
+  background:#fff1f2;
+}
+
+.revenue-breakdown-table .budget-neutral{
+  color:var(--text);
+}
+
 .nowrap{
   white-space:nowrap;
 }
