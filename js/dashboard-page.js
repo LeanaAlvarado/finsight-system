@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-reports-redesign-v218";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-executive-polish-v219";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -13,7 +13,7 @@ const ALERT_OVER_BUDGET_THRESHOLD = 100;
 const ALERT_PREVIEW_LIMIT = 5;
 const ACTIVE_ALERT_STATUSES = new Set(["Active", "Viewed"]);
 const MATERIAL_PROJECT_STATUSES = new Set(["approved", "ongoing", "on going", "in progress", "completed", "complete"]);
-const FINANCIAL_PROJECT_STATUSES = new Set(["approved", "ongoing", "completed", "complete"]);
+const FINANCIAL_PROJECT_STATUSES = new Set(["approved", "ongoing", "on going", "in progress", "completed", "complete"]);
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
 
 function getCurrentRole() {
@@ -211,6 +211,7 @@ function renderCollectionStatus(projects = []) {
   const totalContract = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const totalPaid = projects.reduce((sum, project) => sum + getProjectCollectionPaid(project), 0);
   const totalBalance = Math.max(totalContract - totalPaid, 0);
+  const collectionRate = totalContract > 0 ? (totalPaid / totalContract) * 100 : 0;
   const projectRows = projects
     .map(project => {
       const contract = number(project.contract_amount);
@@ -251,7 +252,7 @@ function renderCollectionStatus(projects = []) {
         `).join("")}
         </div>
       `
-      : `<div class="category-breakdown-empty">No projects with remaining balance.</div>`;
+      : `<div class="category-breakdown-empty"><strong>No Outstanding Collections</strong><span>All recorded project collections are currently up to date.</span></div>`;
   }
 
   const projectsWithBalanceFallback = projects.filter(project => {
@@ -263,6 +264,9 @@ function renderCollectionStatus(projects = []) {
   setText("collectionPaidTotal", peso(totalPaid));
   setText("collectionBalanceTotal", peso(totalBalance));
   setText("collectionOpenProjects", projectsWithBalance || projectsWithBalanceFallback);
+  setText("collectionRate", `${collectionRate.toFixed(2)}%`);
+  const collectionRateBar = document.getElementById("collectionRateBar");
+  if (collectionRateBar) collectionRateBar.style.width = `${Math.min(Math.max(collectionRate, 0), 100).toFixed(2)}%`;
 }
 
 function getRecordDate(record = {}) {
@@ -370,6 +374,17 @@ function showDashboardUser() {
   setText("dashboardRole", toTitleCase(role));
 }
 
+function updateDashboardLastUpdated() {
+  const stamp = new Date().toLocaleString("en-PH", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  setText("dashboardLastUpdated", `Last updated: ${stamp}`);
+}
+
 function getProjectAnalytics(projects, expenses, payroll, inventory) {
   const hasPayrollRecords = payroll.length > 0;
   return projects.map(project => {
@@ -436,7 +451,7 @@ function getBudgetStatusInfo(analysis = {}) {
     return { label: "Warning", className: "warning" };
   }
 
-  return { label: "Safe", className: "safe" };
+  return { label: "Healthy", className: "safe" };
 }
 
 function getProjectStatus(analysis) {
@@ -444,30 +459,47 @@ function getProjectStatus(analysis) {
 }
 
 function renderProfitabilityTable(projectAnalytics) {
-  const table = document.getElementById("profitabilityTable");
-  if (!table) return;
+  const panel = document.getElementById("profitabilityHighlights");
+  if (!panel) return;
 
   const rankedProjects = [...projectAnalytics]
     .sort((a, b) => b.profit - a.profit)
-    .slice(0, 6);
+    .filter(item => item.revenue > 0);
+  const topProject = rankedProjects[0];
+  const needsAttention = [...rankedProjects]
+    .sort((a, b) => a.margin - b.margin || a.profit - b.profit)[0];
 
-  if (!rankedProjects.length) {
-    table.innerHTML = `<tr><td colspan="7" style="text-align:center;">No project records available for BI ranking.</td></tr>`;
+  if (!topProject) {
+    panel.innerHTML = `<div class="category-breakdown-empty">No project profitability records available.</div>`;
     return;
   }
 
-  table.innerHTML = rankedProjects.map((item, index) => {
+  const cards = [
+    {
+      label: "Top Performing",
+      item: topProject,
+      tone: "good"
+    },
+    {
+      label: "Needs Attention",
+      item: needsAttention,
+      tone: needsAttention?.profit < 0 || needsAttention?.margin < 10 ? "bad" : "watch"
+    }
+  ].filter(card => card.item);
+
+  panel.innerHTML = cards.map(card => {
+    const item = card.item;
     const status = getBudgetStatusInfo(item);
     return `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${escapeHtml(item.label)}</td>
-        <td>${peso(item.revenue)}</td>
-        <td>${peso(item.totalCost)}</td>
-        <td class="${item.profit >= 0 ? "good" : "bad"}">${peso(item.profit)}</td>
-        <td>${item.margin.toFixed(2)}%</td>
-        <td><span class="bi-status ${status.className}">${status.label}</span></td>
-      </tr>
+      <div class="profitability-card ${card.tone}">
+        <small>${escapeHtml(card.label)}</small>
+        <strong title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</strong>
+        <div class="profitability-metrics">
+          <span>Net Profit <b>${peso(item.profit)}</b></span>
+          <span>Margin <b>${item.margin.toFixed(2)}%</b></span>
+        </div>
+        <em class="bi-status ${status.className}">${status.label}</em>
+      </div>
     `;
   }).join("");
 }
@@ -488,19 +520,57 @@ function renderBudgetUtilizationList(projectAnalytics) {
 
   list.innerHTML = rankedProjects.map(item => {
     const width = Math.min(Math.max(item.budgetUtilization, 4), 100);
+    const status = getBudgetStatusInfo(item);
     return `
-      <div class="compact-profit-row">
-        <div class="compact-profit-name">
-          <strong>${escapeHtml(item.label)}</strong>
-          <span>${peso(item.budgetRemaining)} remaining</span>
+      <div class="budget-util-row ${status.className}">
+        <div class="budget-util-head">
+          <strong title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</strong>
+          <span class="bi-status ${status.className}">${status.label}</span>
         </div>
-        <div class="compact-profit-bar">
+        <div class="budget-util-grid">
+          <span>Budget <b>${peso(item.budget)}</b></span>
+          <span>Used <b>${peso(item.budgetSpendWithoutMaterials)}</b></span>
+          <span>Remaining <b>${peso(item.budgetRemaining)}</b></span>
+        </div>
+        <div class="compact-profit-bar" aria-label="${escapeHtml(item.label)} ${item.budgetUtilization.toFixed(1)} percent used">
           <span style="width:${width.toFixed(2)}%"></span>
         </div>
-        <div class="compact-profit-margin">${item.budgetUtilization.toFixed(1)}%</div>
+        <div class="budget-util-foot">
+          <span>${item.budgetUtilization.toFixed(1)}% utilized</span>
+        </div>
       </div>
     `;
   }).join("");
+}
+
+function renderProjectHealthOverview(projectAnalytics = []) {
+  const healthProjects = projectAnalytics.filter(item => item.budget > 0);
+  const counts = healthProjects.reduce((summary, item) => {
+    const status = getBudgetStatusInfo(item).label;
+    if (status === "Over Budget" || status === "Critical") summary.critical += 1;
+    else if (status === "Warning") summary.warning += 1;
+    else summary.healthy += 1;
+    return summary;
+  }, { healthy: 0, warning: 0, critical: 0 });
+  const total = Math.max(healthProjects.length, 1);
+  const safePercent = (counts.healthy / total) * 100;
+  const warningPercent = (counts.warning / total) * 100;
+  const criticalPercent = (counts.critical / total) * 100;
+
+  setText("healthyProjectCount", counts.healthy);
+  setText("warningProjectCount", counts.warning);
+  setText("healthCriticalProjectCount", counts.critical);
+  const safeBar = document.getElementById("healthSafeBar");
+  const warningBar = document.getElementById("healthWarningBar");
+  const criticalBar = document.getElementById("healthCriticalBar");
+  if (safeBar) safeBar.style.width = `${safePercent.toFixed(2)}%`;
+  if (warningBar) warningBar.style.width = `${warningPercent.toFixed(2)}%`;
+  if (criticalBar) criticalBar.style.width = `${criticalPercent.toFixed(2)}%`;
+
+  const caption = healthProjects.length
+    ? `${healthProjects.length} budgeted project${healthProjects.length === 1 ? "" : "s"} monitored for budget health.`
+    : "No project budget records available yet.";
+  setText("projectHealthCaption", caption);
 }
 
 function getInventoryProjectLabel(projects, projectCode = "") {
@@ -941,42 +1011,135 @@ function renderBusinessInsights(projectAnalytics, categoryTotals, totals) {
 
   const sortedProjects = [...projectAnalytics].sort((a, b) => b.profit - a.profit);
   const bestProject = sortedProjects[0];
-  const lowestProject = [...projectAnalytics].sort((a, b) => a.margin - b.margin)[0];
   const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+  const categoryTotal = [...categoryTotals.values()].reduce((sum, value) => sum + number(value), 0);
   const insights = [];
+
+  projectAnalytics.forEach(item => {
+    const status = getBudgetStatusInfo(item);
+    if (status.label === "Over Budget") {
+      insights.push({
+        severity: "critical",
+        title: "Budget Overrun",
+        subject: item.label,
+        text: `${peso(item.budgetSpendWithoutMaterials)} used against ${peso(item.budget)} project budget.`,
+        action: `${item.budgetUtilization.toFixed(1)}% utilized. Review project spending immediately.`
+      });
+      return;
+    }
+
+    if (status.label === "Critical") {
+      insights.push({
+        severity: "critical",
+        title: "Critical Budget",
+        subject: item.label,
+        text: `${peso(item.budgetRemaining)} remaining from ${peso(item.budget)} project budget.`,
+        action: `${item.budgetUtilization.toFixed(1)}% already used. Monitor before additional spending.`
+      });
+      return;
+    }
+
+    if (status.label === "Warning") {
+      insights.push({
+        severity: "warning",
+        title: "Low Remaining Budget",
+        subject: item.label,
+        text: `${peso(item.budgetRemaining)} remaining from ${peso(item.budget)} project budget.`,
+        action: `${item.budgetUtilization.toFixed(1)}% utilized. Check upcoming costs.`
+      });
+    }
+  });
+
+  projectAnalytics
+    .filter(item => item.revenue > 0 && item.margin < 10)
+    .sort((a, b) => a.margin - b.margin)
+    .slice(0, 2)
+    .forEach(item => {
+      insights.push({
+        severity: item.margin < 0 ? "critical" : "warning",
+        title: "Low Profitability",
+        subject: item.label,
+        text: `${peso(item.profit)} net profit with ${item.margin.toFixed(2)}% margin.`,
+        action: "Review pricing, budget, or project cost exposure."
+      });
+    });
+
+  projectAnalytics
+    .map(item => {
+      const paid = getProjectCollectionPaid(item.project);
+      const balance = Math.max(item.revenue - paid, 0);
+      return { ...item, paid, balance };
+    })
+    .filter(item => item.revenue > 0 && item.balance > 0)
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, 2)
+    .forEach(item => {
+      insights.push({
+        severity: "warning",
+        title: "Outstanding Collection",
+        subject: item.label,
+        text: `${peso(item.balance)} still collectible from ${peso(item.revenue)} contract value.`,
+        action: `${((item.paid / item.revenue) * 100).toFixed(2)}% collected so far.`
+      });
+    });
+
+  if (topCategory && categoryTotal > 0 && (topCategory[1] / categoryTotal) >= 0.65) {
+    insights.push({
+      severity: "warning",
+      title: "High Expense Concentration",
+      subject: topCategory[0],
+      text: `${peso(topCategory[1])} or ${((topCategory[1] / categoryTotal) * 100).toFixed(2)}% of categorized cost.`,
+      action: "Check if spending is concentrated in one cost driver."
+    });
+  }
 
   if (bestProject) {
     insights.push({
-      title: "Highest project contribution",
-      text: `${bestProject.label} currently leads with ${peso(bestProject.profit)} net profit.`
+      severity: "normal",
+      title: "Highest Project Contribution",
+      subject: bestProject.label,
+      text: `${peso(bestProject.profit)} net profit with ${bestProject.margin.toFixed(2)}% margin.`,
+      action: "This project currently contributes most to profitability."
     });
   }
 
-  if (topCategory) {
+  if (totals.revenue > 0 && totals.profit > 0) {
     insights.push({
-      title: "Largest cost driver",
-      text: `${topCategory[0]} accounts for ${peso(topCategory[1])} of recorded costs.`
+      severity: "normal",
+      title: "Overall Profitability",
+      subject: "Portfolio",
+      text: `Overall profit margin is ${((totals.profit / totals.revenue) * 100).toFixed(2)}%.`,
+      action: "The active project portfolio is currently profitable."
     });
   }
 
-  if (lowestProject && lowestProject.revenue > 0) {
-    insights.push({
-      title: "Lowest margin project",
-      text: `${lowestProject.label} has a ${lowestProject.margin.toFixed(2)}% margin and should be reviewed.`
-    });
+  const priority = { critical: 0, warning: 1, normal: 2 };
+  const visibleInsights = insights
+    .sort((a, b) => priority[a.severity] - priority[b.severity])
+    .slice(0, 5);
+
+  if (!visibleInsights.length) {
+    list.innerHTML = `
+      <div class="insight-item normal">
+        <div class="insight-heading">
+          <em>Healthy</em>
+          <strong>No Critical Projects</strong>
+        </div>
+        <span>All monitored projects are currently within their budget limits.</span>
+      </div>
+    `;
+    return;
   }
 
-  if (totals.revenue > 0) {
-    insights.push({
-      title: "Overall profitability",
-      text: `The overall profit margin is ${((totals.profit / totals.revenue) * 100).toFixed(2)}%.`
-    });
-  }
-
-  list.innerHTML = insights.map(item => `
-    <div class="insight-item">
-      <strong>${escapeHtml(item.title)}</strong>
+  list.innerHTML = visibleInsights.map(item => `
+    <div class="insight-item ${escapeHtml(item.severity)}">
+      <div class="insight-heading">
+        <em>${escapeHtml(item.severity)}</em>
+        <strong>${escapeHtml(item.title)}</strong>
+      </div>
+      <b title="${escapeHtml(item.subject)}">${escapeHtml(item.subject)}</b>
       <span>${escapeHtml(item.text)}</span>
+      <small>${escapeHtml(item.action)}</small>
     </div>
   `).join("");
 }
@@ -1071,7 +1234,7 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   const totalProjectCost = projectAnalytics.reduce((sum, item) => sum + item.totalCost, 0);
   const profit = revenue - totalProjectCost;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-  const riskCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).label !== "Safe").length;
+  const riskCount = projectAnalytics.filter(item => getBudgetStatusInfo(item).className !== "safe").length;
   const criticalProjectCount = projectAnalytics.filter(item => {
     const label = getBudgetStatusInfo(item).label;
     return label === "Critical" || label === "Over Budget";
@@ -1098,6 +1261,7 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   renderCategoryBreakdownList(categoryTotals);
   renderProfitabilityTable(projectAnalytics);
   renderBudgetUtilizationList(projectAnalytics);
+  renderProjectHealthOverview(projectAnalytics);
   renderInventoryProjectList(projects, projectMaterials);
   renderCostAlerts(costAlerts);
   renderCostAlertNotifications(costAlerts);
@@ -1292,6 +1456,7 @@ async function loadDashboard(){
   });
 
   renderBusinessIntelligence(financialProjects, financialExpenses, financialPayroll, projectMaterials, revenue, latestCostAlerts);
+  updateDashboardLastUpdated();
 }
 
 function refreshDashboardNow() {

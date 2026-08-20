@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260820-bi-reports-redesign-v218">
+<link rel="stylesheet" href="style.css?v=20260820-bi-executive-polish-v219">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -44,6 +44,7 @@
       <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
       <h1>Business Intelligence Dashboard</h1>
       <p>Executive KPIs, trends, budget alerts, and decision-support insights for Owner/Manager review.</p>
+      <small class="dashboard-updated" id="dashboardLastUpdated">Last updated: Loading...</small>
     </div>
     <div class="dashboard-toolbar-actions">
       <div class="notification-wrap" id="costAlertNotification" hidden>
@@ -184,6 +185,26 @@
       <div id="budgetUtilizationList" class="compact-profit-list"></div>
     </div>
 
+    <div class="card dashboard-panel health-panel">
+      <div class="card-head">
+        <div>
+          <h3>Project Health Overview</h3>
+          <p class="muted">Budget condition across active projects.</p>
+        </div>
+      </div>
+      <div class="health-count-grid">
+        <div><small>Healthy</small><strong id="healthyProjectCount">0</strong></div>
+        <div><small>Warning</small><strong id="warningProjectCount">0</strong></div>
+        <div><small>Critical</small><strong id="healthCriticalProjectCount">0</strong></div>
+      </div>
+      <div class="health-segment" aria-label="Project health distribution">
+        <span class="safe" id="healthSafeBar" style="width:0%"></span>
+        <span class="warning" id="healthWarningBar" style="width:0%"></span>
+        <span class="critical" id="healthCriticalBar" style="width:0%"></span>
+      </div>
+      <p class="health-caption" id="projectHealthCaption">No active project health data yet.</p>
+    </div>
+
     <div class="card dashboard-panel inventory-panel">
       <div class="inventory-panel-layout">
         <div class="inventory-panel-icon">I</div>
@@ -211,6 +232,13 @@
           <h3>Collection Status</h3>
           <p class="muted">Client payments and remaining collectibles.</p>
         </div>
+      </div>
+      <div class="collection-rate-card">
+        <div>
+          <small>Collection Rate</small>
+          <strong id="collectionRate">0.00%</strong>
+        </div>
+        <div class="collection-rate-bar"><span id="collectionRateBar" style="width:0%"></span></div>
       </div>
       <div id="collectionProjectList" class="collection-project-list" aria-label="Projects with collection balance"></div>
       <div class="summary-list">
@@ -276,33 +304,18 @@
     <div class="card dashboard-panel table-card risk-table-panel">
       <div class="card-head">
         <div>
-          <h3>Project Profitability</h3>
-          <p class="muted">Ranks projects by contract amount, contract budget, tax, and budget utilization.</p>
+          <h3>Project Profitability Overview</h3>
+          <p class="muted">Top performer and project that needs margin review.</p>
         </div>
         <a class="dashboard-card-link" href="revenue.html">View revenue</a>
       </div>
-      <div class="table-wrap">
-        <table class="bi-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Project</th>
-              <th>Revenue</th>
-              <th>Total Cost</th>
-              <th>Net Profit</th>
-              <th>Margin</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="profitabilityTable"></tbody>
-        </table>
-      </div>
+      <div id="profitabilityHighlights" class="profitability-highlights"></div>
     </div>
   </section>
 
 </main>
 
-<script type="module" src="js/app.js?v=20260820-bi-reports-redesign-v218"></script>
+<script type="module" src="js/app.js?v=20260820-bi-executive-polish-v219"></script>
 
 
 </body>

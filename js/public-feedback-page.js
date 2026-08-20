@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260820-bi-reports-redesign-v218";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260820-bi-executive-polish-v219";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

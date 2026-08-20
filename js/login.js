@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260820-bi-reports-redesign-v218";
+import { supabase } from "./supabase.js?v=20260820-bi-executive-polish-v219";
 import {
   clearLoginLockout,
   getLockout,
