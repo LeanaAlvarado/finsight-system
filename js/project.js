@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-bi-pro-dashboard-v221";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-bi-executive-ref-v222";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

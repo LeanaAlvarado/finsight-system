@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260820-bi-pro-dashboard-v221">
+<link rel="stylesheet" href="style.css?v=20260820-bi-executive-ref-v222">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -130,69 +130,90 @@
     </div>
   </section>
 
-  <section class="dashboard-board" aria-label="Business intelligence dashboard panels">
-    <div class="dashboard-section-block">
-      <div class="dashboard-section-title">
-        <div>
-          <small>Financial Performance</small>
-          <h2>Revenue, budget, and net result</h2>
-        </div>
-      </div>
-      <div class="dashboard-row dashboard-row-financial">
-      <div class="card dashboard-panel chart-card overview-panel">
-        <div class="card-head">
-          <div>
-            <h3>Financial Overview</h3>
-            <p class="muted">Revenue and expenses based on current project records.</p>
-          </div>
-          <select class="search compact-select" aria-label="Chart period">
-            <option>Monthly</option>
-            <option>Weekly</option>
-            <option>Yearly</option>
-          </select>
-        </div>
-        <div class="chart-frame chart-frame-sm">
-          <canvas id="salesChart"></canvas>
-        </div>
-        <div class="financial-chart-summary" aria-label="Financial chart explanation">
-          <div><small>Total Revenue</small><strong id="chartRevenueTotal">PHP 0.00</strong></div>
-          <div><small>Total Project Budget</small><strong id="chartExpenseTotal">PHP 0.00</strong></div>
-          <div><small>Net Result</small><strong id="chartNetTotal">PHP 0.00</strong></div>
-        </div>
-      </div>
-
-      <div class="card dashboard-panel expense-breakdown-card expense-panel">
-        <div class="card-head">
-          <div>
-            <h3>Expense Category Breakdown</h3>
-            <p class="muted">Cost distribution by expense group.</p>
-          </div>
-        </div>
-        <div class="expense-breakdown-layout">
-          <div class="chart-frame chart-frame-xs">
-            <canvas id="expenseCategoryChart"></canvas>
-          </div>
-          <div class="expense-breakdown-summary">
-            <div class="summary-row compact-summary-row">
-              <small>Total Categorized Cost</small>
-              <strong id="categoryCostTotal">PHP 0.00</strong>
+  <section class="dashboard-board executive-bi-board" aria-label="Business intelligence dashboard panels">
+    <div class="executive-main-column">
+      <div class="executive-hero-grid">
+        <div class="card dashboard-panel chart-card overview-panel executive-chart-panel">
+          <div class="card-head">
+            <div>
+              <h3>Financial Overview</h3>
+              <p class="muted">Revenue, project budget, and net result by period.</p>
             </div>
-            <div id="categoryBreakdownList" class="category-breakdown-list"></div>
+            <select class="search compact-select" aria-label="Chart period">
+              <option>Monthly</option>
+              <option>Weekly</option>
+              <option>Yearly</option>
+            </select>
+          </div>
+          <div class="chart-frame chart-frame-sm">
+            <canvas id="salesChart"></canvas>
+          </div>
+          <div class="financial-chart-summary" aria-label="Financial chart explanation">
+            <div><small>Total Revenue</small><strong id="chartRevenueTotal">PHP 0.00</strong></div>
+            <div><small>Total Project Budget</small><strong id="chartExpenseTotal">PHP 0.00</strong></div>
+            <div><small>Net Result</small><strong id="chartNetTotal">PHP 0.00</strong></div>
+          </div>
+        </div>
+
+        <div class="card dashboard-panel expense-breakdown-card expense-panel executive-breakdown-panel">
+          <div class="card-head">
+            <div>
+              <h3>Cost Distribution</h3>
+              <p class="muted">Where project costs are concentrated.</p>
+            </div>
+          </div>
+          <div class="expense-breakdown-layout">
+            <div class="chart-frame chart-frame-xs">
+              <canvas id="expenseCategoryChart"></canvas>
+            </div>
+            <div class="expense-breakdown-summary">
+              <div class="summary-row compact-summary-row">
+                <small>Total Categorized Cost</small>
+                <strong id="categoryCostTotal">PHP 0.00</strong>
+              </div>
+              <div id="categoryBreakdownList" class="category-breakdown-list"></div>
+            </div>
           </div>
         </div>
       </div>
-      </div>
-    </div>
 
-    <div class="dashboard-section-block">
-      <div class="dashboard-section-title">
-        <div>
-          <small>Project Budget Health</small>
-          <h2>Utilization, alerts, and margin condition</h2>
+      <div class="executive-lower-grid">
+        <div class="card dashboard-panel summary-card summary-panel executive-collection-panel">
+          <div class="card-head">
+            <div>
+              <h3>Collection Status</h3>
+              <p class="muted">Projects with remaining client collectibles.</p>
+            </div>
+          </div>
+          <div class="collection-rate-card">
+            <div>
+              <small>Collection Rate</small>
+              <strong id="collectionRate">0.00%</strong>
+            </div>
+            <div class="collection-rate-bar"><span id="collectionRateBar" style="width:0%"></span></div>
+          </div>
+          <div id="collectionProjectList" class="collection-project-list" aria-label="Projects with collection balance"></div>
+          <div class="summary-list">
+            <div class="summary-row">
+              <small>Total Contract Amount</small>
+              <strong id="collectionContractTotal">PHP 0.00</strong>
+            </div>
+            <div class="summary-row">
+              <small>Amount Paid</small>
+              <strong id="collectionPaidTotal">PHP 0.00</strong>
+            </div>
+            <div class="summary-row">
+              <small>Remaining Collectibles</small>
+              <strong id="collectionBalanceTotal">PHP 0.00</strong>
+            </div>
+            <div class="summary-row">
+              <small>Projects with Balance</small>
+              <strong id="collectionOpenProjects">0</strong>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="dashboard-row dashboard-row-projects">
-        <div class="card dashboard-panel compact-ranking-panel">
+
+        <div class="card dashboard-panel compact-ranking-panel executive-budget-panel">
           <div class="card-head">
             <div>
               <h3>Budget Utilization</h3>
@@ -202,12 +223,54 @@
           </div>
           <div id="budgetUtilizationList" class="compact-profit-list"></div>
         </div>
+      </div>
 
-        <div class="dashboard-side-stack">
-      <div class="card dashboard-panel health-panel">
+      <div class="card dashboard-panel insight-panel insights-panel executive-insight-panel">
         <div class="card-head">
           <div>
-            <h3>Project Health Overview</h3>
+            <h3>Attention Required</h3>
+            <p class="muted">Decision-support messages from current records.</p>
+          </div>
+        </div>
+        <div class="bi-mini-grid">
+          <div class="mini-bi metric-profit">
+            <small>Profit Margin</small>
+            <strong id="profitMargin">0.00%</strong>
+          </div>
+          <div class="mini-bi metric-risk">
+            <small>Projects Near Budget Limit</small>
+            <strong id="riskProjectCount">0</strong>
+          </div>
+          <div class="mini-bi metric-best">
+            <small>Total Remaining Budget</small>
+            <strong id="bestProjectProfit">PHP 0.00</strong>
+            <span id="bestProjectName">Across monitored projects.</span>
+          </div>
+          <div class="mini-bi metric-cost">
+            <small>Average Budget Use</small>
+            <strong id="topCostDriver">-</strong>
+            <span id="topCostDriverAmount">0 over budget</span>
+          </div>
+        </div>
+        <div id="businessInsightList" class="insight-list"></div>
+      </div>
+    </div>
+
+    <aside class="executive-side-rail" aria-label="Executive dashboard side insights">
+      <div class="card dashboard-panel alert-panel alerts-panel executive-side-card">
+        <div class="card-head">
+          <div>
+            <h3>Risk Alerts</h3>
+            <p class="muted">Budget and cost issues that need action.</p>
+          </div>
+        </div>
+        <div id="costAlertList" class="alert-list"></div>
+      </div>
+
+      <div class="card dashboard-panel health-panel executive-side-card">
+        <div class="card-head">
+          <div>
+            <h3>Project Health</h3>
             <p class="muted">Budget condition across active projects.</p>
           </div>
         </div>
@@ -224,70 +287,24 @@
         <p class="health-caption" id="projectHealthCaption">No active project health data yet.</p>
       </div>
 
-      <div class="card dashboard-panel table-card risk-table-panel">
+      <div class="card dashboard-panel table-card risk-table-panel executive-side-card">
         <div class="card-head">
           <div>
-            <h3>Project Profitability Overview</h3>
-            <p class="muted">Top performer and project that needs margin review.</p>
+            <h3>Profitability Snapshot</h3>
+            <p class="muted">Best performer and project for review.</p>
           </div>
           <a class="dashboard-card-link" href="revenue.html">View revenue</a>
         </div>
         <div id="profitabilityHighlights" class="profitability-highlights"></div>
       </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="dashboard-section-block">
-      <div class="dashboard-section-title">
-        <div>
-          <small>Collections and Operations</small>
-          <h2>Receivables, CCTV material use, and cost alerts</h2>
-        </div>
-      </div>
-      <div class="dashboard-row dashboard-row-support">
-      <div class="card dashboard-panel summary-card summary-panel">
-        <div class="card-head">
-          <div>
-            <h3>Collection Status</h3>
-            <p class="muted">Client payments and remaining collectibles.</p>
-          </div>
-        </div>
-        <div class="collection-rate-card">
-          <div>
-            <small>Collection Rate</small>
-            <strong id="collectionRate">0.00%</strong>
-          </div>
-          <div class="collection-rate-bar"><span id="collectionRateBar" style="width:0%"></span></div>
-        </div>
-        <div id="collectionProjectList" class="collection-project-list" aria-label="Projects with collection balance"></div>
-        <div class="summary-list">
-          <div class="summary-row">
-            <small>Total Contract Amount</small>
-            <strong id="collectionContractTotal">PHP 0.00</strong>
-          </div>
-          <div class="summary-row">
-            <small>Amount Paid</small>
-            <strong id="collectionPaidTotal">PHP 0.00</strong>
-          </div>
-          <div class="summary-row">
-            <small>Remaining Collectibles</small>
-            <strong id="collectionBalanceTotal">PHP 0.00</strong>
-          </div>
-          <div class="summary-row">
-            <small>Projects with Balance</small>
-            <strong id="collectionOpenProjects">0</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="card dashboard-panel inventory-panel">
+      <div class="card dashboard-panel inventory-panel executive-side-card">
         <div class="inventory-panel-layout">
           <div class="inventory-panel-icon">I</div>
           <div>
-            <h3>Project Materials</h3>
+            <h3>CCTV Materials Used</h3>
             <strong id="inventoryPanelCount">0</strong>
-            <span>CCTV material records used</span>
+            <span>Material records used</span>
           </div>
         </div>
         <div class="inventory-panel-stats">
@@ -301,53 +318,12 @@
           </div>
         </div>
       </div>
-
-      <div class="card dashboard-panel alert-panel alerts-panel">
-        <div class="card-head">
-          <div>
-            <h3>Cost Overrun Alerts</h3>
-            <p class="muted">Projects whose payroll and operational expenses are near or above contract budget.</p>
-          </div>
-        </div>
-        <div id="costAlertList" class="alert-list"></div>
-      </div>
-      </div>
-    </div>
-
-    <div class="card dashboard-panel insight-panel insights-panel">
-      <div class="card-head">
-        <div>
-          <h3>Attention Required</h3>
-          <p class="muted">Decision-support messages from current records.</p>
-        </div>
-      </div>
-      <div class="bi-mini-grid">
-        <div class="mini-bi metric-profit">
-          <small>Profit Margin</small>
-          <strong id="profitMargin">0.00%</strong>
-        </div>
-        <div class="mini-bi metric-risk">
-          <small>Projects Near Budget Limit</small>
-          <strong id="riskProjectCount">0</strong>
-        </div>
-        <div class="mini-bi metric-best">
-          <small>Total Remaining Budget</small>
-          <strong id="bestProjectProfit">PHP 0.00</strong>
-          <span id="bestProjectName">Across monitored projects.</span>
-        </div>
-        <div class="mini-bi metric-cost">
-          <small>Average Budget Use</small>
-          <strong id="topCostDriver">-</strong>
-          <span id="topCostDriverAmount">0 over budget</span>
-        </div>
-      </div>
-      <div id="businessInsightList" class="insight-list"></div>
-    </div>
+    </aside>
   </section>
 
 </main>
 
-<script type="module" src="js/app.js?v=20260820-bi-pro-dashboard-v221"></script>
+<script type="module" src="js/app.js?v=20260820-bi-executive-ref-v222"></script>
 
 
 </body>

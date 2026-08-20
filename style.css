@@ -1709,6 +1709,98 @@ tbody tr:hover{
   gap:14px;
 }
 
+.executive-bi-board{
+  grid-template-columns:minmax(0,1fr) minmax(310px,340px);
+  gap:14px;
+  align-items:start;
+}
+
+.executive-main-column,
+.executive-side-rail{
+  display:grid;
+  gap:14px;
+  min-width:0;
+}
+
+.executive-side-rail{
+  position:sticky;
+  top:14px;
+}
+
+.executive-hero-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.75fr) minmax(300px,.88fr);
+  gap:14px;
+  align-items:stretch;
+}
+
+.executive-lower-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);
+  gap:14px;
+  align-items:start;
+}
+
+.executive-chart-panel,
+.executive-breakdown-panel,
+.executive-collection-panel,
+.executive-budget-panel,
+.executive-insight-panel,
+.executive-side-card{
+  border:1px solid #d8e3ee;
+  box-shadow:0 10px 24px rgba(15,45,75,.05);
+}
+
+.executive-chart-panel{
+  min-height:380px;
+}
+
+.executive-breakdown-panel{
+  min-height:380px;
+}
+
+.executive-budget-panel .compact-profit-list{
+  max-height:360px;
+  overflow:auto;
+  padding-right:2px;
+}
+
+.executive-collection-panel .collection-project-scroll{
+  max-height:180px;
+}
+
+.executive-side-card .card-head h3,
+.executive-insight-panel .card-head h3{
+  font-size:14px;
+}
+
+.executive-side-card .muted{
+  font-size:11px;
+  line-height:1.35;
+}
+
+.executive-side-card .alert-list,
+.executive-insight-panel .insight-list{
+  margin-top:10px;
+}
+
+.executive-side-card .cost-alert-card{
+  padding:10px;
+}
+
+.executive-side-card .profitability-highlights{
+  grid-template-columns:1fr;
+}
+
+.executive-side-card .profitability-card{
+  min-height:0;
+  padding:10px;
+}
+
+.executive-side-card .inventory-panel-stats .inventory-project-block{
+  max-height:150px;
+}
+
 .dashboard-section-block{
   display:grid;
   gap:8px;
@@ -2000,11 +2092,11 @@ tbody tr:hover{
 .health-count-grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;
+  gap:6px;
 }
 
 .health-count-grid div{
-  padding:10px;
+  padding:8px;
   border:1px solid var(--line);
   border-radius:var(--radius);
   background:#f8fafc;
@@ -2026,7 +2118,7 @@ tbody tr:hover{
 .health-count-grid strong{
   margin-top:5px;
   color:var(--text);
-  font-size:20px;
+  font-size:18px;
   font-weight:900;
 }
 
@@ -2068,7 +2160,7 @@ tbody tr:hover{
 }
 
 .chart-frame-sm{
-  height:205px;
+  height:235px;
 }
 
 .chart-frame-xs{
@@ -4180,6 +4272,17 @@ tbody tr:hover{
     grid-template-columns:1fr;
   }
 
+  .executive-bi-board,
+  .executive-hero-grid,
+  .executive-lower-grid{
+    grid-template-columns:1fr;
+  }
+
+  .executive-side-rail{
+    position:static;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
   .dashboard-row-financial,
   .dashboard-row-projects,
   .dashboard-row-support{
@@ -4269,7 +4372,11 @@ tbody tr:hover{
   .dashboard-row-financial,
   .dashboard-row-projects,
   .dashboard-row-support,
-  .dashboard-side-stack{
+  .dashboard-side-stack,
+  .executive-bi-board,
+  .executive-hero-grid,
+  .executive-lower-grid,
+  .executive-side-rail{
     grid-template-columns:1fr;
   }
 

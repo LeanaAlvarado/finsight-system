@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260820-bi-pro-dashboard-v221";
+import { supabase } from "./supabase.js?v=20260820-bi-executive-ref-v222";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_INVENTORY_KEY = "lemyu_saved_inventory";

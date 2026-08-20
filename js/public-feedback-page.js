@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260820-bi-pro-dashboard-v221";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260820-bi-executive-ref-v222";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");

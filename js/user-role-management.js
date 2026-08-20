@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260820-bi-pro-dashboard-v221";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260820-bi-executive-ref-v222";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [
