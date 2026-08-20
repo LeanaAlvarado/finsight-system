@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-executive-ref-v222";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-row-align-v223";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

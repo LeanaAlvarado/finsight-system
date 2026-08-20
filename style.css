@@ -1738,7 +1738,7 @@ tbody tr:hover{
   display:grid;
   grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);
   gap:14px;
-  align-items:start;
+  align-items:stretch;
 }
 
 .executive-chart-panel,
@@ -1760,9 +1760,18 @@ tbody tr:hover{
 }
 
 .executive-budget-panel .compact-profit-list{
-  max-height:360px;
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none;
   overflow:auto;
   padding-right:2px;
+}
+
+.executive-collection-panel,
+.executive-budget-panel{
+  display:flex;
+  flex-direction:column;
+  height:100%;
 }
 
 .executive-collection-panel .collection-project-scroll{
