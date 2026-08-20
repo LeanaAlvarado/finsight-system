@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-bi-executive-polish-v219";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-bi-layout-density-v220";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");

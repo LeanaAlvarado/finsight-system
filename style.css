@@ -132,7 +132,8 @@ body{
 
 .dashboard-main{
   display:grid;
-  gap:16px;
+  gap:12px;
+  padding:18px;
   background:#f5f7fb;
   color:#152238;
 }
@@ -141,7 +142,7 @@ body{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap:18px;
+  gap:14px;
   padding:2px 2px 0;
 }
 
@@ -151,7 +152,7 @@ body{
 
 .dashboard-title-block h1{
   color:#0f172a;
-  font-size:25px;
+  font-size:24px;
   font-weight:800;
   letter-spacing:0;
   margin-bottom:4px;
@@ -458,9 +459,10 @@ body{
 .metric-card{
   display:flex;
   flex-direction:column;
-  justify-content:space-between;
-  min-height:116px;
-  padding:15px 16px;
+  justify-content:flex-start;
+  gap:6px;
+  min-height:92px;
+  padding:12px 14px;
 }
 
 .metric-top{
@@ -474,10 +476,10 @@ body{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  flex:0 0 30px;
-  width:30px;
-  height:30px;
-  border-radius:10px;
+  flex:0 0 28px;
+  width:28px;
+  height:28px;
+  border-radius:9px;
   background:var(--primary-soft);
   color:var(--primary-dark);
   font-size:11px;
@@ -515,15 +517,18 @@ body{
 .kpi h2,
 .dark .amount,
 .dark-card .amount{
-  margin:9px 0 3px;
+  margin:2px 0 0;
   color:var(--text);
-  font-size:20px;
+  font-size:19px;
   font-weight:800;
+  line-height:1.2;
+  white-space:nowrap;
 }
 
 .kpi p{
   color:var(--muted);
-  font-size:12px;
+  font-size:11px;
+  line-height:1.35;
 }
 
 .dark,
@@ -1666,8 +1671,8 @@ tbody tr:hover{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap:16px;
-  margin-bottom:10px;
+  gap:12px;
+  margin-bottom:8px;
 }
 
 .card-head h3{
@@ -1699,64 +1704,68 @@ tbody tr:hover{
 
 .dashboard-board{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  grid-template-areas:
-    "overview overview expense ranking"
-    "overview overview expense health"
-    "table table summary inventory"
-    "insights insights insights alerts";
-  align-items:stretch;
+  grid-template-columns:minmax(0,2fr) minmax(260px,1fr) minmax(300px,1.08fr);
+  align-items:start;
   gap:12px;
 }
 
+.dashboard-column{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+}
+
 .dashboard-panel{
+  align-self:start;
+  height:auto;
   min-height:0;
-  padding:14px 15px;
+  width:100%;
+  padding:12px 14px;
 }
 
 .dashboard-board > .chart-card,
 .dashboard-board > .expense-breakdown-card,
 .dashboard-board > .compact-ranking-panel{
-  min-height:292px;
+  min-height:0;
 }
 
 .overview-panel{
-  grid-area:overview;
+  align-self:start;
 }
 
 .expense-panel{
-  grid-area:expense;
+  align-self:start;
 }
 
 .compact-ranking-panel{
-  grid-area:ranking;
+  align-self:start;
 }
 
 .health-panel{
-  grid-area:health;
+  align-self:start;
 }
 
 .inventory-panel{
-  grid-area:inventory;
   align-self:stretch;
 }
 
 .summary-panel{
-  grid-area:summary;
+  align-self:start;
 }
 
 .insights-panel{
-  grid-area:insights;
+  grid-column:1 / -1;
   display:flex;
   flex-direction:column;
 }
 
 .alerts-panel{
-  grid-area:alerts;
+  align-self:start;
 }
 
 .risk-table-panel{
-  grid-area:table;
+  align-self:start;
 }
 
 .dashboard-card-link{
@@ -2010,7 +2019,7 @@ tbody tr:hover{
 }
 
 .chart-frame-sm{
-  height:204px;
+  height:190px;
 }
 
 .chart-frame-xs{
@@ -2246,8 +2255,8 @@ tbody tr:hover{
 }
 
 .insights-panel .insight-list{
-  flex:1;
-  grid-template-rows:repeat(auto-fit,minmax(58px,1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;
 }
 
 .insight-item,
@@ -2652,7 +2661,6 @@ tbody tr:hover{
   flex-direction:column;
   gap:12px;
   justify-content:flex-start;
-  min-height:100%;
 }
 
 .inventory-panel-layout{
@@ -2705,7 +2713,6 @@ tbody tr:hover{
   gap:8px;
   border-top:0;
   padding-top:0;
-  flex:1;
   align-content:start;
 }
 
@@ -4122,14 +4129,11 @@ tbody tr:hover{
 
   .dashboard-board{
     grid-template-columns:repeat(2,minmax(0,1fr));
-    grid-template-areas:
-      "overview overview"
-      "expense ranking"
-      "health health"
-      "summary inventory"
-      "table table"
-      "insights insights"
-      "alerts alerts";
+  }
+
+  .dashboard-column-main,
+  .insights-panel{
+    grid-column:1 / -1;
   }
 
   .bi-mini-grid{
@@ -4210,16 +4214,17 @@ tbody tr:hover{
   }
 
   .dashboard-board{
-    grid-template-areas:
-      "overview"
-      "expense"
-      "ranking"
-      "health"
-      "inventory"
-      "summary"
-      "table"
-      "insights"
-      "alerts";
+    grid-template-columns:1fr;
+  }
+
+  .dashboard-column-main,
+  .insights-panel{
+    grid-column:auto;
+  }
+
+  .insights-panel .insight-list,
+  .profitability-highlights{
+    grid-template-columns:1fr;
   }
 
   .topbar{

@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260820-bi-executive-polish-v219";
+import { supabase } from "./supabase.js?v=20260820-bi-layout-density-v220";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

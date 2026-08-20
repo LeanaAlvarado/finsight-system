@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-executive-polish-v219";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-layout-density-v220";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
