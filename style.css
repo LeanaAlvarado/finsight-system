@@ -1751,12 +1751,25 @@ tbody tr:hover{
   box-shadow:0 10px 24px rgba(15,45,75,.05);
 }
 
+.executive-hero-grid > .dashboard-panel,
+.executive-lower-grid > .dashboard-panel{
+  align-self:stretch;
+  height:100%;
+}
+
 .executive-chart-panel{
   min-height:380px;
 }
 
 .executive-breakdown-panel{
+  display:flex;
+  flex-direction:column;
   min-height:380px;
+}
+
+.executive-breakdown-panel .expense-breakdown-layout{
+  flex:1 1 auto;
+  align-content:center;
 }
 
 .executive-budget-panel .compact-profit-list{

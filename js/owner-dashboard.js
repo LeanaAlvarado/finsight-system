@@ -1,4 +1,4 @@
-import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-card-height-v224";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-bottom-align-v225";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([
