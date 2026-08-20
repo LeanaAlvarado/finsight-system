@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-layout-density-v220";
+import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-bi-pro-dashboard-v221";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -511,7 +511,7 @@ function renderBudgetUtilizationList(projectAnalytics) {
   const rankedProjects = [...projectAnalytics]
     .filter(item => item.budget > 0)
     .sort((a, b) => b.budgetUtilization - a.budgetUtilization)
-    .slice(0, 5);
+    .slice(0, 4);
 
   if (!rankedProjects.length) {
     list.innerHTML = `<div class="category-breakdown-empty">No project budget records available.</div>`;

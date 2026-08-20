@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260820-bi-layout-density-v220";
+import { supabase } from "./supabase.js?v=20260820-bi-pro-dashboard-v221";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([
