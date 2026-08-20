@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js?v=20260820-bi-row-align-v223";
+import { supabase } from "./supabase.js?v=20260820-bi-card-height-v224";
 
 const CLOUD_KEYS_PREFIX = "lemyu_";
 const EXCLUDED_KEYS = new Set([

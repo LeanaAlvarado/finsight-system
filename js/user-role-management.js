@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260820-bi-row-align-v223";
+import { escapeHtml, formatDate, setText, supabase } from "./supabase.js?v=20260820-bi-card-height-v224";
 import { hashPassword, validateStrongPassword } from "./auth-security.js";
 
 const MODULES = [

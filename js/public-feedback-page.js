@@ -1,4 +1,4 @@
-import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260820-bi-row-align-v223";
+import { insertWithOptionalColumns, number, supabase } from "./supabase.js?v=20260820-bi-card-height-v224";
 
 const params = new URLSearchParams(window.location.search);
 const projectId = params.get("project_id");
