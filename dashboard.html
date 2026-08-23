@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260823-financial-health-v235">
+<link rel="stylesheet" href="style.css?v=20260823-financial-table-v236">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -187,24 +187,7 @@
             <a class="dashboard-card-link" href="revenue.html?view=budget-utilization">View details</a>
           </div>
 
-          <div class="financial-health-grid">
-            <section class="financial-health-section executive-collection-panel" aria-labelledby="collectionHealthTitle">
-              <h4 id="collectionHealthTitle">Collection Status</h4>
-              <div class="collection-rate-card">
-                <div>
-                  <small>Collection Rate</small>
-                  <strong id="collectionRate">0.00%</strong>
-                </div>
-                <div class="collection-rate-bar"><span id="collectionRateBar" style="width:0%"></span></div>
-              </div>
-              <div id="collectionProjectList" class="collection-project-list" aria-label="Projects with collection balance"></div>
-            </section>
-
-            <section class="financial-health-section executive-budget-panel" aria-labelledby="budgetHealthTitle">
-              <h4 id="budgetHealthTitle">Budget Utilization</h4>
-              <div id="budgetUtilizationList" class="compact-profit-list"></div>
-            </section>
-          </div>
+          <div id="projectFinancialHealthTable" class="project-financial-health-table" aria-label="Project collection and budget health"></div>
 
         </div>
       </div>
@@ -307,7 +290,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260823-financial-health-v235"></script>
+<script type="module" src="js/app.js?v=20260823-financial-table-v236"></script>
 
 
 </body>

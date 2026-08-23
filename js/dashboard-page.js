@@ -206,55 +206,80 @@ function getProjectCollectionPaid(project = {}) {
   return Math.min(Math.max(firstPayment + progressPayment, 0), contract);
 }
 
-function renderCollectionStatus(projects = []) {
-  const list = document.getElementById("collectionProjectList");
-  const totalContract = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
-  const totalPaid = projects.reduce((sum, project) => sum + getProjectCollectionPaid(project), 0);
-  const collectionRate = totalContract > 0 ? (totalPaid / totalContract) * 100 : 0;
-  const projectRows = projects
-    .map(project => {
-      const contract = number(project.contract_amount);
-      const paid = getProjectCollectionPaid(project);
-      const balance = Math.max(contract - paid, 0);
-      return {
-        code: project.project_code || project.project_title || "Project",
-        contract,
-        paid,
-        balance
-      };
+function renderProjectFinancialHealth(projectAnalytics = []) {
+  const panel = document.getElementById("projectFinancialHealthTable");
+  if (!panel) return;
+
+  const rows = projectAnalytics
+    .filter(item => item.revenue > 0 || item.budget > 0)
+    .map(item => {
+      const paid = getProjectCollectionPaid(item.project);
+      const balance = Math.max(item.revenue - paid, 0);
+      return { ...item, paid, balance, health: getBudgetStatusInfo(item) };
     })
-    .filter(row => row.contract > 0 && row.balance > 0)
-    .sort((a, b) => b.balance - a.balance);
-  if (list) {
-    list.innerHTML = projectRows.length
-      ? `
-        <div class="collection-project-title">
-          <strong>Projects with Unpaid Balance</strong>
-          <span>${projectRows.length} project${projectRows.length === 1 ? "" : "s"}</span>
-        </div>
-        <div class="collection-project-head">
-          <span>Project</span>
-          <span>Contract</span>
-          <span>Paid</span>
-          <span>Balance</span>
-        </div>
-        <div class="collection-project-scroll">
-        ${projectRows.map(row => `
-          <div class="collection-project-row">
-            <strong>${escapeHtml(row.code)}</strong>
-            <span>${compactPeso(row.contract)}</span>
-            <span>${compactPeso(row.paid)}</span>
-            <span>${compactPeso(row.balance)}</span>
-          </div>
-        `).join("")}
-        </div>
-      `
-      : `<div class="category-breakdown-empty"><strong>No Outstanding Collections</strong><span>All recorded project collections are currently up to date.</span></div>`;
+    .sort((a, b) => b.balance - a.balance || b.budgetUtilization - a.budgetUtilization);
+
+  if (!rows.length) {
+    panel.innerHTML = `<div class="category-breakdown-empty">No project financial records available.</div>`;
+    return;
   }
 
-  setText("collectionRate", `${collectionRate.toFixed(2)}%`);
-  const collectionRateBar = document.getElementById("collectionRateBar");
-  if (collectionRateBar) collectionRateBar.style.width = `${Math.min(Math.max(collectionRate, 0), 100).toFixed(2)}%`;
+  const totalContract = rows.reduce((sum, item) => sum + item.revenue, 0);
+  const totalPaid = rows.reduce((sum, item) => sum + item.paid, 0);
+  const collectionRate = totalContract > 0 ? (totalPaid / totalContract) * 100 : 0;
+
+  panel.innerHTML = `
+    <div class="financial-health-summary">
+      <span><small>Portfolio Collection Rate</small><strong>${collectionRate.toFixed(2)}%</strong></span>
+      <span><small>Projects Monitored</small><strong>${rows.length}</strong></span>
+    </div>
+    <div class="financial-health-table-scroll">
+      <table class="unified-financial-health-table">
+        <colgroup>
+          <col style="width:22%">
+          <col span="6" style="width:9%">
+          <col span="2" style="width:12%">
+        </colgroup>
+        <thead>
+          <tr class="financial-group-head">
+            <th rowspan="2">Project</th>
+            <th colspan="3">Collection Status</th>
+            <th colspan="4">Budget Utilization</th>
+            <th rowspan="2">Health</th>
+          </tr>
+          <tr>
+            <th>Contract</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Budget</th>
+            <th>Used</th>
+            <th>Remaining</th>
+            <th>Utilized</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(item => `
+            <tr>
+              <td><strong title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</strong></td>
+              <td>${compactPeso(item.revenue)}</td>
+              <td>${compactPeso(item.paid)}</td>
+              <td>${compactPeso(item.balance)}</td>
+              <td>${compactPeso(item.budget)}</td>
+              <td>${compactPeso(item.budgetSpendWithoutMaterials)}</td>
+              <td>${compactPeso(item.budgetRemaining)}</td>
+              <td>
+                <div class="financial-utilization-cell">
+                  <span>${item.budgetUtilization.toFixed(1)}%</span>
+                  <div class="compact-profit-bar"><span style="width:${Math.min(Math.max(item.budgetUtilization, 3), 100).toFixed(2)}%"></span></div>
+                </div>
+              </td>
+              <td><span class="bi-status ${item.health.className}">${item.health.label}</span></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 function getRecordDate(record = {}) {
@@ -1243,7 +1268,7 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   renderExpenseCategoryChart(categoryTotals);
   renderCategoryBreakdownList(categoryTotals);
   renderProfitabilityTable(projectAnalytics);
-  renderBudgetUtilizationList(projectAnalytics);
+  renderProjectFinancialHealth(projectAnalytics);
   renderProjectHealthOverview(projectAnalytics);
   renderInventoryProjectList(projects, projectMaterials);
   renderCostAlerts(costAlerts);
@@ -1317,8 +1342,6 @@ async function loadDashboard(){
   setText("projectCount", financialProjects.length);
   setText("inventoryPanelValue", peso(projectMaterialCost));
   setText("inventoryPanelCount", projectMaterials.length);
-  renderCollectionStatus(financialProjects);
-
   if (dashboardChart) {
     dashboardChart.destroy();
   }
