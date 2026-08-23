@@ -318,7 +318,7 @@ function renderRevenueTable() {
   if (!revenueTable) return;
 
   if (revenueLoadError) {
-    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="13" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
     renderRevenuePagination(0);
     return;
   }
@@ -334,7 +334,7 @@ function renderRevenueTable() {
     const message = revenueProjects.length && hasActiveRevenueFilters()
       ? "No projects match the selected filters."
       : "No project records found.";
-    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">${message}</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="13" style="text-align:center;">${message}</td></tr>`;
     renderRevenuePagination(totalItems);
     return;
   }
@@ -345,7 +345,6 @@ function renderRevenueTable() {
     return `
     <tr>
       <td>${escapeHtml(row.project.project_title || "-")}</td>
-      <td>${escapeHtml(row.project.client_name || "-")}</td>
       <td>${peso(row.contract)}</td>
       <td>${peso(row.budget)}</td>
       <td>${peso(row.downPayment)}</td>
@@ -373,7 +372,7 @@ function renderRevenueTable() {
 
 async function loadRevenue({ silent = false } = {}) {
   if (!silent && revenueTable && !revenueProjects.length) {
-    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Loading project records...</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="13" style="text-align:center;">Loading project records...</td></tr>`;
   }
 
   const [projectResult, expenseResult, payrollResult] = await Promise.all([

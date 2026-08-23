@@ -3687,21 +3687,21 @@ tbody tr:hover{
   word-break:normal;
 }
 
-.revenue-breakdown-table td:nth-child(n+3){
+.revenue-breakdown-table td:nth-child(n+2){
   font-variant-numeric:tabular-nums;
 }
 
+.revenue-breakdown-table td:nth-child(2),
 .revenue-breakdown-table td:nth-child(3),
 .revenue-breakdown-table td:nth-child(4),
 .revenue-breakdown-table td:nth-child(5),
-.revenue-breakdown-table td:nth-child(6),
+.revenue-breakdown-table td:nth-child(7),
 .revenue-breakdown-table td:nth-child(8),
 .revenue-breakdown-table td:nth-child(9),
 .revenue-breakdown-table td:nth-child(10),
 .revenue-breakdown-table td:nth-child(11),
 .revenue-breakdown-table td:nth-child(12),
-.revenue-breakdown-table td:nth-child(13),
-.revenue-breakdown-table td:nth-child(14){
+.revenue-breakdown-table td:nth-child(13){
   white-space:nowrap;
 }
 
@@ -3888,49 +3888,37 @@ tbody tr:hover{
 
 .revenue-breakdown-table th:nth-child(1),
 .revenue-breakdown-table td:nth-child(1){
-  width:11%;
+  width:14%;
 }
 
 .revenue-breakdown-table th:nth-child(2),
-.revenue-breakdown-table td:nth-child(2){
-  width:9%;
-}
-
 .revenue-breakdown-table th:nth-child(3),
 .revenue-breakdown-table th:nth-child(4),
 .revenue-breakdown-table th:nth-child(5),
-.revenue-breakdown-table th:nth-child(6),
+.revenue-breakdown-table th:nth-child(7),
 .revenue-breakdown-table th:nth-child(8),
 .revenue-breakdown-table th:nth-child(9),
 .revenue-breakdown-table th:nth-child(10),
 .revenue-breakdown-table th:nth-child(11),
 .revenue-breakdown-table th:nth-child(12),
 .revenue-breakdown-table th:nth-child(13),
-.revenue-breakdown-table th:nth-child(14),
+.revenue-breakdown-table td:nth-child(2),
 .revenue-breakdown-table td:nth-child(3),
 .revenue-breakdown-table td:nth-child(4),
 .revenue-breakdown-table td:nth-child(5),
-.revenue-breakdown-table td:nth-child(6),
+.revenue-breakdown-table td:nth-child(7),
 .revenue-breakdown-table td:nth-child(8),
 .revenue-breakdown-table td:nth-child(9),
 .revenue-breakdown-table td:nth-child(10),
 .revenue-breakdown-table td:nth-child(11),
 .revenue-breakdown-table td:nth-child(12),
-.revenue-breakdown-table td:nth-child(13),
-.revenue-breakdown-table td:nth-child(14){
-  width:6.5%;
+.revenue-breakdown-table td:nth-child(13){
+  width:7%;
 }
 
-.revenue-breakdown-table th:nth-child(7),
-.revenue-breakdown-table td:nth-child(7){
-  width:8%;
-}
-
-.revenue-breakdown-table th:nth-child(13),
-.revenue-breakdown-table td:nth-child(13),
-.revenue-breakdown-table th:nth-child(14),
-.revenue-breakdown-table td:nth-child(14){
-  width:6.75%;
+.revenue-breakdown-table th:nth-child(6),
+.revenue-breakdown-table td:nth-child(6){
+  width:9%;
 }
 
 .revenue-breakdown-table .inline-edit{
