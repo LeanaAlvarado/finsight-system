@@ -1995,6 +1995,11 @@ tbody tr:hover{
   overflow-x:hidden;
   border:1px solid var(--line);
   border-radius:0 0 7px 7px;
+  scrollbar-width:thin;
+}
+
+.financial-health-table-scroll::-webkit-scrollbar{
+  width:6px;
 }
 
 .unified-financial-health-table{
@@ -2012,8 +2017,12 @@ tbody tr:hover{
 
 .unified-financial-health-table th{
   font-size:8px;
-  letter-spacing:.025em;
+  letter-spacing:.015em;
   text-align:center;
+  white-space:normal;
+  overflow:hidden;
+  overflow-wrap:normal;
+  word-break:normal;
 }
 
 .unified-financial-health-table .financial-group-head th{
@@ -2046,11 +2055,22 @@ tbody tr:hover{
   border-left:1px solid #d7e2ec;
 }
 
+.unified-financial-health-table thead tr:last-child th + th,
+.unified-financial-health-table tbody td + td{
+  border-left:1px solid #e4ebf2;
+}
+
 .unified-financial-health-table .bi-status{
   min-height:20px;
+  max-width:100%;
   padding:3px 6px;
   font-size:8px;
   white-space:nowrap;
+}
+
+.unified-financial-health-table td:nth-child(9){
+  text-align:center;
+  overflow:hidden;
 }
 
 .financial-utilization-cell{

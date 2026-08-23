@@ -246,8 +246,8 @@ function renderProjectFinancialHealth(projectAnalytics = []) {
         <colgroup>
           <col style="width:20%">
           <col span="6" style="width:9.666%">
-          <col style="width:12%">
           <col style="width:10%">
+          <col style="width:12%">
         </colgroup>
         <thead>
           <tr class="financial-group-head">
@@ -260,10 +260,10 @@ function renderProjectFinancialHealth(projectAnalytics = []) {
             <th>Contract</th>
             <th>Paid</th>
             <th>Balance</th>
-            <th>Allocated</th>
+            <th>Budget</th>
             <th>Used</th>
-            <th>Remaining</th>
-            <th>Usage</th>
+            <th>Left</th>
+            <th>Use %</th>
           </tr>
         </thead>
         <tbody>
