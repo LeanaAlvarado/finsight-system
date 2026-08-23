@@ -244,10 +244,10 @@ function renderProjectFinancialHealth(projectAnalytics = []) {
     <div class="financial-health-table-scroll">
       <table class="unified-financial-health-table">
         <colgroup>
-          <col style="width:20%">
-          <col span="6" style="width:9.666%">
+          <col style="width:30%">
+          <col span="6" style="width:8.333%">
           <col style="width:10%">
-          <col style="width:12%">
+          <col style="width:10%">
         </colgroup>
         <thead>
           <tr class="financial-group-head">
