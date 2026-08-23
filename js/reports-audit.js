@@ -781,9 +781,9 @@ function renderReports() {
 
   const totalRevenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const totalProjectCost = financialProjects.reduce((sum, project) => sum + number(project.project_budget), 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
-  const totalPayroll = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
-  const expenseRecords = expenses.length + payroll.length;
+  // Payroll-linked expenses are already saved and displayed in the expenses table.
+  // Count the same source used by Expense Records to avoid counting payroll twice.
+  const expenseRecords = expenses.length;
   const netResult = totalRevenue - totalProjectCost;
   const netMargin = totalRevenue ? (netResult / totalRevenue) * 100 : 0;
 
