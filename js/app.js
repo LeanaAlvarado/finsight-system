@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260823-dashboard-flow-v243";
+const appVersion = "20260823-dashboard-typography-v244";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",
