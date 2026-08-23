@@ -96,9 +96,9 @@ function getDownPaymentsMap() {
   }
 }
 
-function getProjectDownPayment(project) {
+function getProjectDownPayments(project) {
   const contract = Math.max(number(project?.contract_amount), 0);
-  if (!contract) return 0;
+  if (!contract) return { first: 0, second: 0, total: 0 };
 
   const savedFirstPayment = number(project?.down_payment ?? getDownPaymentsMap()[project?.id] ?? 0);
   const firstPercent = number(project?.billing_down_payment_percent);
@@ -110,7 +110,10 @@ function getProjectDownPayment(project) {
     ? contract * (secondPercent / 100)
     : 0;
 
-  return Math.min(Math.max(firstPayment + secondPayment, 0), contract);
+  const first = Math.min(Math.max(firstPayment, 0), contract);
+  const second = Math.min(Math.max(secondPayment, 0), Math.max(contract - first, 0));
+
+  return { first, second, total: first + second };
 }
 
 function normalizeMatchValue(value = "") {
@@ -161,8 +164,8 @@ function getProjectFinancials(project = {}) {
   const budgetUsed = projectExpenses + projectPayroll;
   const remainingBudget = budget - budgetUsed;
   const budgetUtilization = budget > 0 ? (budgetUsed / budget) * 100 : 0;
-  const downPayment = getProjectDownPayment(project);
-  const balance = Math.max(contract - downPayment, 0);
+  const downPayments = getProjectDownPayments(project);
+  const balance = Math.max(contract - downPayments.total, 0);
   const taxPercent = project.tax_amount === null || project.tax_amount === undefined || project.tax_amount === ""
     ? 0
     : number(project.tax_amount);
@@ -178,7 +181,9 @@ function getProjectFinancials(project = {}) {
     budgetUsed,
     remainingBudget,
     budgetUtilization,
-    downPayment,
+    firstDownPayment: downPayments.first,
+    secondDownPayment: downPayments.second,
+    downPayment: downPayments.total,
     balance,
     taxPercent,
     tax,
@@ -318,7 +323,7 @@ function renderRevenueTable() {
   if (!revenueTable) return;
 
   if (revenueLoadError) {
-    revenueTable.innerHTML = `<tr><td colspan="13" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Unable to load project records. Please try again.</td></tr>`;
     renderRevenuePagination(0);
     return;
   }
@@ -334,7 +339,7 @@ function renderRevenueTable() {
     const message = revenueProjects.length && hasActiveRevenueFilters()
       ? "No projects match the selected filters."
       : "No project records found.";
-    revenueTable.innerHTML = `<tr><td colspan="13" style="text-align:center;">${message}</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">${message}</td></tr>`;
     renderRevenuePagination(totalItems);
     return;
   }
@@ -347,7 +352,8 @@ function renderRevenueTable() {
       <td>${escapeHtml(row.project.project_title || "-")}</td>
       <td>${peso(row.contract)}</td>
       <td>${peso(row.budget)}</td>
-      <td>${peso(row.downPayment)}</td>
+      <td>${peso(row.firstDownPayment)}</td>
+      <td>${peso(row.secondDownPayment)}</td>
       <td>${peso(row.balance)}</td>
       <td>
         <div class="inline-edit">
@@ -372,7 +378,7 @@ function renderRevenueTable() {
 
 async function loadRevenue({ silent = false } = {}) {
   if (!silent && revenueTable && !revenueProjects.length) {
-    revenueTable.innerHTML = `<tr><td colspan="13" style="text-align:center;">Loading project records...</td></tr>`;
+    revenueTable.innerHTML = `<tr><td colspan="14" style="text-align:center;">Loading project records...</td></tr>`;
   }
 
   const [projectResult, expenseResult, payrollResult] = await Promise.all([
