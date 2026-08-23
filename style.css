@@ -2007,15 +2007,15 @@ tbody tr:hover{
   table-layout:fixed;
 }
 
-.unified-financial-health-table th,
-.unified-financial-health-table td{
+.dashboard-panel .unified-financial-health-table th,
+.dashboard-panel .unified-financial-health-table td{
   padding:7px 5px;
   font-size:9px;
   line-height:1.25;
   vertical-align:middle;
 }
 
-.unified-financial-health-table th{
+.dashboard-panel .unified-financial-health-table th{
   font-size:6.5px;
   letter-spacing:0;
   text-align:center;
@@ -2025,7 +2025,7 @@ tbody tr:hover{
   word-break:normal;
 }
 
-.unified-financial-health-table thead tr:last-child th{
+.dashboard-panel .unified-financial-health-table thead tr:last-child th{
   padding-right:2px;
   padding-left:2px;
   font-size:6px;
