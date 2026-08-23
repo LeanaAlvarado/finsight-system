@@ -446,6 +446,28 @@ body{
   grid-template-columns:repeat(5,minmax(0,1fr));
 }
 
+.revenue-kpi-grid .kpi{
+  display:grid;
+  grid-template-rows:minmax(34px,auto) auto 1fr;
+  align-content:start;
+  min-width:0;
+  container-type:inline-size;
+  overflow:hidden;
+}
+
+.revenue-kpi-grid .kpi small{
+  display:block;
+  line-height:1.45;
+}
+
+.revenue-kpi-grid .kpi h2{
+  max-width:100%;
+  font-size:clamp(16px,8.2cqi,19px);
+  letter-spacing:-.025em;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 .grid2{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -3705,6 +3727,20 @@ tbody tr:hover{
   white-space:nowrap;
 }
 
+.revenue-breakdown-table td:nth-child(2),
+.revenue-breakdown-table td:nth-child(3),
+.revenue-breakdown-table td:nth-child(4),
+.revenue-breakdown-table td:nth-child(5),
+.revenue-breakdown-table td:nth-child(7),
+.revenue-breakdown-table td:nth-child(8),
+.revenue-breakdown-table td:nth-child(9),
+.revenue-breakdown-table td:nth-child(10),
+.revenue-breakdown-table td:nth-child(11),
+.revenue-breakdown-table td:nth-child(12),
+.revenue-breakdown-table td:nth-child(13){
+  text-align:right;
+}
+
 .revenue-breakdown-table .budget-cell{
   font-weight:900;
 }
@@ -3888,7 +3924,7 @@ tbody tr:hover{
 
 .revenue-breakdown-table th:nth-child(1),
 .revenue-breakdown-table td:nth-child(1){
-  width:14%;
+  width:13%;
 }
 
 .revenue-breakdown-table th:nth-child(2),
@@ -3899,9 +3935,6 @@ tbody tr:hover{
 .revenue-breakdown-table th:nth-child(8),
 .revenue-breakdown-table th:nth-child(9),
 .revenue-breakdown-table th:nth-child(10),
-.revenue-breakdown-table th:nth-child(11),
-.revenue-breakdown-table th:nth-child(12),
-.revenue-breakdown-table th:nth-child(13),
 .revenue-breakdown-table td:nth-child(2),
 .revenue-breakdown-table td:nth-child(3),
 .revenue-breakdown-table td:nth-child(4),
@@ -3909,16 +3942,28 @@ tbody tr:hover{
 .revenue-breakdown-table td:nth-child(7),
 .revenue-breakdown-table td:nth-child(8),
 .revenue-breakdown-table td:nth-child(9),
-.revenue-breakdown-table td:nth-child(10),
-.revenue-breakdown-table td:nth-child(11),
-.revenue-breakdown-table td:nth-child(12),
-.revenue-breakdown-table td:nth-child(13){
-  width:7%;
+.revenue-breakdown-table td:nth-child(10){
+  width:6.5%;
 }
 
 .revenue-breakdown-table th:nth-child(6),
 .revenue-breakdown-table td:nth-child(6){
+  width:8%;
+}
+
+.revenue-breakdown-table th:nth-child(11),
+.revenue-breakdown-table td:nth-child(11){
   width:9%;
+}
+
+.revenue-breakdown-table th:nth-child(12),
+.revenue-breakdown-table td:nth-child(12){
+  width:7%;
+}
+
+.revenue-breakdown-table th:nth-child(13),
+.revenue-breakdown-table td:nth-child(13){
+  width:11%;
 }
 
 .revenue-breakdown-table .inline-edit{
