@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260823-project-name-v239";
+const appVersion = "20260823-table-labels-v240";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",
