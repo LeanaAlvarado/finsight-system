@@ -3238,7 +3238,11 @@ function toggleEditQuotationTypeView() {
   EDIT_MANPOWER_HIDDEN_FIELD_IDS.forEach(id => {
     const field = document.getElementById(id);
     const wrapper = field?.closest(".form-grid > div");
-    if (wrapper) wrapper.style.display = isManpower ? "none" : "";
+    if (wrapper) {
+      wrapper.style.display = id === "edit_status"
+        ? (isManpower || isCctv ? "none" : "")
+        : (isManpower ? "none" : "");
+    }
   });
 
   const remarksField = document.getElementById("edit_remarks");
@@ -4927,6 +4931,8 @@ window.editProject = async function(id) {
   if (editCctvDurationDays) editCctvDurationDays.value = cctvDetails.durationDays || "";
   edit_completed_date.value = project.completed_date || "";
   edit_status.value = project.status || "Pending";
+  const editCctvStatus = document.getElementById("edit_cctv_status");
+  if (editCctvStatus) editCctvStatus.value = project.status || "Pending";
   edit_progress_percentage.value = getExplicitProjectProgress(project) || 0;
   const editManpowerProgress = document.getElementById("edit_manpower_progress_percentage");
   if (editManpowerProgress) editManpowerProgress.value = edit_progress_percentage.value;
@@ -4984,9 +4990,14 @@ document.getElementById("edit_quotation_type")?.addEventListener("change", toggl
 document.getElementById("edit_manpower_status")?.addEventListener("change", event => {
   if (edit_status) edit_status.value = event.target.value;
 });
+document.getElementById("edit_cctv_status")?.addEventListener("change", event => {
+  if (edit_status) edit_status.value = event.target.value;
+});
 document.getElementById("edit_status")?.addEventListener("change", event => {
   const manpowerStatus = document.getElementById("edit_manpower_status");
+  const cctvStatus = document.getElementById("edit_cctv_status");
   if (manpowerStatus) manpowerStatus.value = event.target.value;
+  if (cctvStatus) cctvStatus.value = event.target.value;
 });
 document.getElementById("edit_manpower_down_payment")?.addEventListener("input", event => {
   if (edit_down_payment) edit_down_payment.value = event.target.value;
@@ -5086,7 +5097,9 @@ if (editProjectForm) {
       completed_date: edit_completed_date.value || currentProject.completed_date || null,
       status: isManpower
         ? (document.getElementById("edit_manpower_status")?.value || currentProject.status || "Pending")
-        : (edit_status.value || currentProject.status || "Pending"),
+        : isCctv
+          ? (document.getElementById("edit_cctv_status")?.value || currentProject.status || "Pending")
+          : (edit_status.value || currentProject.status || "Pending"),
       progress_percentage: getProjectProgressInputValue(isManpower
         ? document.getElementById("edit_manpower_progress_percentage")
         : edit_progress_percentage),

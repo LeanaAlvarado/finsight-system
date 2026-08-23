@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Monitoring</title>
 
-<link rel="stylesheet" href="style.css?v=20260823-operations-active-projects-v249">
+<link rel="stylesheet" href="style.css?v=20260823-cctv-edit-status-v252">
 </head>
 
 <body class="project-monitoring-page">
@@ -412,6 +412,22 @@
       </div>
 
       <div id="editCctvMaterialsPanel" class="quotation-type-panel" style="display:none;">
+        <div class="form-grid cctv-quotation-settings">
+          <div>
+            <label>CCTV Quotation Status</label>
+            <select id="edit_cctv_status">
+              <option>Draft</option>
+              <option>Pending</option>
+              <option>Approved</option>
+              <option>Rejected</option>
+              <option>Ongoing</option>
+              <option>Completed</option>
+              <option>Delayed</option>
+              <option>Cancelled</option>
+            </select>
+          </div>
+        </div>
+
         <div class="uploaded-files-header">
           <h4>CCTV Quotation Materials</h4>
           <button id="toggleCctvMaterialsBtn" type="button" class="secondary-btn compact-toggle-btn" onclick="toggleEditCctvMaterials()">Show Materials</button>
@@ -540,7 +556,7 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=20260823-operations-active-projects-v249"></script>
+<script type="module" src="js/app.js?v=20260823-cctv-edit-status-v252"></script>
 
 </body>
 </html>

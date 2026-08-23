@@ -4641,6 +4641,11 @@ tbody tr:hover{
   text-align:right;
 }
 
+.cctv-quotation-settings{
+  grid-template-columns:minmax(240px,340px);
+  margin-bottom:14px;
+}
+
 /* Inventory Materials typography and table layout. */
 .inventory-materials-section > h3{
   font-size:17px;
