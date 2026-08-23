@@ -889,12 +889,23 @@ tbody tr:hover{
 
 .project-monitoring-main .table-wrap{
   margin-top:13px;
+  overflow-x:hidden;
 }
 
 .project-monitoring-main .monitoring-table{
-  min-width:1080px;
-  table-layout:auto;
+  width:100%;
+  min-width:0;
+  table-layout:fixed;
 }
+
+.project-monitoring-main .monitoring-table th:nth-child(1){ width:7%; }
+.project-monitoring-main .monitoring-table th:nth-child(2){ width:6%; }
+.project-monitoring-main .monitoring-table th:nth-child(3){ width:22%; }
+.project-monitoring-main .monitoring-table th:nth-child(4){ width:17%; }
+.project-monitoring-main .monitoring-table th:nth-child(5){ width:10%; }
+.project-monitoring-main .monitoring-table th:nth-child(6){ width:13%; }
+.project-monitoring-main .monitoring-table th:nth-child(7){ width:8%; }
+.project-monitoring-main .monitoring-table th:nth-child(8){ width:17%; }
 
 .project-monitoring-main .monitoring-table th{
   padding:9px 10px;
@@ -906,6 +917,7 @@ tbody tr:hover{
   padding:10px;
   font-size:12px;
   line-height:1.4;
+  overflow-wrap:anywhere;
 }
 
 .project-monitoring-main .monitoring-table th:first-child,
@@ -928,9 +940,23 @@ tbody tr:hover{
 
 .project-monitoring-main .action-links a,
 .project-monitoring-main .action-links span{
-  margin-bottom:4px;
-  font-size:11px;
-  line-height:1.3;
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+  margin:0;
+  font-size:10px;
+  line-height:1.2;
+}
+
+.project-monitoring-main .monitoring-table .action-links{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px 8px;
+}
+
+.project-monitoring-main .monitoring-table .contract-disabled-message{
+  grid-column:1 / -1;
+  max-width:none;
 }
 
 .project-monitoring-main .pagination-bar,
