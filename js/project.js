@@ -1127,14 +1127,24 @@ function getBillingFormValues(project = {}, useFormValues = true) {
     : useFormValues
     ? document.getElementById("edit_down_payment")
     : null;
+  const progressPercentField = useFormValues && isManpower
+    ? document.getElementById("edit_billing_progress_percent")
+    : useFormValues
+    ? document.getElementById("edit_cctv_billing_progress_percent")
+    : null;
+  const downPaymentPercent = Math.min(Math.max(Number(downPercentField?.value || saved.billing_down_payment_percent || 0), 0), 100);
+  const progressPercent = Math.min(
+    Math.max(Number(progressPercentField?.value || saved.billing_progress_percent || 0), 0),
+    Math.max(100 - downPaymentPercent, 0)
+  );
   return {
     purchase_order_number: (useFormValues ? document.getElementById("edit_purchase_order_number")?.value.trim() : "") || saved.purchase_order_number || "",
     purchase_order_amount: Number(contractField?.value || project.contract_amount || saved.purchase_order_amount || 0),
     purchase_order_file_name: saved.purchase_order_file_name || "",
     purchase_order_file_url: saved.purchase_order_file_url || "",
     billing_down_payment_amount: 0,
-    billing_down_payment_percent: Number(downPercentField?.value || saved.billing_down_payment_percent || 0),
-    billing_progress_percent: Number((useFormValues ? document.getElementById("edit_billing_progress_percent")?.value : "") || saved.billing_progress_percent || 0)
+    billing_down_payment_percent: downPaymentPercent,
+    billing_progress_percent: progressPercent
   };
 }
 
@@ -1142,7 +1152,8 @@ function fillBillingFields(project = {}) {
   const billing = getProjectBillingData(project);
   const fieldMap = {
     edit_purchase_order_number: billing.purchase_order_number,
-    edit_billing_progress_percent: billing.billing_progress_percent || ""
+    edit_billing_progress_percent: billing.billing_progress_percent || "",
+    edit_cctv_billing_progress_percent: billing.billing_progress_percent || ""
   };
 
   Object.entries(fieldMap).forEach(([id, value]) => {
@@ -2583,6 +2594,7 @@ const EDIT_MANPOWER_HIDDEN_FIELD_IDS = [
   "edit_project_budget",
   "edit_contract_amount",
   "edit_down_payment",
+  "edit_cctv_billing_progress_percent",
   "edit_tax_amount",
   "edit_ppr_prepared_by",
   "edit_ppr_noted_by"

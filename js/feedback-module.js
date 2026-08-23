@@ -48,6 +48,7 @@ const cctv_terms = document.getElementById("cctv_terms");
 const cctv_purchase_order_number = document.getElementById("cctv_purchase_order_number");
 const cctv_purchase_order_file = document.getElementById("cctv_purchase_order_file");
 const cctv_down_payment_percent = document.getElementById("cctv_down_payment_percent");
+const cctv_billing_progress_percent = document.getElementById("cctv_billing_progress_percent");
 const cctv_duration_days = document.getElementById("cctv_duration_days");
 const feedbackTable = document.getElementById("feedbackTable");
 const PROPOSAL_UPLOAD_BUCKETS = ["contracts", "progress-files"];
@@ -809,6 +810,9 @@ proposalForm.addEventListener("submit", async event => {
     const fallbackTitle = manpowerItems[0]?.description || "Manpower Quotation";
     const contractValue = isManpower ? number(manpower_contract_amount?.value || contract_amount.value) : number(contract_amount.value);
     const downPaymentPercent = Math.min(Math.max(number(isManpower ? manpower_amount_paid?.value : cctv_down_payment_percent?.value || down_payment.value), 0), 100);
+    const progressPaymentPercent = isManpower
+      ? 0
+      : Math.min(Math.max(number(cctv_billing_progress_percent?.value), 0), Math.max(100 - downPaymentPercent, 0));
     const downPaymentAmount = contractValue * (downPaymentPercent / 100);
 
     const localRecord = {
@@ -838,7 +842,7 @@ proposalForm.addEventListener("submit", async event => {
       purchase_order_file_url: uploadedPurchaseOrder?.publicUrl || "",
       billing_down_payment_amount: 0,
       billing_down_payment_percent: downPaymentPercent,
-      billing_progress_percent: 0,
+      billing_progress_percent: progressPaymentPercent,
       contract_file_name: uploadedFile?.fileName || "",
       contract_file_url: uploadedFile?.publicUrl || ""
     };
