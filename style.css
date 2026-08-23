@@ -461,8 +461,11 @@ body{
   flex-direction:column;
   justify-content:flex-start;
   gap:6px;
+  min-width:0;
   min-height:92px;
   padding:12px 14px;
+  container-type:inline-size;
+  overflow:hidden;
 }
 
 .metric-top{
@@ -1692,6 +1695,18 @@ tbody tr:hover{
   display:grid;
   grid-template-columns:repeat(6,minmax(0,1fr));
   gap:12px;
+}
+
+.dashboard-kpi-grid > *{
+  min-width:0;
+}
+
+.dashboard-kpi-grid .kpi h2{
+  max-width:100%;
+  font-size:clamp(15px,8.5cqi,19px);
+  letter-spacing:-.035em;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 .dashboard-updated{
