@@ -2033,6 +2033,7 @@ tbody tr:hover{
   overflow:hidden;
   overflow-wrap:normal;
   word-break:normal;
+  font-size:8.5px;
 }
 
 .dashboard-panel .unified-financial-health-table thead tr:last-child th{
@@ -3815,7 +3816,10 @@ tbody tr:hover{
 .revenue-breakdown-table td:nth-child(12),
 .revenue-breakdown-table td:nth-child(13),
 .revenue-breakdown-table td:nth-child(14){
-  white-space:nowrap;
+  white-space:normal;
+  overflow:hidden;
+  overflow-wrap:normal;
+  word-break:normal;
 }
 
 .revenue-breakdown-table td:nth-child(2),
