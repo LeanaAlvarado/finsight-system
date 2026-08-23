@@ -210,7 +210,6 @@ function renderCollectionStatus(projects = []) {
   const list = document.getElementById("collectionProjectList");
   const totalContract = projects.reduce((sum, project) => sum + number(project.contract_amount), 0);
   const totalPaid = projects.reduce((sum, project) => sum + getProjectCollectionPaid(project), 0);
-  const totalBalance = Math.max(totalContract - totalPaid, 0);
   const collectionRate = totalContract > 0 ? (totalPaid / totalContract) * 100 : 0;
   const projectRows = projects
     .map(project => {
@@ -226,8 +225,6 @@ function renderCollectionStatus(projects = []) {
     })
     .filter(row => row.contract > 0 && row.balance > 0)
     .sort((a, b) => b.balance - a.balance);
-  const projectsWithBalance = projectRows.length;
-
   if (list) {
     list.innerHTML = projectRows.length
       ? `
@@ -255,15 +252,6 @@ function renderCollectionStatus(projects = []) {
       : `<div class="category-breakdown-empty"><strong>No Outstanding Collections</strong><span>All recorded project collections are currently up to date.</span></div>`;
   }
 
-  const projectsWithBalanceFallback = projects.filter(project => {
-    const contract = number(project.contract_amount);
-    return contract > 0 && Math.max(contract - getProjectCollectionPaid(project), 0) > 0;
-  }).length;
-
-  setText("collectionContractTotal", peso(totalContract));
-  setText("collectionPaidTotal", peso(totalPaid));
-  setText("collectionBalanceTotal", peso(totalBalance));
-  setText("collectionOpenProjects", projectsWithBalance || projectsWithBalanceFallback);
   setText("collectionRate", `${collectionRate.toFixed(2)}%`);
   const collectionRateBar = document.getElementById("collectionRateBar");
   if (collectionRateBar) collectionRateBar.style.width = `${Math.min(Math.max(collectionRate, 0), 100).toFixed(2)}%`;
@@ -526,11 +514,6 @@ function renderBudgetUtilizationList(projectAnalytics) {
         <div class="budget-util-head">
           <strong title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</strong>
           <span class="bi-status ${status.className}">${status.label}</span>
-        </div>
-        <div class="budget-util-grid">
-          <span>Budget <b>${peso(item.budget)}</b></span>
-          <span>Used <b>${peso(item.budgetSpendWithoutMaterials)}</b></span>
-          <span>Remaining <b>${peso(item.budgetRemaining)}</b></span>
         </div>
         <div class="compact-profit-bar" aria-label="${escapeHtml(item.label)} ${item.budgetUtilization.toFixed(1)} percent used">
           <span style="width:${width.toFixed(2)}%"></span>

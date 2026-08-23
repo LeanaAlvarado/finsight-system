@@ -1943,9 +1943,55 @@ tbody tr:hover{
 
 .executive-lower-grid{
   display:grid;
-  grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);
+  grid-template-columns:1fr;
   gap:14px;
   align-items:stretch;
+}
+
+.project-financial-health-panel{
+  min-width:0;
+}
+
+.financial-health-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);
+  gap:18px;
+  margin-top:12px;
+}
+
+.project-financial-health-panel .financial-health-section{
+  min-width:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.financial-health-section + .financial-health-section{
+  padding-left:18px;
+  border-left:1px solid var(--line);
+}
+
+.financial-health-section h4{
+  margin:0 0 9px;
+  color:var(--text);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+
+@media(max-width:900px){
+  .financial-health-grid{
+    grid-template-columns:1fr;
+  }
+
+  .financial-health-section + .financial-health-section{
+    padding-top:16px;
+    padding-left:0;
+    border-top:1px solid var(--line);
+    border-left:0;
+  }
 }
 
 .executive-chart-panel,

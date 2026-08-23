@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260820-budget-warning-v226">
+<link rel="stylesheet" href="style.css?v=20260823-financial-health-v235">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -178,50 +178,34 @@
       </div>
 
       <div class="executive-lower-grid">
-        <div class="card dashboard-panel summary-card summary-panel executive-collection-panel">
+        <div class="card dashboard-panel project-financial-health-panel">
           <div class="card-head">
             <div>
-              <h3>Collection Status</h3>
-              <p class="muted">Projects with remaining client collectibles.</p>
+              <h3>Project Financial Health</h3>
+              <p class="muted">Collection progress and project budget usage in one consolidated view.</p>
             </div>
+            <a class="dashboard-card-link" href="revenue.html?view=budget-utilization">View details</a>
           </div>
-          <div class="collection-rate-card">
-            <div>
-              <small>Collection Rate</small>
-              <strong id="collectionRate">0.00%</strong>
-            </div>
-            <div class="collection-rate-bar"><span id="collectionRateBar" style="width:0%"></span></div>
-          </div>
-          <div id="collectionProjectList" class="collection-project-list" aria-label="Projects with collection balance"></div>
-          <div class="summary-list">
-            <div class="summary-row">
-              <small>Total Contract Amount</small>
-              <strong id="collectionContractTotal">PHP 0.00</strong>
-            </div>
-            <div class="summary-row">
-              <small>Amount Paid</small>
-              <strong id="collectionPaidTotal">PHP 0.00</strong>
-            </div>
-            <div class="summary-row">
-              <small>Remaining Collectibles</small>
-              <strong id="collectionBalanceTotal">PHP 0.00</strong>
-            </div>
-            <div class="summary-row">
-              <small>Projects with Balance</small>
-              <strong id="collectionOpenProjects">0</strong>
-            </div>
-          </div>
-        </div>
 
-        <div class="card dashboard-panel compact-ranking-panel executive-budget-panel">
-          <div class="card-head">
-            <div>
-              <h3>Budget Utilization</h3>
-              <p class="muted">Projects closest to using their project budget.</p>
-            </div>
-            <a class="dashboard-card-link" href="revenue.html?view=budget-utilization">View all</a>
+          <div class="financial-health-grid">
+            <section class="financial-health-section executive-collection-panel" aria-labelledby="collectionHealthTitle">
+              <h4 id="collectionHealthTitle">Collection Status</h4>
+              <div class="collection-rate-card">
+                <div>
+                  <small>Collection Rate</small>
+                  <strong id="collectionRate">0.00%</strong>
+                </div>
+                <div class="collection-rate-bar"><span id="collectionRateBar" style="width:0%"></span></div>
+              </div>
+              <div id="collectionProjectList" class="collection-project-list" aria-label="Projects with collection balance"></div>
+            </section>
+
+            <section class="financial-health-section executive-budget-panel" aria-labelledby="budgetHealthTitle">
+              <h4 id="budgetHealthTitle">Budget Utilization</h4>
+              <div id="budgetUtilizationList" class="compact-profit-list"></div>
+            </section>
           </div>
-          <div id="budgetUtilizationList" class="compact-profit-list"></div>
+
         </div>
       </div>
 
@@ -323,7 +307,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260820-budget-warning-v226"></script>
+<script type="module" src="js/app.js?v=20260823-financial-health-v235"></script>
 
 
 </body>
