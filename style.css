@@ -4050,7 +4050,6 @@ tbody tr:hover{
 .revenue-breakdown-table td:nth-child(6){
   width:7%;
   padding-right:8px;
-  border-right:1px solid #d7e2ec;
 }
 
 .revenue-breakdown-table th:nth-child(7),
