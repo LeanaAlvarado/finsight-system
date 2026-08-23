@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lemyu Dashboard</title>
 
-<link rel="stylesheet" href="style.css?v=20260823-table-labels-v241">
+<link rel="stylesheet" href="style.css?v=20260823-remove-project-health-v242">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -234,26 +234,6 @@
         <div id="costAlertList" class="alert-list"></div>
       </div>
 
-      <div class="card dashboard-panel health-panel executive-side-card">
-        <div class="card-head">
-          <div>
-            <h3>Project Health</h3>
-            <p class="muted">Budget condition across active projects.</p>
-          </div>
-        </div>
-        <div class="health-count-grid">
-          <div><small>Healthy</small><strong id="healthyProjectCount">0</strong></div>
-          <div><small>Warning</small><strong id="warningProjectCount">0</strong></div>
-          <div><small>Critical</small><strong id="healthCriticalProjectCount">0</strong></div>
-        </div>
-        <div class="health-segment" aria-label="Project health distribution">
-          <span class="safe" id="healthSafeBar" style="width:0%"></span>
-          <span class="warning" id="healthWarningBar" style="width:0%"></span>
-          <span class="critical" id="healthCriticalBar" style="width:0%"></span>
-        </div>
-        <p class="health-caption" id="projectHealthCaption">No active project health data yet.</p>
-      </div>
-
       <div class="card dashboard-panel table-card risk-table-panel executive-side-card">
         <div class="card-head">
           <div>
@@ -290,7 +270,7 @@
 
 </main>
 
-<script type="module" src="js/app.js?v=20260823-table-labels-v241"></script>
+<script type="module" src="js/app.js?v=20260823-remove-project-health-v242"></script>
 
 
 </body>

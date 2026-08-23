@@ -560,36 +560,6 @@ function renderBudgetUtilizationList(projectAnalytics) {
   }).join("");
 }
 
-function renderProjectHealthOverview(projectAnalytics = []) {
-  const healthProjects = projectAnalytics.filter(item => item.budget > 0);
-  const counts = healthProjects.reduce((summary, item) => {
-    const status = getBudgetStatusInfo(item).label;
-    if (status === "Over Budget" || status === "Critical") summary.critical += 1;
-    else if (status === "Warning") summary.warning += 1;
-    else summary.healthy += 1;
-    return summary;
-  }, { healthy: 0, warning: 0, critical: 0 });
-  const total = Math.max(healthProjects.length, 1);
-  const safePercent = (counts.healthy / total) * 100;
-  const warningPercent = (counts.warning / total) * 100;
-  const criticalPercent = (counts.critical / total) * 100;
-
-  setText("healthyProjectCount", counts.healthy);
-  setText("warningProjectCount", counts.warning);
-  setText("healthCriticalProjectCount", counts.critical);
-  const safeBar = document.getElementById("healthSafeBar");
-  const warningBar = document.getElementById("healthWarningBar");
-  const criticalBar = document.getElementById("healthCriticalBar");
-  if (safeBar) safeBar.style.width = `${safePercent.toFixed(2)}%`;
-  if (warningBar) warningBar.style.width = `${warningPercent.toFixed(2)}%`;
-  if (criticalBar) criticalBar.style.width = `${criticalPercent.toFixed(2)}%`;
-
-  const caption = healthProjects.length
-    ? `${healthProjects.length} budgeted project${healthProjects.length === 1 ? "" : "s"} monitored for budget health.`
-    : "No project budget records available yet.";
-  setText("projectHealthCaption", caption);
-}
-
 function getInventoryProjectLabel(projects, projectCode = "") {
   const normalizedCode = normalizeMatchValue(projectCode);
   const project = projects.find(item => normalizeMatchValue(item.project_code) === normalizedCode);
@@ -1278,7 +1248,6 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   renderCategoryBreakdownList(categoryTotals);
   renderProfitabilityTable(projectAnalytics);
   renderProjectFinancialHealth(projectAnalytics);
-  renderProjectHealthOverview(projectAnalytics);
   renderInventoryProjectList(projects, projectMaterials);
   renderCostAlerts(costAlerts);
   renderCostAlertNotifications(costAlerts);

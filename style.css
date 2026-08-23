@@ -2264,10 +2264,6 @@ tbody tr:hover{
   align-self:start;
 }
 
-.health-panel{
-  align-self:start;
-}
-
 .inventory-panel{
   align-self:stretch;
 }
@@ -2385,8 +2381,7 @@ tbody tr:hover{
   font-weight:900;
 }
 
-.collection-rate-bar,
-.health-segment{
+.collection-rate-bar{
   display:flex;
   width:100%;
   height:8px;
@@ -2467,67 +2462,6 @@ tbody tr:hover{
 .collection-project-row span{
   text-align:right;
   font-weight:700;
-}
-
-.health-count-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:6px;
-}
-
-.health-count-grid div{
-  padding:8px;
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  background:#f8fafc;
-}
-
-.health-count-grid small,
-.health-count-grid strong{
-  display:block;
-}
-
-.health-count-grid small{
-  color:var(--muted);
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-}
-
-.health-count-grid strong{
-  margin-top:5px;
-  color:var(--text);
-  font-size:18px;
-  font-weight:900;
-}
-
-.health-segment{
-  margin-top:10px;
-}
-
-.health-segment span{
-  display:block;
-  height:100%;
-}
-
-.health-segment .safe{
-  background:#0f766e;
-}
-
-.health-segment .warning{
-  background:#b7791f;
-}
-
-.health-segment .critical{
-  background:#b42318;
-}
-
-.health-caption{
-  margin-top:9px;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.45;
 }
 
 .chart-frame{
