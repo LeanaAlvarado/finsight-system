@@ -4016,19 +4016,17 @@ tbody tr:hover{
 
 .revenue-breakdown-table th:nth-child(1),
 .revenue-breakdown-table td:nth-child(1){
-  width:12%;
+  width:11%;
 }
 
 .revenue-breakdown-table th:nth-child(2),
 .revenue-breakdown-table th:nth-child(3),
-.revenue-breakdown-table th:nth-child(6),
 .revenue-breakdown-table th:nth-child(8),
 .revenue-breakdown-table th:nth-child(9),
 .revenue-breakdown-table th:nth-child(10),
 .revenue-breakdown-table th:nth-child(11),
 .revenue-breakdown-table td:nth-child(2),
 .revenue-breakdown-table td:nth-child(3),
-.revenue-breakdown-table td:nth-child(6),
 .revenue-breakdown-table td:nth-child(8),
 .revenue-breakdown-table td:nth-child(9),
 .revenue-breakdown-table td:nth-child(10),
@@ -4045,7 +4043,19 @@ tbody tr:hover{
 
 .revenue-breakdown-table th:nth-child(7),
 .revenue-breakdown-table td:nth-child(7){
-  width:8%;
+  width:9%;
+}
+
+.revenue-breakdown-table th:nth-child(6),
+.revenue-breakdown-table td:nth-child(6){
+  width:7%;
+  padding-right:8px;
+  border-right:1px solid #d7e2ec;
+}
+
+.revenue-breakdown-table th:nth-child(7),
+.revenue-breakdown-table td:nth-child(7){
+  padding-left:8px;
 }
 
 .revenue-breakdown-table th:nth-child(12),
@@ -4060,7 +4070,7 @@ tbody tr:hover{
 
 .revenue-breakdown-table th:nth-child(14),
 .revenue-breakdown-table td:nth-child(14){
-  width:10%;
+  width:9%;
 }
 
 .revenue-breakdown-table .inline-edit{
@@ -4069,6 +4079,7 @@ tbody tr:hover{
   gap:5px;
   min-width:0;
   align-items:center;
+  width:100%;
 }
 
 .revenue-breakdown-table .tax-input{
