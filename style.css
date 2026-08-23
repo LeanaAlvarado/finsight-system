@@ -1960,8 +1960,8 @@ tbody tr:hover{
 .financial-health-summary{
   display:flex;
   align-items:center;
-  gap:22px;
-  padding:9px 11px;
+  gap:18px;
+  padding:8px 10px;
   border:1px solid var(--line);
   border-bottom:0;
   border-radius:7px 7px 0 0;
@@ -1976,7 +1976,7 @@ tbody tr:hover{
 
 .financial-health-summary small{
   color:var(--muted);
-  font-size:10px;
+  font-size:9px;
   font-weight:800;
   letter-spacing:.045em;
   text-transform:uppercase;
@@ -1984,7 +1984,7 @@ tbody tr:hover{
 
 .financial-health-summary strong{
   color:var(--primary-dark);
-  font-size:12px;
+  font-size:11px;
   font-weight:900;
 }
 
@@ -2004,16 +2004,16 @@ tbody tr:hover{
 
 .unified-financial-health-table th,
 .unified-financial-health-table td{
-  padding:8px 7px;
-  font-size:10px;
-  line-height:1.3;
+  padding:7px 5px;
+  font-size:9px;
+  line-height:1.25;
   vertical-align:middle;
 }
 
 .unified-financial-health-table th{
-  font-size:9px;
-  letter-spacing:.035em;
-  text-align:right;
+  font-size:8px;
+  letter-spacing:.025em;
+  text-align:center;
 }
 
 .unified-financial-health-table .financial-group-head th{
@@ -2037,13 +2037,28 @@ tbody tr:hover{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  font-size:9px;
+}
+
+.unified-financial-health-table td:nth-child(2),
+.unified-financial-health-table td:nth-child(5),
+.unified-financial-health-table td:nth-child(9){
+  border-left:1px solid #d7e2ec;
+}
+
+.unified-financial-health-table .bi-status{
+  min-height:20px;
+  padding:3px 6px;
+  font-size:8px;
+  white-space:nowrap;
 }
 
 .financial-utilization-cell{
   display:grid;
-  gap:4px;
+  gap:3px;
   text-align:right;
   font-variant-numeric:tabular-nums;
+  font-size:9px;
   font-weight:800;
 }
 

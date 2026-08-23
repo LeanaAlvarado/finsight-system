@@ -135,6 +135,14 @@ function compactPeso(value = 0) {
   return peso(amount);
 }
 
+function compactFinancialPeso(value = 0) {
+  const amount = number(value);
+  const abs = Math.abs(amount);
+  if (abs >= 1000000) return `₱${(amount / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `₱${(amount / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`;
+  return `₱${amount.toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
+}
+
 function getProjectLabel(project) {
   return project.project_title || project.project_code || project.client_name || "Untitled Project";
 }
@@ -236,9 +244,10 @@ function renderProjectFinancialHealth(projectAnalytics = []) {
     <div class="financial-health-table-scroll">
       <table class="unified-financial-health-table">
         <colgroup>
-          <col style="width:22%">
-          <col span="6" style="width:9%">
-          <col span="2" style="width:12%">
+          <col style="width:20%">
+          <col span="6" style="width:9.666%">
+          <col style="width:12%">
+          <col style="width:10%">
         </colgroup>
         <thead>
           <tr class="financial-group-head">
@@ -251,22 +260,22 @@ function renderProjectFinancialHealth(projectAnalytics = []) {
             <th>Contract</th>
             <th>Paid</th>
             <th>Balance</th>
-            <th>Budget</th>
+            <th>Allocated</th>
             <th>Used</th>
             <th>Remaining</th>
-            <th>Utilized</th>
+            <th>Usage</th>
           </tr>
         </thead>
         <tbody>
           ${rows.map(item => `
             <tr>
               <td><strong title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</strong></td>
-              <td>${compactPeso(item.revenue)}</td>
-              <td>${compactPeso(item.paid)}</td>
-              <td>${compactPeso(item.balance)}</td>
-              <td>${compactPeso(item.budget)}</td>
-              <td>${compactPeso(item.budgetSpendWithoutMaterials)}</td>
-              <td>${compactPeso(item.budgetRemaining)}</td>
+              <td>${compactFinancialPeso(item.revenue)}</td>
+              <td>${compactFinancialPeso(item.paid)}</td>
+              <td>${compactFinancialPeso(item.balance)}</td>
+              <td>${compactFinancialPeso(item.budget)}</td>
+              <td>${compactFinancialPeso(item.budgetSpendWithoutMaterials)}</td>
+              <td>${compactFinancialPeso(item.budgetRemaining)}</td>
               <td>
                 <div class="financial-utilization-cell">
                   <span>${item.budgetUtilization.toFixed(1)}%</span>
