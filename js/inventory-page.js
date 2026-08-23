@@ -1148,16 +1148,16 @@ function renderInventoryMaterialsTable(items = currentInventoryItems, projects =
               : `<span class="muted">No<br>picture</span>`
           }
         </td>
-        <td>
+        <td class="inventory-project-cell">
           <strong>${escapeHtml(projectCode || "General")}</strong>
           ${projectTitle ? `<br><span class="muted">${escapeHtml(projectTitle)}</span>` : ""}
         </td>
-        <td>${escapeHtml(i.name || "-")}</td>
-        <td>${escapeHtml(itemDescription || "-")}</td>
-        <td>${qtyValue}</td>
-        <td>${escapeHtml(getItemUnit(i) || "-")}</td>
-        <td>${peso(priceValue)}</td>
-        <td>${peso(total)}</td>
+        <td class="inventory-material-name"><strong>${escapeHtml(i.name || "-")}</strong></td>
+        <td class="inventory-material-description">${escapeHtml(itemDescription || "-")}</td>
+        <td class="inventory-number-cell">${qtyValue}</td>
+        <td class="inventory-unit-cell">${escapeHtml(getItemUnit(i) || "-")}</td>
+        <td class="inventory-money-cell">${peso(priceValue)}</td>
+        <td class="inventory-money-cell">${peso(total)}</td>
         <td class="action-links">
           <button type="button" onclick="editInventoryMaterial('${escapeHtml(i.id || "")}')">Edit</button>
           <button type="button" class="danger-btn" onclick="deleteInventoryMaterial('${escapeHtml(i.id || "")}')">Delete</button>

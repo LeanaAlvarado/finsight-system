@@ -1317,27 +1317,27 @@ tbody tr:hover{
 
 .inventory-materials-table th:nth-child(1),
 .inventory-materials-table td:nth-child(1){
-  width:7%;
+  width:6%;
 }
 
 .inventory-materials-table th:nth-child(2),
 .inventory-materials-table td:nth-child(2){
-  width:13%;
+  width:17%;
 }
 
 .inventory-materials-table th:nth-child(3),
 .inventory-materials-table td:nth-child(3){
-  width:12%;
+  width:16%;
 }
 
 .inventory-materials-table th:nth-child(4),
 .inventory-materials-table td:nth-child(4){
-  width:25%;
+  width:20%;
 }
 
 .inventory-materials-table th:nth-child(5),
 .inventory-materials-table td:nth-child(5){
-  width:6%;
+  width:7%;
   text-align:center;
 }
 
@@ -1353,12 +1353,12 @@ tbody tr:hover{
 
 .inventory-materials-table th:nth-child(8),
 .inventory-materials-table td:nth-child(8){
-  width:11%;
+  width:10%;
 }
 
 .inventory-materials-table th:nth-child(9),
 .inventory-materials-table td:nth-child(9){
-  width:10%;
+  width:8%;
 }
 
 .inventory-project-summary{
@@ -4625,6 +4625,101 @@ tbody tr:hover{
 .quotation-qty,
 .quotation-amount{
   text-align:right;
+}
+
+/* Inventory Materials typography and table layout. */
+.inventory-materials-section > h3{
+  font-size:17px;
+  line-height:1.35;
+  font-weight:800;
+}
+
+.inventory-materials-section .inventory-list-controls .search{
+  min-width:0;
+  font-size:12px;
+  line-height:1.35;
+}
+
+.inventory-materials-section .inventory-materials-table th,
+.inventory-materials-section .inventory-materials-table td{
+  padding:10px 8px;
+  font-size:11.5px;
+  line-height:1.45;
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:break-word;
+}
+
+.inventory-materials-section .inventory-materials-table th{
+  color:#42536a;
+  font-size:10px;
+  font-weight:800;
+  line-height:1.3;
+  letter-spacing:.035em;
+  vertical-align:middle;
+}
+
+.inventory-materials-section .inventory-materials-table td{
+  color:var(--text);
+  vertical-align:middle;
+}
+
+.inventory-materials-section .inventory-project-cell strong,
+.inventory-materials-section .inventory-material-name strong{
+  display:block;
+  color:var(--text);
+  font-size:12px;
+  font-weight:750;
+  line-height:1.4;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:break-word;
+}
+
+.inventory-materials-section .inventory-project-cell .muted{
+  display:inline-block;
+  margin-top:3px;
+  color:#5f7086;
+  font-size:11px;
+  line-height:1.4;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+
+.inventory-materials-section .inventory-material-description{
+  color:#52647a;
+  font-size:11.5px;
+}
+
+.inventory-materials-section .inventory-number-cell,
+.inventory-materials-section .inventory-unit-cell{
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+
+.inventory-materials-section .inventory-money-cell{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  white-space:normal;
+}
+
+.inventory-materials-section .inventory-materials-table .action-links{
+  align-content:center;
+  gap:5px;
+}
+
+.inventory-materials-section .inventory-materials-table .action-links button{
+  flex:1 1 100%;
+  width:100%;
+  min-width:0;
+  min-height:29px;
+  padding:5px 6px;
+  font-size:10px;
+}
+
+.inventory-materials-section .pagination-bar{
+  font-size:11.5px;
 }
 
 /* Business dashboard typography: readable, compact, and never truncated. */
