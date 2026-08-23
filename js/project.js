@@ -68,6 +68,10 @@ function restoreProjectListState() {
     projectListState.sort = saved.sort ?? projectListState.sort;
     projectCurrentPage = Number(saved.page || projectCurrentPage) || 1;
 
+    if (isOperationsScope() && !["all", "approved", "ongoing"].includes(String(projectListState.status).toLowerCase())) {
+      projectListState.status = "all";
+    }
+
     const fieldMap = {
       projectSearch: projectListState.search,
       projectStatusFilter: projectListState.status,
@@ -95,6 +99,11 @@ function isFinanceScope() {
 function isOperationsScope() {
   return document.body.dataset.roleScope === "operations"
     || String(localStorage.getItem("lemyu_user_role") || "").toLowerCase() === "project manager/operations staff";
+}
+
+function isOperationsVisibleProject(project = {}) {
+  const status = String(project.status || project.project_status || "").trim().toLowerCase();
+  return ["approved", "ongoing", "on going", "in progress"].includes(status);
 }
 
 function applyFinanceProjectScope() {
@@ -127,6 +136,15 @@ function applyOperationsProjectScope() {
 
   const listHeading = document.querySelector("#projectListSection h3");
   if (listHeading) listHeading.innerHTML = `<span class="num">02</span> Project Monitoring List`;
+
+  const statusFilter = document.getElementById("projectStatusFilter");
+  if (statusFilter) {
+    statusFilter.innerHTML = `
+      <option value="all">Approved and ongoing</option>
+      <option value="Approved">Approved</option>
+      <option value="Ongoing">Ongoing</option>
+    `;
+  }
 }
 
 function assetUrl(path) {
@@ -852,7 +870,7 @@ function renderOperationsExpenseProjectOptions() {
 
   const currentValue = select.value;
   select.innerHTML = `<option value="">Select Project</option>`;
-  allProjects.forEach(project => {
+  allProjects.filter(project => !isOperationsScope() || isOperationsVisibleProject(project)).forEach(project => {
     select.innerHTML += `<option value="${escapeProjectHtml(project.id)}">${escapeProjectHtml(getProjectDisplayName(project))}</option>`;
   });
 
@@ -4214,6 +4232,7 @@ function getFilteredProjects() {
   const search = projectListState.search.trim().toLowerCase();
 
   return allProjects
+    .filter(project => !isOperationsScope() || isOperationsVisibleProject(project))
     .filter(project => {
       if (!search) return true;
       return getProjectSearchText(project).includes(search);
