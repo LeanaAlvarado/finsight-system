@@ -376,6 +376,27 @@ body{
   overflow-wrap:anywhere;
 }
 
+/* Keep the proposal/feedback account summary aligned on one line. */
+.feedback-main .signed-user{
+  width:360px;
+  min-width:360px;
+}
+
+.feedback-main .signed-user-row{
+  display:grid;
+  grid-template-columns:110px minmax(0,1fr);
+  gap:16px;
+}
+
+.feedback-main .signed-user-row span,
+.feedback-main .signed-user-row strong{
+  white-space:nowrap;
+}
+
+.feedback-main .signed-user-row strong{
+  overflow-wrap:normal;
+}
+
 .tag{
   color:var(--primary);
   font-size:11px;
@@ -5060,8 +5081,22 @@ tbody tr:hover{
     width:100%;
   }
 
+  .feedback-main .signed-user{
+    width:100%;
+    min-width:0;
+  }
+
+  .feedback-main .signed-user-row{
+    grid-template-columns:100px minmax(0,1fr);
+    gap:10px;
+  }
+
   .signed-user strong{
     text-align:left;
+  }
+
+  .feedback-main .signed-user strong{
+    text-align:right;
   }
 
   .search{
