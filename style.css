@@ -378,13 +378,15 @@ body{
 
 /* Keep the proposal/feedback account summary aligned on one line. */
 .feedback-main .signed-user,
-.reports-page .signed-user{
+.reports-page .signed-user,
+.user-role-main .signed-user{
   width:360px;
   min-width:360px;
 }
 
 .feedback-main .signed-user-row,
-.reports-page .signed-user-row{
+.reports-page .signed-user-row,
+.user-role-main .signed-user-row{
   display:grid;
   grid-template-columns:110px minmax(0,1fr);
   gap:16px;
@@ -393,12 +395,15 @@ body{
 .feedback-main .signed-user-row span,
 .feedback-main .signed-user-row strong,
 .reports-page .signed-user-row span,
-.reports-page .signed-user-row strong{
+.reports-page .signed-user-row strong,
+.user-role-main .signed-user-row span,
+.user-role-main .signed-user-row strong{
   white-space:nowrap;
 }
 
 .feedback-main .signed-user-row strong,
-.reports-page .signed-user-row strong{
+.reports-page .signed-user-row strong,
+.user-role-main .signed-user-row strong{
   overflow-wrap:normal;
 }
 
@@ -5087,13 +5092,15 @@ tbody tr:hover{
   }
 
   .feedback-main .signed-user,
-  .reports-page .signed-user{
+  .reports-page .signed-user,
+  .user-role-main .signed-user{
     width:100%;
     min-width:0;
   }
 
   .feedback-main .signed-user-row,
-  .reports-page .signed-user-row{
+  .reports-page .signed-user-row,
+  .user-role-main .signed-user-row{
     grid-template-columns:100px minmax(0,1fr);
     gap:10px;
   }
@@ -5103,7 +5110,8 @@ tbody tr:hover{
   }
 
   .feedback-main .signed-user strong,
-  .reports-page .signed-user strong{
+  .reports-page .signed-user strong,
+  .user-role-main .signed-user strong{
     text-align:right;
   }
 
