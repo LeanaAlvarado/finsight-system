@@ -377,23 +377,28 @@ body{
 }
 
 /* Keep the proposal/feedback account summary aligned on one line. */
-.feedback-main .signed-user{
+.feedback-main .signed-user,
+.reports-page .signed-user{
   width:360px;
   min-width:360px;
 }
 
-.feedback-main .signed-user-row{
+.feedback-main .signed-user-row,
+.reports-page .signed-user-row{
   display:grid;
   grid-template-columns:110px minmax(0,1fr);
   gap:16px;
 }
 
 .feedback-main .signed-user-row span,
-.feedback-main .signed-user-row strong{
+.feedback-main .signed-user-row strong,
+.reports-page .signed-user-row span,
+.reports-page .signed-user-row strong{
   white-space:nowrap;
 }
 
-.feedback-main .signed-user-row strong{
+.feedback-main .signed-user-row strong,
+.reports-page .signed-user-row strong{
   overflow-wrap:normal;
 }
 
@@ -5081,12 +5086,14 @@ tbody tr:hover{
     width:100%;
   }
 
-  .feedback-main .signed-user{
+  .feedback-main .signed-user,
+  .reports-page .signed-user{
     width:100%;
     min-width:0;
   }
 
-  .feedback-main .signed-user-row{
+  .feedback-main .signed-user-row,
+  .reports-page .signed-user-row{
     grid-template-columns:100px minmax(0,1fr);
     gap:10px;
   }
@@ -5095,7 +5102,8 @@ tbody tr:hover{
     text-align:left;
   }
 
-  .feedback-main .signed-user strong{
+  .feedback-main .signed-user strong,
+  .reports-page .signed-user strong{
     text-align:right;
   }
 
