@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260914-payroll-net-v253";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260914-payroll-monitoring-v254";
 
 let projectRecords = [];
 let expenseRecords = [];
@@ -430,11 +430,11 @@ async function loadPayrollAndExpenses() {
   populateProjectSelects();
   populateExpenseCategoryFilter(expenses);
 
-  const payrollTotal = payroll.reduce((sum, item) => sum + netPayrollAmount(item), 0);
+  const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const projectPayrollTotal = payroll
     .filter(item => item.project_id)
-    .reduce((sum, item) => sum + netPayrollAmount(item), 0);
+    .reduce((sum, item) => sum + number(item.salary_amount), 0);
   const otherExpenseTotal = expenses
     .filter(item => !isPayrollExpense(item))
     .reduce((sum, item) => sum + number(item.amount), 0);

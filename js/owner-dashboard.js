@@ -1,4 +1,4 @@
-import { supabase, netPayrollAmount, peso, number, readTable, setText } from "./supabase.js?v=20260914-payroll-net-v253";
+import { supabase, peso, number, readTable, setText } from "./supabase.js?v=20260914-payroll-monitoring-v254";
 
 async function loadOwnerDashboard() {
   const [projectResult, payrollResult, expenseResult, feedbackResult] = await Promise.all([
@@ -22,7 +22,7 @@ async function loadOwnerDashboard() {
   const totalContract = projects.reduce((sum, p) => sum + number(p.contract_amount), 0);
   const totalTax = projects.reduce((sum, p) => sum + number(p.tax_amount), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + number(e.amount), 0);
-  const totalPayroll = payroll.reduce((sum, p) => sum + netPayrollAmount(p), 0);
+  const totalPayroll = payroll.reduce((sum, p) => sum + number(p.salary_amount), 0);
 
   const completed = projects.filter(p => p.status === "Completed").length;
   const ongoing = projects.filter(p => p.status === "Ongoing").length;
