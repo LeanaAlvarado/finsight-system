@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260914-payroll-monitoring-v254";
+const appVersion = "20260914-project-selector-v255";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

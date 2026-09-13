@@ -179,6 +179,33 @@ function getProjectSnapshot(projectId) {
   };
 }
 
+function mergeProjectSelectorRecords(projects = [], contracts = []) {
+  const records = [...projects];
+  const knownKeys = new Set(projects.flatMap(project => [
+    String(project.id || ""),
+    String(project.project_code || "")
+  ]).filter(Boolean));
+
+  contracts.forEach(contract => {
+    const projectId = String(contract.project_id || contract.id || "");
+    const projectCode = String(contract.project_code || "");
+    if (!projectId || knownKeys.has(projectId) || (projectCode && knownKeys.has(projectCode))) return;
+
+    records.push({
+      id: projectId,
+      project_code: projectCode,
+      project_title: contract.project_title || contract.contract_title || contract.client_name || "Untitled Project",
+      client_name: contract.client_name || "",
+      status: contract.project_status || contract.status || "Draft"
+    });
+    knownKeys.add(projectId);
+    if (projectCode) knownKeys.add(projectCode);
+  });
+
+  return records.sort((first, second) => String(first.project_code || first.project_title || "")
+    .localeCompare(String(second.project_code || second.project_title || "")));
+}
+
 function findLinkedPayrollExpense(payroll = {}) {
   const oldDescription = `Payroll for ${payroll.employee_name || ""}`;
   return expenseRecords.find(expense => {
@@ -409,8 +436,9 @@ function renderExpenseTable() {
 }
 
 async function loadPayrollAndExpenses() {
-  const [projectResult, payrollResult, expenseResult] = await Promise.all([
+  const [projectResult, contractResult, payrollResult, expenseResult] = await Promise.all([
     readTable("projects"),
+    readTable("smart_contracts"),
     readTable("payroll", { orderBy: "created_at" }),
     readTable("expenses", { orderBy: "created_at" })
   ]);
@@ -420,7 +448,7 @@ async function loadPayrollAndExpenses() {
     return;
   }
 
-  const projects = projectResult.data;
+  const projects = mergeProjectSelectorRecords(projectResult.data, contractResult.error ? [] : contractResult.data);
   const payroll = payrollResult.data;
   const expenses = expenseResult.data;
   projectRecords = projects;
