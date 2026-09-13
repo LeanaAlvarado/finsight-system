@@ -202,8 +202,11 @@ function mergeProjectSelectorRecords(projects = [], contracts = []) {
     if (projectCode) knownKeys.add(projectCode);
   });
 
-  return records.sort((first, second) => String(first.project_code || first.project_title || "")
-    .localeCompare(String(second.project_code || second.project_title || "")));
+  const projectCodeSorter = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+  return records.sort((first, second) => projectCodeSorter.compare(
+    String(first.project_code || first.project_title || ""),
+    String(second.project_code || second.project_title || "")
+  ));
 }
 
 function findLinkedPayrollExpense(payroll = {}) {
