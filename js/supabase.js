@@ -15,6 +15,10 @@ export function number(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+export function netPayrollAmount(record = {}) {
+  return Math.max(number(record.salary_amount) - number(record.deduction_amount), 0);
+}
+
 export function peso(value) {
   return "PHP " + number(value).toLocaleString("en-PH", {
     minimumFractionDigits: 2,

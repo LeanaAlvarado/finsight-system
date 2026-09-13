@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
 
 let projectRecords = [];
 let expenseRecords = [];
@@ -185,7 +185,7 @@ function findLinkedPayrollExpense(payroll = {}) {
     return String(expense.category || "").toLowerCase() === "payroll"
       && String(expense.project_id || "") === String(payroll.project_id || "")
       && String(expense.date || expense.expense_date || "").slice(0, 10) === String(payroll.pay_date || "").slice(0, 10)
-      && number(expense.amount) === number(payroll.salary_amount)
+      && [number(payroll.salary_amount), netPayrollAmount(payroll)].includes(number(expense.amount))
       && String(expense.description || "") === oldDescription;
   });
 }
@@ -203,7 +203,7 @@ function findLinkedPayrollForExpense(expense = {}) {
   const matchesCoreFields = payroll => {
     return String(payroll.project_id || "") === String(expense.project_id || "")
       && String(payroll.pay_date || "").slice(0, 10) === expenseDate
-      && number(payroll.salary_amount) === number(expense.amount);
+      && [number(payroll.salary_amount), netPayrollAmount(payroll)].includes(number(expense.amount));
   };
 
   return payrollRecords.find(payroll => {
@@ -222,7 +222,7 @@ async function syncPayrollExpense(payrollRecord, previousPayroll = null) {
     ...projectSnapshot,
     project_id: payrollRecord.project_id || null,
     category: "Payroll",
-    amount: payrollRecord.salary_amount,
+    amount: netPayrollAmount(payrollRecord),
     date: payrollRecord.pay_date || null,
     expense_date: payrollRecord.pay_date || null,
     description: "Payroll for " + payrollRecord.employee_name
@@ -400,11 +400,11 @@ async function loadPayrollAndExpenses() {
   populateProjectSelects();
   populateExpenseCategoryFilter(expenses);
 
-  const payrollTotal = payroll.reduce((sum, item) => sum + number(item.salary_amount), 0);
+  const payrollTotal = payroll.reduce((sum, item) => sum + netPayrollAmount(item), 0);
   const projectBudgetTotal = projects.reduce((sum, project) => sum + number(project.project_budget), 0);
   const projectPayrollTotal = payroll
     .filter(item => item.project_id)
-    .reduce((sum, item) => sum + number(item.salary_amount), 0);
+    .reduce((sum, item) => sum + netPayrollAmount(item), 0);
   const otherExpenseTotal = expenses
     .filter(item => !isPayrollExpense(item))
     .reduce((sum, item) => sum + number(item.amount), 0);
@@ -674,6 +674,13 @@ document.getElementById("payrollForm")?.addEventListener("submit", async event =
 
   const deduction = parseAmountInput(deduction_amount, { required: false });
   if (deduction === null) return;
+  if (deduction > salary) {
+    deduction_amount.setCustomValidity("Deduction cannot be greater than the salary amount.");
+    deduction_amount.reportValidity();
+    deduction_amount.focus();
+    return;
+  }
+  deduction_amount.setCustomValidity("");
   const projectSnapshot = getProjectSnapshot(project_id.value);
   const payrollProjectSnapshot = {
     project_code: projectSnapshot.project_code,

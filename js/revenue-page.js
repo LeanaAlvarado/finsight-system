@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, peso, escapeHtml, netPayrollAmount, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";
@@ -154,7 +154,7 @@ function getProjectFinancials(project = {}) {
   const projectPayroll = hasPayrollRecords
     ? revenuePayroll
       .filter(pr => recordBelongsToProject(pr, project))
-      .reduce((sum, pr) => sum + number(pr.salary_amount), 0)
+      .reduce((sum, pr) => sum + netPayrollAmount(pr), 0)
     : revenueExpenses
       .filter(e => recordBelongsToProject(e, project) && normalizeMatchValue(e.category) === "payroll")
       .reduce((sum, e) => sum + number(e.amount), 0);

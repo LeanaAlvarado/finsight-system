@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, number, peso, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
+import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const AUDIT_PAGE_SIZE = 10;
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
@@ -390,7 +390,7 @@ function buildAuditEvents(projects, expenses, payroll, inventory, feedback) {
         events,
         "Payroll & Expenses",
         `Payroll record saved for ${item.employee_name || "employee"}`,
-        peso(item.salary_amount),
+        peso(netPayrollAmount(item)),
         getRecordDate(item),
         "transaction"
       );

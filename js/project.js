@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
@@ -1908,7 +1908,7 @@ function getProjectFinancials(project, expenses = [], payroll = []) {
   const projectPayroll = payroll.length
     ? payroll
       .filter(item => String(item.project_id || "") === String(project.id || ""))
-      .reduce((sum, item) => sum + Number(item.salary_amount || 0), 0)
+      .reduce((sum, item) => sum + netPayrollAmount(item), 0)
     : expenses
       .filter(exp => String(exp.project_id || "") === String(project.id || "") && String(exp.category || "").trim().toLowerCase() === "payroll")
       .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);

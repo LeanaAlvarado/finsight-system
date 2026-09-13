@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, escapeHtml, netPayrollAmount, peso, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;
@@ -115,7 +115,7 @@ function getDashboardExpensePieces(expenses = [], payroll = []) {
   const payrollExpenseFallback = payroll.length ? [] : expenses.filter(isPayrollExpense);
   const nonPayrollExpenseTotal = nonPayrollExpenses.reduce((sum, expense) => sum + number(expense.amount), 0);
   const payrollTotal = payroll.length
-    ? payroll.reduce((sum, item) => sum + number(item.salary_amount), 0)
+    ? payroll.reduce((sum, item) => sum + netPayrollAmount(item), 0)
     : payrollExpenseFallback.reduce((sum, expense) => sum + number(expense.amount), 0);
 
   return {
@@ -419,7 +419,7 @@ function getProjectAnalytics(projects, expenses, payroll, inventory) {
     const payrollTotal = hasPayrollRecords
       ? payroll
         .filter(item => recordBelongsToProject(item, project))
-        .reduce((sum, item) => sum + number(item.salary_amount), 0)
+        .reduce((sum, item) => sum + netPayrollAmount(item), 0)
       : expenses
         .filter(expense => recordBelongsToProject(expense, project) && isPayrollExpense(expense))
         .reduce((sum, expense) => sum + number(expense.amount), 0);
@@ -663,7 +663,7 @@ function getProjectActualExpenses(project, expenses = [], payroll = []) {
       project_id: item.project_id,
       project_code: item.project_code,
       category: "Payroll",
-      amount: item.salary_amount,
+      amount: netPayrollAmount(item),
       date: item.pay_date,
       description: item.description || item.payroll_description || item.employee_name
     }));
