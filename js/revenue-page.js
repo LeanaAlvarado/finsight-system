@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, netPayrollAmount, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, peso, escapeHtml, netPayrollAmount, number, readTable, setText } from "./supabase.js?v=20260914-payroll-net-v253";
 
 const LOCAL_PROJECTS_KEY = "lemyu_saved_projects";
 const LOCAL_DOWN_PAYMENTS_KEY = "lemyu_down_payments";

@@ -1,4 +1,4 @@
-import { supabase, escapeHtml, netPayrollAmount, peso, number, readTable, setText } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, escapeHtml, netPayrollAmount, peso, number, readTable, setText } from "./supabase.js?v=20260914-payroll-net-v253";
 
 let dashboardChart = null;
 let expenseCategoryChart = null;

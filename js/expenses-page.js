@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, number, readTable, setText, updateWithOptionalColumns } from "./supabase.js?v=20260914-payroll-net-v253";
 
 let projectRecords = [];
 let expenseRecords = [];
@@ -235,6 +235,35 @@ async function syncPayrollExpense(payrollRecord, previousPayroll = null) {
     : insertWithOptionalColumns("expenses", expenseRecord, optionalColumns);
 }
 
+async function reconcileLegacyPayrollExpenses() {
+  const updates = payrollRecords.map(payroll => {
+    const linkedExpense = findLinkedPayrollExpense(payroll);
+    const netPay = netPayrollAmount(payroll);
+
+    if (!linkedExpense?.id || number(linkedExpense.amount) !== number(payroll.salary_amount) || netPay === number(payroll.salary_amount)) {
+      return null;
+    }
+
+    return { id: linkedExpense.id, amount: netPay };
+  }).filter(Boolean);
+
+  if (!updates.length) return;
+
+  const results = await Promise.all(updates.map(update =>
+    supabase.from("expenses").update({ amount: update.amount }).eq("id", update.id)
+  ));
+
+  results.forEach((result, index) => {
+    if (result.error) {
+      console.warn("Unable to correct linked payroll expense:", result.error.message);
+      return;
+    }
+
+    const expense = expenseRecords.find(item => String(item.id || "") === String(updates[index].id));
+    if (expense) expense.amount = updates[index].amount;
+  });
+}
+
 function populateProjectSelects() {
   const payrollProjectSelect = document.getElementById("project_id");
   const expenseProjectSelect = document.getElementById("projectSelect");
@@ -397,6 +426,7 @@ async function loadPayrollAndExpenses() {
   projectRecords = projects;
   payrollRecords = payroll;
   expenseRecords = expenses;
+  await reconcileLegacyPayrollExpenses();
   populateProjectSelects();
   populateExpenseCategoryFilter(expenses);
 

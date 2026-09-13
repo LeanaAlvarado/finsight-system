@@ -1,4 +1,4 @@
-import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, updateWithOptionalColumns } from "./supabase.js?v=20260820-budget-warning-v226";
+import { supabase, peso, escapeHtml, formatDate, insertWithOptionalColumns, netPayrollAmount, updateWithOptionalColumns } from "./supabase.js?v=20260914-payroll-net-v253";
 
 const form = document.getElementById("projectForm");
 const tbody = document.getElementById("projectTable");
