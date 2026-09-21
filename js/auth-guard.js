@@ -1,5 +1,6 @@
 import { endSession, isSessionActive, refreshSession } from "./auth-security.js";
-import { recordAuditEvent } from "./supabase.js?v=20260921-append-only-audit-v257";
+import { recordAuditEvent } from "./supabase.js?v=20260921-permanent-audit-v258";
+import { installActivityAudit } from "./activity-audit.js?v=20260921-permanent-audit-v258";
 
 const PAGE_PERMISSIONS = {
   "dashboard.html": "Dashboard",
@@ -97,6 +98,7 @@ function trimSidebarForRole(permissions) {
   });
 }
 
+let activityAuditInstalled = false;
 function enforceAccess() {
   const page = getCurrentPage();
   const requiredPermission = PAGE_PERMISSIONS[page];
@@ -104,6 +106,9 @@ function enforceAccess() {
   if (!requiredPermission) return;
 
   if (!isSessionActive()) {
+    if (localStorage.getItem("lemyu_is_authenticated") === "true") {
+      void recordAuditEvent("Session expired", "authentication");
+    }
     redirectToLogin("Session timeout. You have been automatically logged out after inactivity.");
     return;
   }
@@ -122,12 +127,17 @@ function enforceAccess() {
   }
 
   if (!["owner/manager", "system administrator"].includes(role) && !permissions.includes(requiredPermission)) {
+    void recordAuditEvent("Module access denied", "authentication", page);
     alert("Unauthorized access. Your role cannot open this module.");
     window.location.href = isOperationsRole(role) ? "projects.html" : isFinanceRole(role) ? "expenses.html" : "dashboard.html";
     return;
   }
 
   refreshSession();
+  if (!activityAuditInstalled) {
+    activityAuditInstalled = true;
+    installActivityAudit(page, requiredPermission);
+  }
 }
 
 ["click", "keydown", "mousemove", "touchstart"].forEach(eventName => {

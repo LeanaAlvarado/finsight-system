@@ -1,6 +1,6 @@
 
 
-import { recordAuditEvent, supabase } from "./supabase.js?v=20260921-append-only-audit-v257";
+import { recordAuditEvent, supabase } from "./supabase.js?v=20260921-permanent-audit-v258";
 import {
   clearLoginLockout,
   getLockout,

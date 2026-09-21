@@ -18,7 +18,7 @@ const pageModules = {
 const publicPages = new Set(["index.html", "public-feedback.html"]);
 const pageName = window.location.pathname.split("/").pop() || "index.html";
 const pageModule = pageModules[pageName];
-const appVersion = "20260921-append-only-audit-v257";
+const appVersion = "20260921-permanent-audit-v258";
 const approvedRoleLabels = new Set([
   "System Administrator",
   "Owner/Manager",

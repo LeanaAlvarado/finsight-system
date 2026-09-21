@@ -1,4 +1,5 @@
-import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText } from "./supabase.js?v=20260921-append-only-audit-v257";
+import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText, supabase } from "./supabase.js?v=20260921-permanent-audit-v258";
+import { readAuditLogs } from "./audit-history.js?v=20260921-permanent-audit-v258";
 
 const AUDIT_PAGE_SIZE = 10;
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
@@ -349,6 +350,7 @@ function applyAuditAccessScope() {
 }
 
 function getAuditModuleName(tableName = "") {
+  if (String(tableName).startsWith("page:")) return String(tableName).slice(5);
   const table = String(tableName).replace(/^public\./, "").toLowerCase();
   if (table === "projects" || table === "project_files" || table === "smart_contracts") return "Project Monitoring";
   if (table === "expenses" || table === "payroll") return "Payroll & Expenses";
@@ -357,6 +359,7 @@ function getAuditModuleName(tableName = "") {
   if (table === "users" || table === "roles") return "User & Role Management";
   if (table === "reports") return "Reports & Audit Logs";
   if (table === "authentication") return "Authentication";
+  if (table === "cost_overrun_alerts") return "Dashboard";
   return "System";
 }
 
@@ -372,7 +375,7 @@ function getAuditReference(log = {}) {
   if (table === "users") return row.full_name || row.username || row.email || log.record_id || "User record";
   if (table === "roles") return row.role_name || row.name || log.record_id || "Role record";
   if (table === "project_files") return row.file_name || log.record_id || "Project file";
-  return log.record_id || row.name || "System event";
+  return log.record_id || row.name || log.metadata?.page || "System event";
 }
 
 function getAuditActivity(log = {}) {
@@ -392,7 +395,8 @@ function buildAuditEvents(logs = []) {
     moduleName: getAuditModuleName(log.table_name),
     activity: getAuditActivity(log),
     reference: getAuditReference(log),
-    dateValue: log.occurred_at || log.created_at || new Date().toISOString(),
+    dateValue: log.occurred_at || log.created_at || "",
+    actor: log.metadata?.actor_email || log.actor_id || "System / public activity",
     activityType: String(log.action || "event").toLowerCase()
   })).sort((a, b) => new Date(b.dateValue) - new Date(a.dateValue));
 }
@@ -403,7 +407,7 @@ function getFilteredAuditEvents() {
   return auditEvents
     .filter(event => {
       if (!search) return true;
-      return [event.moduleName, event.activity, event.reference]
+      return [event.moduleName, event.activity, event.reference, event.actor]
         .join(" ")
         .toLowerCase()
         .includes(search);
@@ -463,7 +467,7 @@ function renderAuditTable() {
   if (!auditTable || !canViewAuditLogs()) return;
 
   if (auditLoadError) {
-    auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">Unable to load audit log records. Please try again.</td></tr>`;
+    auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Unable to load permanent audit history. Refresh and try again. ${escapeHtml(auditLoadError)}</td></tr>`;
     renderAuditPagination(0);
     return;
   }
@@ -479,14 +483,15 @@ function renderAuditTable() {
     const message = auditEvents.length && hasActiveAuditFilters()
       ? "No audit log records match the selected filters."
       : "No audit events available yet.";
-    auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">${message}</td></tr>`;
+    auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
     renderAuditPagination(totalItems);
     return;
   }
 
   auditTable.innerHTML = pageEvents.map(event => `
     <tr>
-      <td>${formatDate(event.dateValue)}</td>
+      <td>${escapeHtml(event.dateValue ? new Date(event.dateValue).toLocaleString("en-PH") : "-")}</td>
+      <td>${escapeHtml(event.actor)}</td>
       <td>${escapeHtml(event.moduleName)}</td>
       <td>${escapeHtml(event.activity)}</td>
       <td>${escapeHtml(event.reference)}</td>
@@ -765,7 +770,7 @@ function renderReports() {
   setText("projectReportCount", financialProjects.length);
   setText("financialScope", operationsOnly ? "-" : peso(totalRevenue));
   setText("expenseReportCount", operationsOnly ? "-" : expenseRecords);
-  setText("auditCount", canViewAuditLogs() ? auditEvents.length : "-");
+  setText("auditCount", canViewAuditLogs() && !auditLoadError ? auditEvents.length : "-");
   setText("reportRevenue", operationsOnly ? "-" : peso(totalRevenue));
   setText("reportExpenses", operationsOnly ? "-" : peso(totalProjectCost));
   setText("reportProfit", operationsOnly ? "-" : peso(netResult));
@@ -782,7 +787,7 @@ function renderReports() {
 
 async function loadReports() {
   if (auditTable && canViewAuditLogs()) {
-    auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading audit log records...</td></tr>`;
+    auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading audit log records...</td></tr>`;
   }
 
   const [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult, auditResult] = await Promise.all([
@@ -791,7 +796,7 @@ async function loadReports() {
     readTable("payroll", { orderBy: "created_at" }),
     readTable("inventory", { orderBy: "created_at" }),
     readTable("feedback", { orderBy: "created_at" }),
-    readTable("audit_logs", { orderBy: "occurred_at" })
+    canViewAuditLogs() ? readAuditLogs(supabase) : Promise.resolve({ data: [], error: null })
   ]);
 
   const loadError = [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult].find(result => result.error)?.error;
