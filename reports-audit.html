@@ -184,9 +184,17 @@
   <section id="auditLogSection" class="card printable-report-section">
     <h3><span class="num">03</span> Audit Log</h3>
     <p class="muted">Permanent, append-only activity history. Events remain visible even when their source record is deleted.</p>
+    <p class="muted">Recorded actions show saved changes and module activity. Choose All recorded events to include interface interactions and background synchronization.</p>
 
     <div id="auditFilters" class="inventory-list-toolbar screen-only">
       <input id="auditSearch" class="search" type="search" placeholder="Search activity, user or reference">
+
+      <select id="auditViewFilter" aria-label="Activity view">
+        <option value="activity">Recorded actions</option>
+        <option value="interaction">Interface interactions</option>
+        <option value="background">Background synchronization</option>
+        <option value="all">All recorded events</option>
+      </select>
 
       <select id="auditModuleFilter">
         <option value="all">All modules</option>
@@ -239,7 +247,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260921-permanent-audit-v258"></script>
+<script type="module" src="js/app.js?v=20260921-audit-descriptions-v259"></script>
 
 </body>
 </html>

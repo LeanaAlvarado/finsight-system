@@ -1,4 +1,4 @@
-import { recordAuditEvent } from "./supabase.js?v=20260921-permanent-audit-v258";
+import { recordAuditEvent } from "./supabase.js?v=20260921-audit-descriptions-v259";
 
 // UI attempts are labelled separately from successful database changes, which
 // are logged transactionally by triggers. Never record input values or URLs
@@ -21,13 +21,17 @@ export function installActivityAudit(page, moduleName) {
     });
   }, true);
   document.addEventListener("submit", event => {
-    void record("Form submission attempted", { form: event.target.id || "form" });
+    void record("Form submission attempted", {
+      form: event.target.id || "form",
+      form_label: event.target.getAttribute?.("aria-label") || ""
+    });
   }, true);
   document.addEventListener("change", event => {
     const control = event.target;
     if (!control?.matches?.("input, select, textarea") || control.type === "password") return;
     void record("Field or filter changed", {
-      control: control.id || control.name || control.tagName.toLowerCase()
+      control: control.id || control.name || control.tagName.toLowerCase(),
+      field_label: (control.getAttribute?.("aria-label") || control.labels?.[0]?.textContent || "").trim().slice(0, 120)
     });
   }, true);
   window.addEventListener("beforeprint", () => { void record("Print dialog requested"); });

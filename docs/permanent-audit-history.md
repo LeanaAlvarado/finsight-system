@@ -18,6 +18,10 @@
 - Login/logout, session expiry, denied module access, report generation, module visits, control activations, form attempts, field/filter changes and print requests are recorded as application events. A click or submission attempt does **not** claim that the resulting operation succeeded. Database entries establish which changes committed. Inputs, credentials and query-string tokens are not captured by UI tracking.
 - Application events use the authenticated Supabase identity. Client-supplied metadata cannot override the stored event label, source or actor email. Credential keys are recursively redacted from new snapshots, including nested user mirrors. Existing history is left intact.
 - The viewer reads persistent audit records independently of current business records, displays actor/time information, and fetches all pages with a stable cursor so Supabase's response cap does not hide older history.
+- Activity descriptions use the saved snapshots: item creation/deletion includes the item name and quantity; updates list changed fields with before/after values, including nested quotation settings. Longer updates have expandable details. Existing rows receive the same descriptions without rewriting history.
+- The default **Recorded actions** view shows committed business changes, module visits and other recorded actions. **Interface interactions** contains clicks and submission attempts; **Background synchronization** contains duplicate saved copies, cloud sync and writes that changed only timestamps. **All recorded events** includes every loaded audit row. Changes to standalone billing/settings remain in Recorded actions. No rows are deleted by these filters.
+
+The descriptive activity viewer is a frontend-only update. Once the permanent-history migration above has been applied, deploying the viewer requires no additional Supabase SQL.
 
 ## Practical limits
 

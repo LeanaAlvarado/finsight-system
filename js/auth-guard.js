@@ -1,6 +1,6 @@
 import { endSession, isSessionActive, refreshSession } from "./auth-security.js";
-import { recordAuditEvent } from "./supabase.js?v=20260921-permanent-audit-v258";
-import { installActivityAudit } from "./activity-audit.js?v=20260921-permanent-audit-v258";
+import { recordAuditEvent } from "./supabase.js?v=20260921-audit-descriptions-v259";
+import { installActivityAudit } from "./activity-audit.js?v=20260921-audit-descriptions-v259";
 
 const PAGE_PERMISSIONS = {
   "dashboard.html": "Dashboard",

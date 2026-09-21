@@ -1,5 +1,6 @@
-import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText, supabase } from "./supabase.js?v=20260921-permanent-audit-v258";
-import { readAuditLogs } from "./audit-history.js?v=20260921-permanent-audit-v258";
+import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText, supabase } from "./supabase.js?v=20260921-audit-descriptions-v259";
+import { readAuditLogs } from "./audit-history.js?v=20260921-audit-descriptions-v259";
+import { buildAuditEvents, matchesAuditView } from "./audit-presentation.js?v=20260921-audit-descriptions-v259";
 
 const AUDIT_PAGE_SIZE = 10;
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
@@ -25,6 +26,7 @@ const reportCoverageState = {
 };
 
 const auditListState = {
+  view: "activity",
   search: "",
   module: "all",
   action: "all",
@@ -349,65 +351,14 @@ function applyAuditAccessScope() {
   if (auditSection) auditSection.style.display = "none";
 }
 
-function getAuditModuleName(tableName = "") {
-  if (String(tableName).startsWith("page:")) return String(tableName).slice(5);
-  const table = String(tableName).replace(/^public\./, "").toLowerCase();
-  if (table === "projects" || table === "project_files" || table === "smart_contracts") return "Project Monitoring";
-  if (table === "expenses" || table === "payroll") return "Payroll & Expenses";
-  if (table === "inventory" || table === "material_catalog") return "Inventory";
-  if (table === "feedback") return "Proposal / Quotation & Feedback";
-  if (table === "users" || table === "roles") return "User & Role Management";
-  if (table === "reports") return "Reports & Audit Logs";
-  if (table === "authentication") return "Authentication";
-  if (table === "cost_overrun_alerts") return "Dashboard";
-  return "System";
-}
-
-function getAuditReference(log = {}) {
-  const row = log.new_data || log.old_data || {};
-  const table = String(log.table_name || "").replace(/^public\./, "").toLowerCase();
-
-  if (table === "projects") return row.project_title || row.project_code || log.record_id || "Project record";
-  if (table === "payroll") return row.employee_name || log.record_id || "Payroll record";
-  if (table === "expenses") return row.description || row.category || (row.amount ? peso(row.amount) : log.record_id || "Expense record");
-  if (table === "inventory" || table === "material_catalog") return row.name || row.material_name || log.record_id || "Material record";
-  if (table === "feedback") return row.client_name || log.record_id || "Feedback record";
-  if (table === "users") return row.full_name || row.username || row.email || log.record_id || "User record";
-  if (table === "roles") return row.role_name || row.name || log.record_id || "Role record";
-  if (table === "project_files") return row.file_name || log.record_id || "Project file";
-  return log.record_id || row.name || log.metadata?.page || "System event";
-}
-
-function getAuditActivity(log = {}) {
-  const action = String(log.action || "EVENT").toUpperCase();
-  if (action === "EVENT") return log.metadata?.event || "System event recorded";
-  const entity = String(log.table_name || "record").replace(/^public\./, "").replaceAll("_", " ");
-  const verb = {
-    INSERT: "created",
-    UPDATE: "updated",
-    DELETE: "deleted"
-  }[action] || "recorded";
-  return `${entity.charAt(0).toUpperCase()}${entity.slice(1)} ${verb}`;
-}
-
-function buildAuditEvents(logs = []) {
-  return (logs || []).map(log => ({
-    moduleName: getAuditModuleName(log.table_name),
-    activity: getAuditActivity(log),
-    reference: getAuditReference(log),
-    dateValue: log.occurred_at || log.created_at || "",
-    actor: log.metadata?.actor_email || log.actor_id || "System / public activity",
-    activityType: String(log.action || "event").toLowerCase()
-  })).sort((a, b) => new Date(b.dateValue) - new Date(a.dateValue));
-}
-
 function getFilteredAuditEvents() {
   const search = auditListState.search.trim().toLowerCase();
 
   return auditEvents
+    .filter(event => matchesAuditView(event, auditListState.view))
     .filter(event => {
       if (!search) return true;
-      return [event.moduleName, event.activity, event.reference, event.actor]
+      return [event.moduleName, event.activity, event.reference, event.actor, ...event.details]
         .join(" ")
         .toLowerCase()
         .includes(search);
@@ -426,7 +377,8 @@ function getFilteredAuditEvents() {
 function hasActiveAuditFilters() {
   return Boolean(auditListState.search.trim())
     || auditListState.module !== "all"
-    || auditListState.action !== "all";
+    || auditListState.action !== "all"
+    || auditListState.view !== "all";
 }
 
 function renderAuditPagination(totalItems) {
@@ -493,7 +445,7 @@ function renderAuditTable() {
       <td>${escapeHtml(event.dateValue ? new Date(event.dateValue).toLocaleString("en-PH") : "-")}</td>
       <td>${escapeHtml(event.actor)}</td>
       <td>${escapeHtml(event.moduleName)}</td>
-      <td>${escapeHtml(event.activity)}</td>
+      <td>${escapeHtml(event.activity)}${event.details.length > 3 ? `<details><summary>View all ${event.details.length} changes</summary><ul>${event.details.map(detail => `<li>${escapeHtml(detail)}</li>`).join("")}</ul></details>` : ""}</td>
       <td>${escapeHtml(event.reference)}</td>
     </tr>
   `).join("");
@@ -507,6 +459,7 @@ function renderLatestActivity(events = []) {
   if (!list || !count) return;
 
   const latestEvents = events
+    .filter(event => matchesAuditView(event, "activity"))
     .slice()
     .sort((a, b) => new Date(b.dateValue || 0) - new Date(a.dateValue || 0))
     .slice(0, 5);
@@ -517,7 +470,7 @@ function renderLatestActivity(events = []) {
       <li>
         <span>${formatDate(event.dateValue)}</span>
         <strong>${escapeHtml(event.moduleName)}</strong>
-        <em>${escapeHtml(event.reference)}</em>
+        <em>${escapeHtml(event.activity)}</em>
       </li>
     `).join("")
     : `<li>No recent activity yet.</li>`;
@@ -870,6 +823,7 @@ function bindCoverageControls() {
 
 function bindAuditFilters() {
   const controls = [
+    ["auditViewFilter", "view"],
     ["auditSearch", "search"],
     ["auditModuleFilter", "module"],
     ["auditActionFilter", "action"],
