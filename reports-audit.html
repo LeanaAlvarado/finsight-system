@@ -183,7 +183,7 @@
 
   <section id="auditLogSection" class="card printable-report-section">
     <h3><span class="num">03</span> Audit Log</h3>
-    <p class="muted">Traceable activity generated from the latest saved records.</p>
+    <p class="muted">Permanent, append-only activity history. Events remain visible even when their source record is deleted.</p>
 
     <div id="auditFilters" class="inventory-list-toolbar screen-only">
       <input id="auditSearch" class="search" type="search" placeholder="Search activity or reference">
@@ -194,14 +194,15 @@
         <option value="Payroll & Expenses">Payroll & Expenses</option>
         <option value="Inventory">Inventory</option>
         <option value="Proposal / Quotation & Feedback">Proposal / Quotation & Feedback</option>
+        <option value="User & Role Management">User & Role Management</option>
       </select>
 
       <select id="auditActionFilter">
         <option value="all">All activity</option>
-        <option value="record">Record activity</option>
-        <option value="transaction">Transactions</option>
-        <option value="feedback">Feedback</option>
-        <option value="monitoring">Monitoring</option>
+        <option value="insert">Created</option>
+        <option value="update">Updated</option>
+        <option value="delete">Deleted</option>
+        <option value="event">Other system events</option>
       </select>
 
       <select id="auditSort">
@@ -232,7 +233,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260823-accurate-expense-report-v251"></script>
+<script type="module" src="js/app.js?v=20260921-append-only-audit-v257"></script>
 
 </body>
 </html>

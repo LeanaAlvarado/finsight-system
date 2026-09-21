@@ -1,4 +1,4 @@
-import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, setText } from "./supabase.js?v=20260914-payroll-monitoring-v254";
+import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText } from "./supabase.js?v=20260921-append-only-audit-v257";
 
 const AUDIT_PAGE_SIZE = 10;
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
@@ -10,11 +10,12 @@ let reportRecords = {
   expenses: [],
   payroll: [],
   inventory: [],
-  feedback: []
+  feedback: [],
+  auditLogs: []
 };
 let auditEvents = [];
 let auditCurrentPage = 1;
-let reportsLoadError = "";
+let auditLoadError = "";
 
 const reportCoverageState = {
   mode: "month",
@@ -76,16 +77,6 @@ function mergeCurrentRecords(cloudRecords = [], localKey, keyFields) {
 
 function getRecordDate(record) {
   return record.created_at || record.uploaded_at || record.date || record.expense_date || record.pay_date || "";
-}
-
-function addAuditEvent(events, moduleName, activity, reference, dateValue, activityType = "record") {
-  events.push({
-    moduleName,
-    activity,
-    reference,
-    dateValue: dateValue || new Date().toISOString(),
-    activityType
-  });
 }
 
 function isFinanceScope() {
@@ -357,71 +348,53 @@ function applyAuditAccessScope() {
   if (auditSection) auditSection.style.display = "none";
 }
 
-function buildAuditEvents(projects, expenses, payroll, inventory, feedback) {
-  const events = [];
-  const financeOnly = isFinanceScope();
-  const operationsOnly = isOperationsScope();
+function getAuditModuleName(tableName = "") {
+  const table = String(tableName).replace(/^public\./, "").toLowerCase();
+  if (table === "projects" || table === "project_files" || table === "smart_contracts") return "Project Monitoring";
+  if (table === "expenses" || table === "payroll") return "Payroll & Expenses";
+  if (table === "inventory" || table === "material_catalog") return "Inventory";
+  if (table === "feedback") return "Proposal / Quotation & Feedback";
+  if (table === "users" || table === "roles") return "User & Role Management";
+  if (table === "reports") return "Reports & Audit Logs";
+  if (table === "authentication") return "Authentication";
+  return "System";
+}
 
-  projects.forEach(project => {
-    addAuditEvent(
-      events,
-      "Project Monitoring",
-      operationsOnly ? "Project record available for monitoring review" : "Project budget and contract amount available for financial review",
-      project.project_title || project.project_code || "Project",
-      getRecordDate(project),
-      "monitoring"
-    );
-  });
+function getAuditReference(log = {}) {
+  const row = log.new_data || log.old_data || {};
+  const table = String(log.table_name || "").replace(/^public\./, "").toLowerCase();
 
-  if (!operationsOnly) {
-    expenses.forEach(expense => {
-      addAuditEvent(
-        events,
-        "Payroll & Expenses",
-        `${expense.category || "Expense"} transaction recorded`,
-        peso(expense.amount),
-        getRecordDate(expense),
-        "transaction"
-      );
-    });
+  if (table === "projects") return row.project_title || row.project_code || log.record_id || "Project record";
+  if (table === "payroll") return row.employee_name || log.record_id || "Payroll record";
+  if (table === "expenses") return row.description || row.category || (row.amount ? peso(row.amount) : log.record_id || "Expense record");
+  if (table === "inventory" || table === "material_catalog") return row.name || row.material_name || log.record_id || "Material record";
+  if (table === "feedback") return row.client_name || log.record_id || "Feedback record";
+  if (table === "users") return row.full_name || row.username || row.email || log.record_id || "User record";
+  if (table === "roles") return row.role_name || row.name || log.record_id || "Role record";
+  if (table === "project_files") return row.file_name || log.record_id || "Project file";
+  return log.record_id || row.name || "System event";
+}
 
-    payroll.forEach(item => {
-      addAuditEvent(
-        events,
-        "Payroll & Expenses",
-        `Payroll record saved for ${item.employee_name || "employee"}`,
-        peso(netPayrollAmount(item)),
-        getRecordDate(item),
-        "transaction"
-      );
-    });
-  }
+function getAuditActivity(log = {}) {
+  const action = String(log.action || "EVENT").toUpperCase();
+  if (action === "EVENT") return log.metadata?.event || "System event recorded";
+  const entity = String(log.table_name || "record").replace(/^public\./, "").replaceAll("_", " ");
+  const verb = {
+    INSERT: "created",
+    UPDATE: "updated",
+    DELETE: "deleted"
+  }[action] || "recorded";
+  return `${entity.charAt(0).toUpperCase()}${entity.slice(1)} ${verb}`;
+}
 
-  if (!financeOnly && !operationsOnly) {
-    inventory.forEach(item => {
-      addAuditEvent(
-        events,
-        "Inventory",
-        "Inventory material recorded",
-        item.name || item.material_name || "Material",
-        getRecordDate(item),
-        "record"
-      );
-    });
-
-    feedback.forEach(item => {
-      addAuditEvent(
-        events,
-        "Proposal / Quotation & Feedback",
-        `Client feedback submitted with rating ${item.rating || item.overall_satisfaction || 0}/5`,
-        item.client_name || "Client",
-        getRecordDate(item),
-        "feedback"
-      );
-    });
-  }
-
-  return events.sort((a, b) => new Date(b.dateValue) - new Date(a.dateValue));
+function buildAuditEvents(logs = []) {
+  return (logs || []).map(log => ({
+    moduleName: getAuditModuleName(log.table_name),
+    activity: getAuditActivity(log),
+    reference: getAuditReference(log),
+    dateValue: log.occurred_at || log.created_at || new Date().toISOString(),
+    activityType: String(log.action || "event").toLowerCase()
+  })).sort((a, b) => new Date(b.dateValue) - new Date(a.dateValue));
 }
 
 function getFilteredAuditEvents() {
@@ -489,7 +462,7 @@ function renderAuditPagination(totalItems) {
 function renderAuditTable() {
   if (!auditTable || !canViewAuditLogs()) return;
 
-  if (reportsLoadError) {
+  if (auditLoadError) {
     auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">Unable to load audit log records. Please try again.</td></tr>`;
     renderAuditPagination(0);
     return;
@@ -569,6 +542,7 @@ function renderReportProjectList(projects = []) {
 }
 
 window.generateReportsActiveProjectsReport = function() {
+  void recordAuditEvent("Generated Active Projects Report", "reports");
   const activeProjects = filterByCoverage(reportRecords.projects)
     .filter(project => isReportFinancialStatus(project.status))
     .sort((a, b) => String(a.project_code || "").localeCompare(String(b.project_code || "")));
@@ -659,6 +633,7 @@ window.generateReportsActiveProjectsReport = function() {
 };
 
 window.generateReportsProjectMaterialsReport = function() {
+  void recordAuditEvent("Generated Material Usage Report", "reports");
   const projects = filterByCoverage(reportRecords.projects).filter(project => isReportMaterialStatus(project.status || project.project_status));
   const { groups, materials } = getProjectMaterialsGroupedReport(projects, reportRecords.inventory);
   const totalRecords = materials.length;
@@ -787,8 +762,6 @@ function renderReports() {
   const netResult = totalRevenue - totalProjectCost;
   const netMargin = totalRevenue ? (netResult / totalRevenue) * 100 : 0;
 
-  auditEvents = buildAuditEvents(projects, expenses, payroll, inventory, feedback);
-
   setText("projectReportCount", financialProjects.length);
   setText("financialScope", operationsOnly ? "-" : peso(totalRevenue));
   setText("expenseReportCount", operationsOnly ? "-" : expenseRecords);
@@ -812,24 +785,34 @@ async function loadReports() {
     auditTable.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading audit log records...</td></tr>`;
   }
 
-  const [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult] = await Promise.all([
+  const [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult, auditResult] = await Promise.all([
     readTable("projects", { orderBy: "created_at" }),
     readTable("expenses", { orderBy: "created_at" }),
     readTable("payroll", { orderBy: "created_at" }),
     readTable("inventory", { orderBy: "created_at" }),
-    readTable("feedback", { orderBy: "created_at" })
+    readTable("feedback", { orderBy: "created_at" }),
+    readTable("audit_logs", { orderBy: "occurred_at" })
   ]);
 
   const loadError = [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult].find(result => result.error)?.error;
-  reportsLoadError = loadError?.message || "";
+  // A business-data load failure should not fabricate or remove audit history.
+  // The Audit Log has its own persistent query and error state below.
+  auditLoadError = auditResult.error?.message || "";
 
   reportRecords = {
     projects: mergeCurrentRecords(projectResult.error ? [] : projectResult.data, "lemyu_saved_projects", ["id", "project_code"]),
     expenses: expenseResult.error ? [] : expenseResult.data,
     payroll: payrollResult.error ? [] : payrollResult.data,
     inventory: mergeCurrentRecords(inventoryResult.error ? [] : inventoryResult.data, "lemyu_saved_inventory", ["id"]),
-    feedback: feedbackResult.error ? [] : feedbackResult.data
+    feedback: feedbackResult.error ? [] : feedbackResult.data,
+    auditLogs: auditResult.error ? [] : auditResult.data
   };
+
+  // Audit records are loaded from the permanent audit_logs table, never
+  // regenerated from the current records. A DELETE event therefore stays
+  // visible after the project, payroll, expense, inventory, or feedback row
+  // has already been removed.
+  auditEvents = buildAuditEvents(reportRecords.auditLogs);
 
   renderReports();
 }
@@ -908,6 +891,7 @@ window.goToAuditPage = function(page) {
 };
 
 document.getElementById("printReportBtn")?.addEventListener("click", () => {
+  void recordAuditEvent("Printed management summary", "reports");
   renderReports();
   window.print();
 });

@@ -1,6 +1,6 @@
 
 
-import { supabase } from "./supabase.js?v=20260820-budget-warning-v226";
+import { recordAuditEvent, supabase } from "./supabase.js?v=20260921-append-only-audit-v257";
 import {
   clearLoginLockout,
   getLockout,
@@ -517,6 +517,10 @@ async function completeLogin(appUser) {
 
   clearLoginLockout(pendingEmail);
   startSession(appUser, permissions);
+  await recordAuditEvent("Successful login", "authentication", appUser.id || appUser.email || null, {
+    email: appUser.email || pendingEmail,
+    role: appUser.role || appUser.role_name || ""
+  });
   alert("Login successful.");
   window.location.href = isOperationsRole(appUser.role)
     ? "projects.html"

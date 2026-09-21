@@ -1,4 +1,5 @@
 import { endSession, isSessionActive, refreshSession } from "./auth-security.js";
+import { recordAuditEvent } from "./supabase.js?v=20260921-append-only-audit-v257";
 
 const PAGE_PERMISSIONS = {
   "dashboard.html": "Dashboard",
@@ -135,8 +136,13 @@ function enforceAccess() {
 
 document.querySelectorAll('a[href="index.html"]').forEach(link => {
   if (link.textContent.trim().toLowerCase() === "logout") {
-    link.addEventListener("click", () => {
+    link.addEventListener("click", async event => {
+      event.preventDefault();
+      await recordAuditEvent("User logout", "authentication", null, {
+        email: localStorage.getItem("lemyu_user_email") || ""
+      });
       endSession();
+      window.location.href = "index.html";
     });
   }
 });

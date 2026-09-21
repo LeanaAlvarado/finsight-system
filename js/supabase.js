@@ -79,6 +79,24 @@ export async function readTable(tableName, options = {}) {
   return { data: data || [], error };
 }
 
+// Non-CRUD actions do not pass through a table trigger. This helper records
+// those actions through the append-only database RPC without interrupting the
+// user flow if the audit service is temporarily unavailable.
+export async function recordAuditEvent(action, tableName = "application", recordId = null, metadata = {}) {
+  try {
+    const { error } = await supabase.rpc("record_audit_event", {
+      p_action: action,
+      p_table_name: tableName,
+      p_record_id: recordId,
+      p_metadata: metadata
+    });
+
+    if (error) console.warn("Audit event was not saved:", error.message || error);
+  } catch (error) {
+    console.warn("Audit event was not saved:", error?.message || error);
+  }
+}
+
 function insertQuery(tableName, record, returnRecord) {
   const query = supabase.from(tableName).insert([record]);
   return returnRecord ? query.select("*").single() : query;
