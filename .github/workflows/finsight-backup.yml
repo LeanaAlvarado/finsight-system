@@ -1,0 +1,48 @@
+name: FinSight encrypted data backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 18:17 Asia/Manila = 10:17 UTC. GitHub can delay scheduled runs.
+    - cron: '17 10 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: finsight-data-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Check out committed source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check backup tools and encryption with synthetic data
+        shell: powershell
+        run: |
+          ./tests/backup-tools.test.ps1
+          ./tests/backup-encryption.test.ps1
+
+      - name: Export, verify, and encrypt database and uploaded files
+        shell: powershell
+        env:
+          SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_STORAGE_KEY: ${{ secrets.SUPABASE_STORAGE_KEY }}
+          FINSIGHT_BACKUP_PASSPHRASE: ${{ secrets.FINSIGHT_BACKUP_PASSPHRASE }}
+        run: ./scripts/backup/Invoke-FinSightGitHubBackup.ps1
+
+      - name: Store only the encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: finsight-encrypted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/finsight-encrypted-artifact/backup.zip.gpg
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
