@@ -4,3 +4,11 @@ finsight-system/
 outputs/
 tmp_*/
 supabase/.temp/
+# Private backups and credentials must never enter the public site/repository.
+backups/
+*.dump
+*.backup
+*.gpg
+*.clixml
+backup-config*.json
+backup-manifest*.json
