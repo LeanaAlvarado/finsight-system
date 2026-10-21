@@ -13,6 +13,7 @@ export function createAuditFeed(client, { scope, storage, onChange = () => {}, n
   let cursor = null;
   let generation = 0;
   let request = null;
+  let headRequest = null;
   let channel = null;
   let disposed = false;
   let latestId = null;
@@ -109,16 +110,20 @@ export function createAuditFeed(client, { scope, storage, onChange = () => {}, n
   }
 
   async function checkLatest() {
-    if (disposed || state.loading || state.pending) return;
+    if (disposed || state.loading || state.pending || headRequest) return;
     const version = generation;
+    const controller = new AbortController();
+    headRequest = controller;
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
       const { data, error } = await client.from('audit_logs').select('id')
-        .order('occurred_at', { ascending: false }).order('id', { ascending: false }).limit(1);
+        .order('occurred_at', { ascending: false }).order('id', { ascending: false }).limit(1).abortSignal(controller.signal);
       if (!error && !disposed && generation === version && data?.[0]?.id && data[0].id !== latestId) {
         latestId = data[0].id;
         markPending();
       }
     } catch { /* Keep the loaded records on a transient network failure. */ }
+    finally { clearTimeout(timeout); headRequest = null; }
   }
 
   return {
@@ -135,7 +140,7 @@ export function createAuditFeed(client, { scope, storage, onChange = () => {}, n
     checkLatest,
     clearCache: removeCache,
     dispose() {
-      disposed = true; generation++; request?.abort();
+      disposed = true; generation++; request?.abort(); headRequest?.abort();
       if (channel) { void client.removeChannel(channel); channel = null; }
     }
   };
