@@ -970,10 +970,46 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => stopAuditLog());
 window.addEventListener('pageshow', event => { if (event.persisted) void startAuditLog(); });
 
-document.getElementById("printReportBtn")?.addEventListener("click", () => {
-  void recordAuditEvent("Printed management summary", "reports");
+document.getElementById("generateSummaryReportBtn")?.addEventListener("click", () => {
+  const reportWindow = window.open("", "_blank");
+  if (!reportWindow) {
+    alert("Please allow pop-ups to generate the Management Summary report.");
+    return;
+  }
   renderReports();
-  window.print();
+  const metrics = [
+    ["Project Records", "projectReportCount"],
+    ["Total Revenue", "reportRevenue"],
+    ["Project Cost Estimated", "reportExpenses"],
+    ["Estimated Profit", "reportProfit"],
+    ["Net Result Margin", "reportMargin"],
+    ["Client Feedback", "reportFeedback"]
+  ].filter(([, id]) => (!isOperationsScope() || id === "projectReportCount")
+    && (!isFinanceScope() || id !== "reportFeedback"));
+  const rows = metrics.map(([label, id]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(document.getElementById(id)?.textContent || "-")}</td></tr>`).join("");
+  reportWindow.document.write(`<!DOCTYPE html>
+    <html lang="en"><head><meta charset="UTF-8"><title>Management Summary Report</title>
+    <style>
+      @page{size:A4;margin:18mm;}
+      body{font-family:Arial,sans-serif;color:#071f3d;margin:0;background:#f4f7fb;}
+      main{max-width:850px;margin:24px auto;padding:32px;background:#fff;}
+      small{font-weight:700;letter-spacing:.06em;color:#51657d;}
+      h1{font-size:25px;margin:10px 0;}
+      p{color:#42566f;font-size:13px;line-height:1.5;}
+      table{width:100%;border-collapse:collapse;margin-top:24px;}
+      th,td{padding:14px;border:1px solid #d9e3ee;text-align:left;}
+      th{background:#eef4fa;}td{text-align:right;font-weight:700;}
+      .actions{text-align:right;}button{padding:10px 16px;border:0;border-radius:6px;background:#174f80;color:#fff;cursor:pointer;}
+      @media print{body{background:#fff;}main{margin:0;padding:0;}.actions{display:none;}}
+    </style></head><body><main>
+    <div class="actions"><button type="button" onclick="window.print()">Print / Save PDF</button></div>
+    <small>LEMYU FIBER OPTIC INSTALLATION AND SERVICES</small>
+    <h1>Management Summary Report</h1>
+    <p>${escapeHtml(getPrintCoverageText())}<br>Generated: ${escapeHtml(new Date().toLocaleString("en-PH"))}</p>
+    <table><tbody>${rows}</tbody></table>
+    </main></body></html>`);
+  reportWindow.document.close();
+  void recordAuditEvent("Generated management summary", "reports");
 });
 
 applyFinanceReportScope();

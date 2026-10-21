@@ -14,6 +14,9 @@ let timerId = 0;
 let authChanged;
 let removeCount = 0;
 let queryCount = 0;
+let generatedHtml = '';
+let printCalls = 0;
+const recordedEvents = [];
 const data = Array.from({ length: 50 }, (_, n) => ({
   id: `${String(100 - n).padStart(8, '0')}-0000-4000-8000-000000000000`,
   occurred_at: '2026-10-21T00:00:00Z', action: 'INSERT', table_name: 'public.inventory',
@@ -50,14 +53,18 @@ const context = vm.createContext({
   document: { body: { dataset: {} }, visibilityState: 'visible', getElementById: element,
     querySelectorAll: () => [], querySelector: () => null,
     addEventListener(name, callback) { documentHandlers[name] = callback; } },
-  window: { addEventListener(name, callback) { windowHandlers[name] = callback; } }
+  window: {
+    addEventListener(name, callback) { windowHandlers[name] = callback; },
+    open() { return { document: { write(html) { generatedHtml = html; }, close() {} } }; },
+    print() { printCalls++; }
+  }
 });
 const names = ['escapeHtml', 'formatDate', 'netPayrollAmount', 'number', 'peso', 'readTable', 'recordAuditEvent', 'setText', 'supabase'];
 const helpers = new vm.SyntheticModule(names, function() {
   const functions = { escapeHtml: value => String(value).replaceAll('<', '&lt;'), formatDate: String,
     netPayrollAmount: () => 0, number: value => Number(value) || 0, peso: String,
     readTable(table) { businessCalls.push(table); return new Promise(resolve => businessResolvers.push(resolve)); },
-    recordAuditEvent: async () => {}, setText(id, value) { element(id).textContent = String(value); }, supabase: client };
+    recordAuditEvent: async (...args) => { recordedEvents.push(args); }, setText(id, value) { element(id).textContent = String(value); }, supabase: client };
   for (const name of names) this.setExport(name, functions[name]);
 }, { context });
 const modules = new Map();
@@ -86,6 +93,11 @@ businessResolvers.forEach(resolve => resolve({ data: [], error: null }));
 await new Promise(resolve => setImmediate(resolve));
 assert.match(element('auditTable').innerHTML, /Cable/);
 assert.match(element('latestActivityList').innerHTML, /Cable 100/);
+element('generateSummaryReportBtn').listeners.click();
+assert.match(generatedHtml, /<h1>Management Summary Report<\/h1>/);
+assert.match(generatedHtml, /Total Revenue/);
+assert.equal(printCalls, 0, 'Generating a report must show a preview without opening the print dialog');
+assert.deepEqual(recordedEvents.at(-1), ['Generated management summary', 'reports']);
 authChanged('SIGNED_OUT', null);
 assert.equal(element('auditTable').innerHTML, '');
 assert.equal(element('auditLogSection').style.display, 'none');
