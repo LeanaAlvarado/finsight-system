@@ -1,6 +1,6 @@
 import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText, supabase } from "./supabase.js?v=20260921-audit-descriptions-v259";
-import { readAuditLogs } from "./audit-history.js?v=20260921-audit-descriptions-v259";
-import { buildAuditEvents, matchesAuditView } from "./audit-presentation.js?v=20260921-audit-descriptions-v259";
+import { createAuditFeed } from "./audit-feed.js?v=20261021-audit-lazy-v1";
+import { matchesAuditView } from "./audit-presentation.js?v=20260921-audit-descriptions-v259";
 
 const AUDIT_PAGE_SIZE = 10;
 const LOCAL_QUOTATION_ITEMS_KEY = "lemyu_quotation_items";
@@ -18,6 +18,14 @@ let reportRecords = {
 let auditEvents = [];
 let auditCurrentPage = 1;
 let auditLoadError = "";
+let auditFeed = null;
+let auditRefreshTimer = null;
+let auditFilterTimer = null;
+let auditBrowsing = false;
+let auditPollTimer = null;
+let auditAuthSubscription = null;
+let auditIdentity = null;
+let auditStopped = false;
 
 const reportCoverageState = {
   mode: "month",
@@ -394,8 +402,8 @@ function renderAuditPagination(totalItems) {
 
   pagination.hidden = false;
   summary.textContent = totalItems
-    ? `Showing ${startIndex}-${endIndex} of ${totalItems} audit log records`
-    : "Showing 0 of 0 audit log records";
+    ? `Showing ${startIndex}-${endIndex} of ${totalItems} matching loaded records${auditFeed?.state.hasMore ? ' — older history available' : ''}`
+    : `No matching loaded records${auditFeed?.state.hasMore ? ' — load older history to continue' : ''}`;
 
   const pageWindow = 5;
   const firstPage = Math.max(1, Math.min(auditCurrentPage - 2, totalPages - pageWindow + 1));
@@ -411,14 +419,20 @@ function renderAuditPagination(totalItems) {
   controls.innerHTML = `
     <button type="button" onclick="goToAuditPage(${auditCurrentPage - 1})" ${auditCurrentPage <= 1 ? "disabled" : ""}>Previous</button>
     ${pageButtons.join("")}
-    <button type="button" onclick="goToAuditPage(${auditCurrentPage + 1})" ${auditCurrentPage >= totalPages ? "disabled" : ""}>Next</button>
+    <button type="button" onclick="goToAuditPage(${auditCurrentPage + 1})" ${(auditCurrentPage >= totalPages && !auditFeed?.state.hasMore) || auditFeed?.state.loading || auditBrowsing ? "disabled" : ""}>Next</button>
   `;
 }
 
 function renderAuditTable() {
   if (!auditTable || !canViewAuditLogs()) return;
 
-  if (auditLoadError) {
+  if (!auditEvents.length && auditFeed?.state.loading) {
+    auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading recent audit records...</td></tr>`;
+    renderAuditPagination(0);
+    return;
+  }
+
+  if (auditLoadError && !auditEvents.length) {
     auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Unable to load permanent audit history. Refresh and try again. ${escapeHtml(auditLoadError)}</td></tr>`;
     renderAuditPagination(0);
     return;
@@ -432,7 +446,9 @@ function renderAuditTable() {
   const pageEvents = events.slice(startIndex, startIndex + AUDIT_PAGE_SIZE);
 
   if (!pageEvents.length) {
-    const message = auditEvents.length && hasActiveAuditFilters()
+    const message = auditFeed?.state.hasMore
+      ? "No matches in the loaded history. Use Load older records to continue searching."
+      : auditEvents.length && hasActiveAuditFilters()
       ? "No audit log records match the selected filters."
       : "No audit events available yet.";
     auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
@@ -723,7 +739,7 @@ function renderReports() {
   setText("projectReportCount", financialProjects.length);
   setText("financialScope", operationsOnly ? "-" : peso(totalRevenue));
   setText("expenseReportCount", operationsOnly ? "-" : expenseRecords);
-  setText("auditCount", canViewAuditLogs() && !auditLoadError ? auditEvents.length : "-");
+  setText("auditCount", canViewAuditLogs() ? `${auditEvents.length}${auditFeed?.state.hasMore ? '+' : ''}` : "-");
   setText("reportRevenue", operationsOnly ? "-" : peso(totalRevenue));
   setText("reportExpenses", operationsOnly ? "-" : peso(totalProjectCost));
   setText("reportProfit", operationsOnly ? "-" : peso(netResult));
@@ -733,29 +749,21 @@ function renderReports() {
   setText("printCoverageText", getPrintCoverageText());
   setText("printGeneratedText", `Generated: ${new Date().toLocaleString("en-PH")}`);
 
-  renderLatestActivity(auditEvents);
+  renderLatestActivity(auditFeed?.state.recentEvents || auditEvents);
   renderReportProjectList(financialProjects);
   renderAuditTable();
 }
 
 async function loadReports() {
-  if (auditTable && canViewAuditLogs()) {
-    auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading audit log records...</td></tr>`;
-  }
-
-  const [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult, auditResult] = await Promise.all([
+  const [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult] = await Promise.all([
     readTable("projects", { orderBy: "created_at" }),
     readTable("expenses", { orderBy: "created_at" }),
     readTable("payroll", { orderBy: "created_at" }),
     readTable("inventory", { orderBy: "created_at" }),
-    readTable("feedback", { orderBy: "created_at" }),
-    canViewAuditLogs() ? readAuditLogs(supabase) : Promise.resolve({ data: [], error: null })
+    readTable("feedback", { orderBy: "created_at" })
   ]);
 
   const loadError = [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult].find(result => result.error)?.error;
-  // A business-data load failure should not fabricate or remove audit history.
-  // The Audit Log has its own persistent query and error state below.
-  auditLoadError = auditResult.error?.message || "";
 
   reportRecords = {
     projects: mergeCurrentRecords(projectResult.error ? [] : projectResult.data, "lemyu_saved_projects", ["id", "project_code"]),
@@ -763,14 +771,8 @@ async function loadReports() {
     payroll: payrollResult.error ? [] : payrollResult.data,
     inventory: mergeCurrentRecords(inventoryResult.error ? [] : inventoryResult.data, "lemyu_saved_inventory", ["id"]),
     feedback: feedbackResult.error ? [] : feedbackResult.data,
-    auditLogs: auditResult.error ? [] : auditResult.data
+    auditLogs: []
   };
-
-  // Audit records are loaded from the permanent audit_logs table, never
-  // regenerated from the current records. A DELETE event therefore stays
-  // visible after the project, payroll, expense, inventory, or feedback row
-  // has already been removed.
-  auditEvents = buildAuditEvents(reportRecords.auditLogs);
 
   renderReports();
 }
@@ -836,18 +838,137 @@ function bindAuditFilters() {
 
     const eventName = element.type === "search" ? "input" : "change";
     element.addEventListener(eventName, event => {
-      auditListState[stateKey] = event.target.value || (stateKey === "search" ? "" : "all");
-      auditCurrentPage = 1;
-      renderAuditTable();
+      clearTimeout(auditFilterTimer);
+      const value = event.target.value || (stateKey === "search" ? "" : "all");
+      const apply = async () => {
+        auditListState[stateKey] = value;
+        auditCurrentPage = 1;
+        if (stateKey === 'sort') await auditFeed?.setOldestFirst(value === 'oldest');
+        renderAuditTable();
+      };
+      if (stateKey === 'search') auditFilterTimer = setTimeout(apply, 250);
+      else void apply();
     });
   });
 }
 
-window.goToAuditPage = function(page) {
-  const totalPages = Math.max(1, Math.ceil(getFilteredAuditEvents().length / AUDIT_PAGE_SIZE));
-  auditCurrentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
-  renderAuditTable();
+window.goToAuditPage = async function(page) {
+  if (auditBrowsing || auditFeed?.state.loading) return;
+  const target = Math.max(Number(page) || 1, 1);
+  auditBrowsing = true;
+  try {
+    // A filter may discard a whole batch. Bound the work per user request;
+    // never traverse the entire history just to display one page.
+    for (let batches = 0; batches < 3 && auditFeed?.state.hasMore
+      && getFilteredAuditEvents().length <= (target - 1) * AUDIT_PAGE_SIZE; batches++) {
+      await auditFeed.loadMore();
+      if (auditFeed.state.error) break;
+    }
+    const totalPages = Math.max(1, Math.ceil(getFilteredAuditEvents().length / AUDIT_PAGE_SIZE));
+    auditCurrentPage = Math.min(target, totalPages);
+  } finally { auditBrowsing = false; renderAuditTable(); }
 };
+
+function renderAuditFeed(state) {
+  if (!canViewAuditLogs()) { stopAuditLog(true); return; }
+  auditEvents = state.events;
+  auditLoadError = state.error;
+  setText('auditCount', `${auditEvents.length}${state.hasMore ? '+' : ''}`);
+  renderLatestActivity(state.recentEvents);
+  renderAuditTable();
+  const status = state.error
+    ? `Could not refresh audit history. ${state.events.length ? 'Loaded records remain available. ' : ''}${state.error}`
+    : state.cached ? 'Showing recently saved history; checking for updates...'
+    : state.loading ? 'Loading audit history...'
+    : state.pending ? 'New audit activity is available.' : state.live;
+  setText('auditLoadStatus', status);
+  const more = document.getElementById('auditLoadMoreBtn');
+  if (more) { more.hidden = !state.hasMore; more.disabled = state.loading; }
+  if (more) more.textContent = state.oldestFirst ? 'Load newer records' : 'Load older records';
+  const refresh = document.getElementById('auditRefreshBtn');
+  if (refresh) {
+    refresh.disabled = state.loading;
+    refresh.textContent = state.pending ? 'Show new activity' : state.error ? 'Retry refresh' : 'Refresh logs';
+  }
+  // Coalesce a burst of WebSocket inserts. Older pages stay in place until
+  // the user chooses to refresh, rather than jumping while being reviewed.
+  if (state.pending && !state.loading && !auditBrowsing && auditCurrentPage === 1
+    && auditListState.sort === 'newest' && document.visibilityState !== 'hidden' && !auditRefreshTimer) {
+    auditRefreshTimer = setTimeout(() => {
+      auditRefreshTimer = null;
+      if (!auditStopped && !auditBrowsing && auditCurrentPage === 1 && auditListState.sort === 'newest') void auditFeed?.refresh();
+    }, 1000);
+  }
+}
+
+function stopAuditLog(clearCache = false) {
+  auditStopped = true;
+  clearTimeout(auditRefreshTimer); clearTimeout(auditFilterTimer); clearInterval(auditPollTimer);
+  auditRefreshTimer = null; auditFilterTimer = null; auditPollTimer = null;
+  if (clearCache) auditFeed?.clearCache();
+  auditFeed?.dispose();
+  auditFeed = null;
+  auditAuthSubscription?.unsubscribe();
+  auditAuthSubscription = null;
+  if (clearCache) {
+    auditEvents = []; auditLoadError = '';
+    if (auditTable) auditTable.innerHTML = '';
+    setText('auditCount', '-');
+    renderLatestActivity([]);
+    if (auditSection) auditSection.style.display = 'none';
+  }
+}
+
+async function startAuditLog() {
+  if (!auditTable) return;
+  if (!canViewAuditLogs()) { stopAuditLog(true); return; }
+  auditStopped = false;
+  auditEvents = []; auditLoadError = '';
+  auditTable.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading recent audit records...</td></tr>`;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (auditStopped) return;
+    if (error || !data?.session?.user?.id) throw new Error('Sign in again to view audit history.');
+    auditIdentity = data.session.user.id;
+    let storage;
+    try { storage = window.sessionStorage; } catch { /* In-memory loading still works. */ }
+    auditFeed = createAuditFeed(supabase, {
+      scope: `${auditIdentity}:${localStorage.getItem('lemyu_user_role') || ''}`,
+      storage, onChange: renderAuditFeed
+    });
+    const { data: auth } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session || session.user.id !== auditIdentity) stopAuditLog(true);
+    });
+    auditAuthSubscription = auth.subscription;
+    await auditFeed.start();
+    if (auditStopped) return;
+    if (!getFilteredAuditEvents().length && auditFeed.state.hasMore && !auditFeed.state.error) {
+      await window.goToAuditPage(1);
+    }
+    // Only head checks during idle time. Never reload business/report tables.
+    auditPollTimer = setInterval(() => {
+      if (document.visibilityState !== 'hidden') void auditFeed?.checkLatest();
+    }, 60_000);
+  } catch (error) {
+    auditLoadError = error.message || 'Unable to load audit history.';
+    renderAuditTable();
+    setText('auditLoadStatus', auditLoadError);
+  }
+}
+
+document.getElementById('auditLoadMoreBtn')?.addEventListener('click', () => { void auditFeed?.loadMore(); });
+document.getElementById('auditRefreshBtn')?.addEventListener('click', () => {
+  auditCurrentPage = 1;
+  if (auditFeed) void auditFeed.refresh(); else void startAuditLog();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden' && !auditStopped) {
+    if (auditFeed?.state.pending) renderAuditFeed(auditFeed.state);
+    else void auditFeed?.checkLatest();
+  }
+});
+window.addEventListener('pagehide', () => stopAuditLog());
+window.addEventListener('pageshow', event => { if (event.persisted) void startAuditLog(); });
 
 document.getElementById("printReportBtn")?.addEventListener("click", () => {
   void recordAuditEvent("Printed management summary", "reports");
@@ -860,4 +981,5 @@ applyOperationsReportScope();
 applyAuditAccessScope();
 bindCoverageControls();
 bindAuditFilters();
+void startAuditLog();
 loadReports();

@@ -67,7 +67,7 @@
       <p>Saved entries shown in Expense Records.</p>
     </div>
     <div class="card kpi">
-      <small>Audit Events</small>
+      <small>Audit Events (loaded)</small>
       <h2 id="auditCount">0</h2>
       <p>Generated traceability entries.</p>
     </div>
@@ -185,6 +185,7 @@
     <h3><span class="num">03</span> Audit Log</h3>
     <p class="muted">Permanent, append-only activity history. Events remain visible even when their source record is deleted.</p>
     <p class="muted">Recorded actions show saved changes and module activity. Choose All recorded events to include interface interactions and background synchronization.</p>
+    <p class="muted">Recent history loads first. Filters search loaded records; load older records to search further. Oldest first starts from the beginning of history.</p>
 
     <div id="auditFilters" class="inventory-list-toolbar screen-only">
       <input id="auditSearch" class="search" type="search" placeholder="Search activity, user or reference">
@@ -221,7 +222,7 @@
       <select id="auditSort">
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>
-        <option value="module_asc">Module A-Z</option>
+        <option value="module_asc">Module A-Z (loaded records)</option>
       </select>
     </div>
 
@@ -244,10 +245,17 @@
       <span id="auditPaginationSummary">Showing 0 of 0 audit log records</span>
       <div id="auditPaginationControls" class="pagination-controls"></div>
     </div>
+    <div class="pagination-bar screen-only">
+      <span id="auditLoadStatus" role="status" aria-live="polite">Loading recent audit records...</span>
+      <div class="pagination-controls">
+        <button id="auditRefreshBtn" type="button">Refresh logs</button>
+        <button id="auditLoadMoreBtn" type="button" hidden>Load older records</button>
+      </div>
+    </div>
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20260921-audit-descriptions-v259"></script>
+<script type="module" src="js/app.js?v=20261021-audit-lazy-v1"></script>
 
 </body>
 </html>
