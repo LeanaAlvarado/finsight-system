@@ -986,27 +986,40 @@ document.getElementById("generateSummaryReportBtn")?.addEventListener("click", (
     ["Client Feedback", "reportFeedback"]
   ].filter(([, id]) => (!isOperationsScope() || id === "projectReportCount")
     && (!isFinanceScope() || id !== "reportFeedback"));
-  const rows = metrics.map(([label, id]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(document.getElementById(id)?.textContent || "-")}</td></tr>`).join("");
+  const generatedDate = new Date();
+  const metricCards = metrics.map(([label, id]) => `<div class="metric"><small>${escapeHtml(label)}</small><strong>${escapeHtml(document.getElementById(id)?.textContent || "-")}</strong></div>`).join("");
   reportWindow.document.write(`<!DOCTYPE html>
     <html lang="en"><head><meta charset="UTF-8"><title>Management Summary Report</title>
     <style>
-      @page{size:A4;margin:18mm;}
+      @page{size:A4;margin:14mm;}
+      *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       body{font-family:Arial,sans-serif;color:#071f3d;margin:0;background:#f4f7fb;}
-      main{max-width:850px;margin:24px auto;padding:32px;background:#fff;}
-      small{font-weight:700;letter-spacing:.06em;color:#51657d;}
-      h1{font-size:25px;margin:10px 0;}
-      p{color:#42566f;font-size:13px;line-height:1.5;}
-      table{width:100%;border-collapse:collapse;margin-top:24px;}
-      th,td{padding:14px;border:1px solid #d9e3ee;text-align:left;}
-      th{background:#eef4fa;}td{text-align:right;font-weight:700;}
-      .actions{text-align:right;}button{padding:10px 16px;border:0;border-radius:6px;background:#174f80;color:#fff;cursor:pointer;}
-      @media print{body{background:#fff;}main{margin:0;padding:0;}.actions{display:none;}}
-    </style></head><body><main>
-    <div class="actions"><button type="button" onclick="window.print()">Print / Save PDF</button></div>
-    <small>LEMYU FIBER OPTIC INSTALLATION AND SERVICES</small>
-    <h1>Management Summary Report</h1>
-    <p>${escapeHtml(getPrintCoverageText())}<br>Generated: ${escapeHtml(new Date().toLocaleString("en-PH"))}</p>
-    <table><tbody>${rows}</tbody></table>
+      .report-page{max-width:960px;margin:0 auto;padding:28px;background:#fff;min-height:100vh;}
+      .actions{text-align:right;margin-bottom:14px;}
+      button{border:0;border-radius:6px;background:#174f80;color:#fff;padding:9px 14px;font-weight:800;}
+      .report-top{display:flex;justify-content:space-between;gap:18px;border-bottom:2px solid #0f5f66;padding-bottom:16px;margin-bottom:18px;}
+      small{display:block;color:#51657d;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
+      h1{margin:4px 0 6px;font-size:24px;}
+      p{margin:0;color:#42566f;font-size:12px;line-height:1.45;}
+      .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:18px 0;}
+      .metric{border:1px solid #c9d7e6;border-radius:6px;padding:12px;background:#f8fbff;}
+      .metric strong{display:block;margin-top:6px;font-size:18px;}
+      @media print{body{background:#fff}.actions{display:none}.report-page{max-width:none;padding:0;}}
+    </style></head><body><main class="report-page">
+    <div class="actions"><button type="button" onclick="window.print()">Print</button></div>
+    <div class="report-top">
+      <div>
+        <small>LEMYU FIBER OPTIC INSTALLATION AND SERVICES</small>
+        <h1>Management Summary Report</h1>
+        <p>Revenue, estimated project cost, profit, margin, and feedback for the selected report coverage.</p>
+        <p>${escapeHtml(getPrintCoverageText())}</p>
+      </div>
+      <div>
+        <small>Generated Date</small>
+        <p>${escapeHtml(generatedDate.toLocaleString("en-PH"))}</p>
+      </div>
+    </div>
+    <div class="metrics">${metricCards}</div>
     </main></body></html>`);
   reportWindow.document.close();
   void recordAuditEvent("Generated management summary", "reports");
