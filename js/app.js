@@ -181,7 +181,8 @@ if (!publicPages.has(pageName)) {
 }
 
 if (pageModule) {
-  const pageVersion = pageName === "reports-audit.html" ? "20261021-summary-template-v3" : appVersion;
+  const pageVersion = pageName === "reports-audit.html" ? "20261021-summary-template-v3"
+    : pageName === "revenue.html" ? "20261029-operational-expenses" : appVersion;
   await import(`${pageModule}?v=${pageVersion}`);
   cloudReadyPromise.then(() => {
     if (!window.lemyuLastRecoveryReport) return;

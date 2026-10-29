@@ -406,7 +406,11 @@ async function loadRevenue({ silent = false } = {}) {
   let totalContractVal = 0;
   let totalBudgetVal = 0;
   let totalTaxVal = 0;
-  let totalExpenseVal = 0;
+  // Match Payroll & Expenses: count every non-payroll expense once,
+  // including unassigned expenses and expenses on non-financial projects.
+  const totalExpenseVal = revenueExpenses
+    .filter(expense => String(expense.category || "").trim().toLowerCase() !== "payroll")
+    .reduce((sum, expense) => sum + number(expense.amount), 0);
   let totalPayrollVal = 0;
 
   revenueProjects.filter(isFinancialProject).forEach(project => {
@@ -414,7 +418,6 @@ async function loadRevenue({ silent = false } = {}) {
     totalContractVal += row.contract;
     totalBudgetVal += row.budget;
     totalTaxVal += row.tax;
-    totalExpenseVal += row.projectExpenses;
     totalPayrollVal += row.projectPayroll;
   });
 
