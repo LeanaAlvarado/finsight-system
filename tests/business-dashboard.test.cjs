@@ -1,0 +1,41 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+(async () => {
+ const source=fs.readFileSync('js/business-metrics.js','utf8');
+ const {buildBusinessMetrics:build}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+ const projects=[{id:'a',project_code:'A',status:'Approved',contract_amount:1000,project_budget:600,tax_amount:10,initial_actual_cost:20},{id:'b',project_code:'B',status:'Completed',contract_amount:500,project_budget:100,tax_amount:0},{id:'draft',status:'Draft',contract_amount:90000}];
+ const expenses=[{id:'e1',project_id:'a',amount:100.25,date:'2026-10-01',category:'Transport',status:'Approved'}, {id:'e1',project_id:'a',amount:100.25,date:'2026-10-01',category:'Transport',status:'Approved'}, {id:'mirror',project_id:'a',amount:50,category:'Payroll'}, {id:'legacy',project_id:'b',amount:30,category:'Payroll',date:'2026-10-04'}, {id:'pending',project_id:'a',amount:999,status:'Pending'}, {id:'wrong',project_id:'unknown',project_code:'A',amount:999}, {id:'nodate',project_id:'b',amount:90,date:'2026-02-30'}];
+ const payroll=[{id:'p1',project_id:'a',salary_amount:50,deduction_amount:10,pay_date:'2026-10-02'}];
+ const before=JSON.stringify({projects,expenses,payroll});
+ const m=build(projects,expenses,payroll);
+ assert.equal(m.rows.length,2); assert.equal(m.totals.contract,150000); assert.equal(m.totals.budget,70000);
+ assert.equal(m.totals.tax,10000); assert.equal(m.totals.expected,70000); assert.equal(m.totals.spending,29025);
+ assert.equal(m.rows[0].spending,17025,'Opening + approved cost + gross payroll; no mirror double count');
+ assert.equal(m.rows[1].remaining,-2000,'Overrun remains negative'); assert.equal(m.rows[1].utilization,120);
+ assert.equal(m.monthly[0][1],18025); assert.equal(m.undated,11000);
+ assert.equal(m.categories.reduce((s,c)=>s+c[1],0),m.totals.spending,'Categories reconcile');
+ assert.equal(m.monthly.reduce((s,c)=>s+c[1],0)+m.undated,m.totals.spending,'Monthly + undated reconcile');
+ assert.equal(m.excluded,2); assert.equal(JSON.stringify({projects,expenses,payroll}),before,'Read-only calculation');
+ assert.equal(build().totals.margin,null); assert.equal(build([{status:'Approved',contract_amount:0}]).rows[0].utilization,null);
+ const negative=build([{status:'Completed',contract_amount:100,project_budget:200,tax_amount:10}]);
+ assert.equal(negative.totals.expected,-11000); assert.ok(Math.abs(negative.totals.margin + 110) < 1e-10);
+ assert.equal(build([{id:'a',status:'Approved'}],[{project_id:'a',amount:0.1},{project_id:'a',amount:0.2}]).totals.spending,30);
+ for(const root of ['.']) {
+  assert.equal(fs.readFileSync(root+'/js/business-metrics.js','utf8'),source);
+  const html=fs.readFileSync(root+'/dashboard.html','utf8');
+  for(const id of ['salesChart','expenseCategoryChart','biBudgetChart','biTrendChart','biContributionChart','biStatusChart','biDataRows']) assert.equal(html.split('id="'+id+'"').length,2,id+' unique');
+  assert.ok(!html.includes('businessInsightList'));
+ }
+ const vm=require('node:vm');
+ const dashboard=fs.readFileSync('js/dashboard-page.js','utf8');
+ const reader=dashboard.slice(dashboard.indexOf('async function readDashboardTable('),dashboard.indexOf('async function loadDashboard(){'));
+ const records=Array.from({length:1203},(_,id)=>({id})); let pages=0;
+ const context=vm.createContext({supabase:{from:()=>({select:()=>({order:()=>({range:async(a,b)=>{pages++;return {data:records.slice(a,b+1),error:null};}})})})}});
+ vm.runInContext(reader,context);
+ const loaded=await vm.runInContext("readDashboardTable('expenses')",context);
+ assert.equal(loaded.data.length,1203,'Read every page, not just the API default row limit'); assert.equal(pages,4);
+ context.supabase={from:()=>{throw Error('Offline');}};
+ const failed=await vm.runInContext("readDashboardTable('expenses')",context);
+ assert.ok(failed.error); assert.equal(failed.data.length,0);
+ console.log('PASS: exact amounts, taxes, expected contribution, payroll deduplication per project, approval filtering, ID precedence, overruns, zero values, invalid dates, reconciliation, source immutability, synchronized copies and chart IDs.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

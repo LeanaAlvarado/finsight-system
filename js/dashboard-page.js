@@ -1,3 +1,4 @@
+import { renderGraphDashboard } from './business-dashboard.js?v=20261109-bi';
 import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260914-payroll-monitoring-v254";
 
 let dashboardChart = null;
@@ -1257,189 +1258,50 @@ function renderBusinessIntelligence(projects, expenses, payroll, projectMaterial
   });
 }
 
+async function readDashboardTable(table) {
+  const data = [];
+  for (let start = 0; ; ) {
+    let page;
+    try { page = await supabase.from(table).select('*').order('id', {ascending:true}).range(start, start + 499); }
+    catch (error) { return {data:[],error}; }
+    if (page.error) return {data:[],error:page.error};
+    const rows = page.data || [];
+    if (!rows.length) return {data,error:null};
+    data.push(...rows); start += rows.length;
+  }
+}
+
 async function loadDashboard(){
-  const [projectResult, expenseResult, payrollResult, inventoryResult] = await Promise.all([
-    readTable("projects"),
-    readTable("expenses"),
-    readTable("payroll"),
-    readTable("inventory")
+  const [projectResult, expenseResult, payrollResult] = await Promise.all([
+    readDashboardTable("projects"),
+    readDashboardTable("expenses"),
+    readDashboardTable("payroll")
   ]);
 
-  const fallbackProjects = readLocalJson("lemyu_saved_projects", []);
-  if (projectResult.error && !fallbackProjects.length) {
-    setText("netProfit", "Connection error");
-    console.error(projectResult.error);
+  // Read the current authoritative source; cached/deleted projects must not reappear in BI totals.
+  const projects = projectResult.data || [];
+  const expenses = expenseResult.data || [];
+  const payroll = payrollResult.data || [];
+
+  const failed = [projectResult, expenseResult, payrollResult].some(result => result.error);
+  if (failed) {
+    const warning = document.getElementById('biQuality');
+    if (warning) { warning.setAttribute('role','alert'); warning.textContent = 'Financial data could not be fully loaded. Charts are withheld to avoid incomplete totals. Refresh when the connection is available.'; }
+    for (const id of ['totalRevenue','totalExpenses','netProfit','profitMarginKpi','projectCount','criticalProjectCount']) setText(id,'Unavailable');
+    document.querySelector('.bi-board').hidden = true;
+    setText('dashboardLastUpdated','Update failed — financial figures unavailable');
     return;
   }
-
-  if (expenseResult.error) {
-    console.warn("Dashboard loaded without expense records.", expenseResult.error);
-  }
-
-  const projects = mergeCurrentRecords(
-    projectResult.error ? [] : projectResult.data,
-    "lemyu_saved_projects",
-    ["id", "project_code"]
-  );
-  const expenses = expenseResult.error ? [] : (expenseResult.data || []);
-  const payroll = payrollResult.error ? [] : payrollResult.data;
-  const inventory = mergeCurrentRecords(
-    inventoryResult.error ? [] : inventoryResult.data,
-    "lemyu_saved_inventory",
-    ["id"],
-    item => ({
-      ...item,
-      material_name: item.material_name || item.name || item.description || "Unnamed Material",
-      name: item.name || item.material_name || item.description || "Unnamed Material"
-    })
-  );
-
-  if (payrollResult.error || inventoryResult.error) {
-    console.warn("Dashboard BI loaded without optional payroll or inventory records.", payrollResult.error || inventoryResult.error);
-  }
-
+  document.querySelector('.bi-board').hidden = false;
+  document.getElementById('biQuality')?.setAttribute('role','status');
+  for (const canvas of document.querySelectorAll('.bi-chart canvas')) canvas.hidden = false;
+  renderGraphDashboard(projects, expenses, payroll);
   const savedCostAlerts = canViewCostOverrunAlerts() ? await loadSavedCostAlerts() : [];
   const financialProjects = projects.filter(isFinancialProject);
-  const financialExpenses = expenses.filter(expense => recordBelongsToProjects(expense, financialProjects));
-  const financialPayroll = payroll.filter(item => recordBelongsToProjects(item, financialProjects));
-
   latestCostAlerts = canViewCostOverrunAlerts()
-    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(financialProjects, financialExpenses, savedCostAlerts, financialPayroll), savedCostAlerts)
+    ? await syncCostOverrunAlerts(buildCostOverrunAlerts(financialProjects, expenses, savedCostAlerts, payroll), savedCostAlerts)
     : [];
-
-  const revenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
-  const projectMaterials = getApprovedCompletedCctvQuotationMaterials(financialProjects, inventory);
-  const projectMaterialCost = projectMaterials.reduce((sum, item) => sum + getInventoryMaterialCost(item), 0);
-  const projectAnalytics = getProjectAnalytics(financialProjects, financialExpenses, financialPayroll, projectMaterials);
-  const totalCost = projectAnalytics.reduce((sum, item) => sum + number(item.totalCost), 0);
-  const profit = revenue - totalCost;
-
-  setText("totalRevenue", peso(revenue));
-  setText("totalExpenses", peso(totalCost));
-  setText("netProfit", peso(profit));
-  setText("projectCount", financialProjects.length);
-  setText("inventoryPanelValue", peso(projectMaterialCost));
-  setText("inventoryPanelCount", projectMaterials.length);
-  if (dashboardChart) {
-    dashboardChart.destroy();
-  }
-
-  const trend = getMonthlyTrend(financialProjects, financialExpenses, financialPayroll);
-  const trendTotals = getTrendTotals(trend);
-  setText("chartRevenueTotal", peso(trendTotals.revenue));
-  setText("chartExpenseTotal", peso(trendTotals.expenses));
-  setText("chartNetTotal", peso(trendTotals.net));
-
-  dashboardChart = new Chart(document.getElementById("salesChart"), {
-    type: "bar",
-    data: {
-      labels: trend.labels,
-      datasets: [
-        {
-          label: "Revenue",
-          data: trend.revenue,
-          borderColor: "#1f4e79",
-          backgroundColor: "rgba(31,78,121,.72)",
-          borderRadius: 5,
-          borderWidth: 1,
-          maxBarThickness: 34
-        },
-        {
-          label: "Project Budget",
-          data: trend.expenses,
-          borderColor: "#9f3a35",
-          backgroundColor: "rgba(159,58,53,.68)",
-          borderRadius: 5,
-          borderWidth: 1,
-          maxBarThickness: 34
-        },
-        {
-          type: "line",
-          label: "Net Result",
-          data: trendTotals.netByPeriod,
-          borderColor: "#0f766e",
-          backgroundColor: "#0f766e",
-          fill: false,
-          tension: .38,
-          pointRadius: 4,
-          pointHoverRadius: 5,
-          borderWidth: 3
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: "index",
-        intersect: false
-      },
-      plugins: {
-        legend: {
-          position: "top",
-          labels: {
-            usePointStyle: true,
-            boxWidth: 9,
-            color: "#24364b",
-            font: {
-              size: 11,
-              weight: "700"
-            }
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label(context) {
-              return `${context.dataset.label}: ${peso(context.parsed.y || 0)}`;
-            },
-            afterBody(items) {
-              const revenueItem = items.find(item => item.dataset.label === "Revenue");
-              const expenseItem = items.find(item => item.dataset.label === "Project Budget");
-              if (!revenueItem || !expenseItem) return "";
-              const net = number(revenueItem.parsed.y) - number(expenseItem.parsed.y);
-              return `Net explanation: ${peso(net)}`;
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: "Amount in Philippine Peso",
-            color: "#51657d",
-            font: {
-              size: 11,
-              weight: "700"
-            }
-          },
-          grid: {
-            color: "rgba(101,115,134,.16)"
-          },
-          ticks: {
-            color: "#657386",
-            callback(value) {
-              return compactPeso(value);
-            }
-          }
-        },
-        x: {
-          grid: {
-            display: false
-          },
-          ticks: {
-            color: "#657386",
-            font: {
-              weight: "700"
-            }
-          }
-        }
-      }
-    }
-  });
-
-  renderBusinessIntelligence(financialProjects, financialExpenses, financialPayroll, projectMaterials, revenue, latestCostAlerts);
+  renderCostAlertNotifications(latestCostAlerts);
   updateDashboardLastUpdated();
 }
 
