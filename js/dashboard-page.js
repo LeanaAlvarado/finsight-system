@@ -1287,14 +1287,15 @@ async function loadDashboard(){
   const failed = [projectResult, expenseResult, payrollResult, inventoryResult].some(result => result.error);
   if (failed) {
     const warning = document.getElementById('biQuality');
-    if (warning) { warning.setAttribute('role','alert'); warning.textContent = 'Financial data could not be fully loaded. Charts are withheld to avoid incomplete totals. Refresh when the connection is available.'; }
+    if (warning) { warning.hidden = false; warning.setAttribute('role','alert'); warning.textContent = 'Financial data could not be fully loaded. Charts are withheld to avoid incomplete totals. Refresh when the connection is available.'; }
     for (const id of ['totalRevenue','totalExpenses','netProfit','profitMarginKpi','projectCount','criticalProjectCount']) setText(id,'Unavailable');
     document.querySelector('.bi-board').hidden = true;
     setText('dashboardLastUpdated','Update failed — financial figures unavailable');
     return;
   }
   document.querySelector('.bi-board').hidden = false;
-  document.getElementById('biQuality')?.setAttribute('role','status');
+  const qualityNotice = document.getElementById('biQuality');
+  if (qualityNotice) qualityNotice.hidden = true;
   for (const canvas of document.querySelectorAll('.bi-chart canvas')) canvas.hidden = false;
   renderGraphDashboard(projects, expenses, payroll);
   const savedCostAlerts = canViewCostOverrunAlerts() ? await loadSavedCostAlerts() : [];

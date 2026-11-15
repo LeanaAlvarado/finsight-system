@@ -131,7 +131,7 @@
     </div>
   </section>
 
-<p id="biScope" class="bi-status">Loading project records…</p><p id="biQuality" class="bi-status" role="status"></p><section class="bi-board" aria-label="Business intelligence charts">
+<p id="biQuality" class="bi-status" role="alert" hidden></p><section class="bi-board" aria-label="Business intelligence charts">
 <section class="card"><div class="bi-question">01 / Project scale</div><h3>Contract value vs planned budget</h3><p>Which projects carry the largest commitments? Top 8 by contract value. Contract value is not cash collected.</p><div class="bi-chart"><canvas id="salesChart" role="img" aria-label="Contract value vs planned budget. Exact project values are available in the data table below."></canvas><div class="bi-empty" hidden>No recorded data to plot.</div></div></section>
 <section class="card"><div class="bi-question">02 / Cost drivers</div><h3>Recorded cost breakdown</h3><p>Where has spending been recorded? Includes gross payroll and opening recorded costs; excludes inventory valuation.</p><div class="bi-chart"><canvas id="expenseCategoryChart" role="img" aria-label="Recorded cost breakdown. Exact project values are available in the data table below."></canvas><div class="bi-empty" hidden>No recorded data to plot.</div></div></section>
 <section class="card"><div class="bi-question">03 / Budget control</div><h3>Budget vs recorded spending</h3><p>Which projects need cost review? Top 8 by budget utilization; red bars exceed budget. Zero-budget projects with spending appear first.</p><div id="biBudgetSummary" class="bi-summary"></div><div class="bi-chart"><canvas id="biBudgetChart" role="img" aria-label="Budget vs recorded spending. Exact project values are available in the data table below."></canvas><div class="bi-empty" hidden>No recorded data to plot.</div></div></section>
@@ -141,7 +141,7 @@
 <section class="card bi-wide"><details><summary>View exact figures and computation basis</summary><div class="bi-info">Contract value = saved contract amount. Planned tax = contract × saved tax percentage ÷ 100. Expected contribution = contract − planned budget − planned tax. Expected margin = total expected contribution ÷ total contract × 100; N/A when contract is zero.<br>Recorded spending = opening recorded cost + approved/validated expenses (legacy entries with no status are included) + gross payroll. Payroll-category expense copies are excluded where the project has payroll records. Budget balance may be negative. Budget utilization = recorded spending ÷ planned budget; undefined when budget is zero.<br>Inventory value is excluded because stock value is not proof of consumption and may duplicate expense entries. Planned tax and budget are not added to recorded spending. Opening costs must represent costs not already entered as transactions. This view covers eligible projects only, not company-wide overhead or audited profit.</div><div class="bi-data"><table><thead><tr><th>Project</th><th>Contract</th><th>Budget</th><th>Planned tax</th><th>Recorded spending</th><th>Budget balance</th><th>Budget used</th><th>Expected contribution</th></tr></thead><tbody id="biDataRows"></tbody><tfoot><tr id="biTotals"></tr></tfoot></table></div></details></section></section>
 </main>
 
-<script type="module" src="js/app.js?v=20261115-restore-kpis"></script>
+<script type="module" src="js/app.js?v=20261115-remove-dashboard-notes"></script>
 
 
 </body>

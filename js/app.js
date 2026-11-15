@@ -181,7 +181,7 @@ if (!publicPages.has(pageName)) {
 }
 
 if (pageModule) {
-  const pageVersion = pageName === "dashboard.html" ? "20261115-restore-kpis"
+  const pageVersion = pageName === "dashboard.html" ? "20261115-remove-dashboard-notes"
     : pageName === "reports-audit.html" ? "20261021-summary-template-v3"
     : pageName === "revenue.html" ? "20261029-operational-expenses" : appVersion;
   await import(`${pageModule}?v=${pageVersion}`);
