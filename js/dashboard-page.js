@@ -1,5 +1,5 @@
-import { buildBusinessMetrics } from './business-metrics.js?v=20261115-reconcile-bi';
-import { renderGraphDashboard } from './business-dashboard.js?v=20261115-reconcile-bi';
+import { buildBusinessMetrics } from './business-metrics.js?v=20261115-unified-budget-alerts';
+import { renderGraphDashboard } from './business-dashboard.js?v=20261115-unified-budget-alerts';
 import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260914-payroll-monitoring-v254";
 
 let dashboardChart = null;
@@ -709,7 +709,7 @@ function getCostAlertSortRank(alert) {
 
 function buildCostOverrunAlerts(projects, expenses, savedAlerts = [], payroll = []) {
   const savedByProjectSeverity = new Map(
-    savedAlerts.map(alert => [`${alert.project_id}|${alert.severity}`, alert])
+    savedAlerts.filter(alert => ACTIVE_ALERT_STATUSES.has(alert.status || "Active")).map(alert => [`${alert.project_id}|${alert.severity}`, alert])
   );
 
   return buildBusinessMetrics(projects, expenses, payroll).rows
@@ -1315,7 +1315,7 @@ async function loadDashboard(){
   setText("netProfit", peso(profit));
   setText("profitMarginKpi", (revenue > 0 ? profit / revenue * 100 : 0).toFixed(2) + "%");
   setText("projectCount", financialProjects.length);
-  setText("criticalProjectCount", buildBusinessMetrics(projects, expenses, payroll).rows.filter(row => ["Critical", "Over Budget"].includes(row.severity)).length);
+  setText("criticalProjectCount", buildBusinessMetrics(projects, expenses, payroll).rows.filter(row => row.severity !== "Healthy").length);
 
   latestCostAlerts = canViewCostOverrunAlerts()
     ? await syncCostOverrunAlerts(buildCostOverrunAlerts(financialProjects, expenses, savedCostAlerts, payroll), savedCostAlerts)

@@ -1,5 +1,5 @@
 
-import { buildBusinessMetrics } from './business-metrics.js?v=20261115-reconcile-bi';
+import { buildBusinessMetrics } from './business-metrics.js?v=20261115-unified-budget-alerts';
 const charts = new Map();
 const money = cents => 'PHP ' + (cents / 100).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
 const colors = ['#244e78','#14a89a','#e5a541','#a36bca','#d76662','#8093a8'];
@@ -8,7 +8,7 @@ export function renderGraphDashboard(projects, expenses, payroll) {
  const text = (id,value) => { const e=document.getElementById(id); if(e) e.textContent=value; };
  text('totalRevenue',money(m.totals.contract)); text('totalExpenses',money(m.totals.spending));
  text('netProfit',money(m.totals.expected)); text('profitMarginKpi',m.totals.margin === null ? 'N/A' : m.totals.margin.toFixed(2)+'%');
- text('projectCount',m.rows.length); text('criticalProjectCount',m.rows.filter(r => r.utilization >= 85 || (r.budget <= 0 && r.spending > 0)).length);
+ text('projectCount',m.rows.length); text('criticalProjectCount',m.rows.filter(r => r.severity !== 'Healthy').length);
  const chart = (id,type,labels,datasets,opts={}) => {
    const canvas=document.getElementById(id); if(!canvas) return;
    charts.get(id)?.destroy();

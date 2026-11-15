@@ -1,4 +1,4 @@
-import { buildBusinessMetrics } from './business-metrics.js?v=20261115-reconcile-bi';
+import { buildBusinessMetrics } from './business-metrics.js?v=20261115-unified-budget-alerts';
 import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText, supabase } from "./supabase.js?v=20260921-audit-descriptions-v259";
 import { createAuditFeed } from "./audit-feed.js?v=20261021-audit-lazy-v1";
 import { matchesAuditView } from "./audit-presentation.js?v=20260921-audit-descriptions-v259";
@@ -734,9 +734,9 @@ function renderReports() {
   const totalProjectCost = financialProjects.reduce((sum, project) => sum + number(project.project_budget) + (number(project.project_budget) > 0 ? 0 : materials.filter(item => recordBelongsToProject(item, project)).reduce((cost, item) => cost + number(item.qty) * number(item.price), 0)), 0);
   // Budget risk is a lifetime snapshot for the projects in the selected coverage.
   const riskRows = buildBusinessMetrics(financialProjects, reportRecords.expenses, reportRecords.payroll).rows;
-  const criticalRows = riskRows.filter(row => ['Critical', 'Over Budget'].includes(row.severity));
+  const criticalRows = riskRows.filter(row => row.severity !== 'Healthy');
   setText('reportCritical', operationsOnly ? '-' : criticalRows.length);
-  setText('reportCriticalDetails', operationsOnly ? '' : criticalRows.map(row => row.label + ': ' + row.severity + ' (' + (row.utilization === null ? 'No budget' : row.utilization.toFixed(2) + '% used') + ')').join('; ') || 'No critical or over-budget projects.');
+  setText('reportCriticalDetails', operationsOnly ? '' : criticalRows.map(row => row.label + ': ' + row.severity + ' (' + (row.utilization === null ? 'No budget' : row.utilization.toFixed(2) + '% used') + ')').join('; ') || 'No budget alerts.');
   // Payroll-linked expenses are already saved and displayed in the expenses table.
   // Count the same source used by Expense Records to avoid counting payroll twice.
   const expenseRecords = expenses.length;
@@ -1006,7 +1006,7 @@ document.getElementById("generateSummaryReportBtn")?.addEventListener("click", (
     ["Project Cost Estimated", "reportExpenses"],
     ["Estimated Profit", "reportProfit"],
     ["Net Result Margin", "reportMargin"],
-    ["Critical Projects", "reportCritical"],
+    ["Projects with Budget Alerts", "reportCritical"],
     ["Budget Risk Details", "reportCriticalDetails"],
     ["Client Feedback", "reportFeedback"]
   ].filter(([, id]) => (!isOperationsScope() || id === "projectReportCount")

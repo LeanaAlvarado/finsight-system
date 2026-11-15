@@ -124,10 +124,10 @@
     <div class="card kpi metric-card metric-risk">
       <div class="metric-top">
         <span class="metric-icon">!</span>
-        <small>Critical Projects</small>
+        <small>Projects with Budget Alerts</small>
       </div>
       <h2 id="criticalProjectCount">0</h2>
-      <p>85% or more used, or spending without a budget</p>
+      <p>Warning, critical, or over budget; matches the bell</p>
     </div>
   </section>
 
@@ -141,7 +141,7 @@
 <section class="card bi-wide"><details><summary>View exact figures and computation basis</summary><div class="bi-info">Contract value = saved contract amount. Planned tax = contract × saved tax percentage ÷ 100. Expected contribution = contract − planned budget − planned tax. Expected margin = total expected contribution ÷ total contract × 100; N/A when contract is zero.<br>Recorded spending = opening recorded cost + approved/validated expenses (legacy entries with no status are included) + gross payroll. Payroll-category expense copies are excluded where the project has payroll records. Budget balance may be negative. Budget utilization = recorded spending ÷ planned budget; undefined when budget is zero.<br>Inventory value is excluded because stock value is not proof of consumption and may duplicate expense entries. Planned tax and budget are not added to recorded spending. Opening costs must represent costs not already entered as transactions. This view covers eligible projects only, not company-wide overhead or audited profit.</div><div class="bi-data"><table><thead><tr><th>Project</th><th>Contract</th><th>Budget</th><th>Planned tax</th><th>Recorded spending</th><th>Budget balance</th><th>Budget used</th><th>Expected contribution</th><th>Budget status</th></tr></thead><tbody id="biDataRows"></tbody><tfoot><tr id="biTotals"></tr></tfoot></table></div></details></section></section>
 </main>
 
-<script type="module" src="js/app.js?v=20261115-reconcile-bi"></script>
+<script type="module" src="js/app.js?v=20261115-unified-budget-alerts"></script>
 
 
 </body>
