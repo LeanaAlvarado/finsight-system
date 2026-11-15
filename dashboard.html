@@ -79,43 +79,43 @@
     <div class="card kpi metric-card metric-revenue">
       <div class="metric-top">
         <span class="metric-icon">R</span>
-        <small>Contract Value</small>
+        <small>Total Revenue</small>
       </div>
       <h2 id="totalRevenue">PHP 0.00</h2>
-      <p>Committed value; not cash collected</p>
+      <p>Saved project contract value</p>
     </div>
 
     <div class="card kpi metric-card metric-expense">
       <div class="metric-top">
         <span class="metric-icon">E</span>
-        <small>Recorded Spending</small>
+        <small>Total Expenses</small>
       </div>
       <h2 id="totalExpenses">PHP 0.00</h2>
-      <p>Recorded expenses, gross payroll and opening costs</p>
+      <p>Project budget cost plus overruns</p>
     </div>
 
     <div class="card kpi metric-card metric-profit">
       <div class="metric-top">
         <span class="metric-icon">P</span>
-        <small>Expected Contribution</small>
+        <small>Net Profit</small>
       </div>
       <h2 id="netProfit">PHP 0.00</h2>
-      <p>Contract less planned budget and tax</p>
+      <p>Revenue less expenses</p>
     </div>
 
     <div class="card kpi metric-card metric-profit">
       <div class="metric-top">
         <span class="metric-icon">%</span>
-        <small>Expected Margin</small>
+        <small>Profit Margin</small>
       </div>
       <h2 id="profitMarginKpi">0.00%</h2>
-      <p>Expected contribution ÷ contract value</p>
+      <p>Net profit compared with revenue</p>
     </div>
 
     <div class="card kpi metric-card metric-projects">
       <div class="metric-top">
         <span class="metric-icon">PR</span>
-        <small>Portfolio Projects</small>
+        <small>Active Projects</small>
       </div>
       <h2 id="projectCount">0</h2>
       <p>Approved, ongoing, and completed projects</p>
@@ -124,10 +124,10 @@
     <div class="card kpi metric-card metric-risk">
       <div class="metric-top">
         <span class="metric-icon">!</span>
-        <small>Budget Review</small>
+        <small>Critical Projects</small>
       </div>
       <h2 id="criticalProjectCount">0</h2>
-      <p>≥85% used, or spending without a budget</p>
+      <p>Near or over project budget</p>
     </div>
   </section>
 
@@ -141,7 +141,7 @@
 <section class="card bi-wide"><details><summary>View exact figures and computation basis</summary><div class="bi-info">Contract value = saved contract amount. Planned tax = contract × saved tax percentage ÷ 100. Expected contribution = contract − planned budget − planned tax. Expected margin = total expected contribution ÷ total contract × 100; N/A when contract is zero.<br>Recorded spending = opening recorded cost + approved/validated expenses (legacy entries with no status are included) + gross payroll. Payroll-category expense copies are excluded where the project has payroll records. Budget balance may be negative. Budget utilization = recorded spending ÷ planned budget; undefined when budget is zero.<br>Inventory value is excluded because stock value is not proof of consumption and may duplicate expense entries. Planned tax and budget are not added to recorded spending. Opening costs must represent costs not already entered as transactions. This view covers eligible projects only, not company-wide overhead or audited profit.</div><div class="bi-data"><table><thead><tr><th>Project</th><th>Contract</th><th>Budget</th><th>Planned tax</th><th>Recorded spending</th><th>Budget balance</th><th>Budget used</th><th>Expected contribution</th></tr></thead><tbody id="biDataRows"></tbody><tfoot><tr id="biTotals"></tr></tfoot></table></div></details></section></section>
 </main>
 
-<script type="module" src="js/app.js?v=20261109-graph-bi"></script>
+<script type="module" src="js/app.js?v=20261115-restore-kpis"></script>
 
 
 </body>

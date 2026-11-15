@@ -1272,10 +1272,11 @@ async function readDashboardTable(table) {
 }
 
 async function loadDashboard(){
-  const [projectResult, expenseResult, payrollResult] = await Promise.all([
+  const [projectResult, expenseResult, payrollResult, inventoryResult] = await Promise.all([
     readDashboardTable("projects"),
     readDashboardTable("expenses"),
-    readDashboardTable("payroll")
+    readDashboardTable("payroll"),
+    readDashboardTable("inventory")
   ]);
 
   // Read the current authoritative source; cached/deleted projects must not reappear in BI totals.
@@ -1283,7 +1284,7 @@ async function loadDashboard(){
   const expenses = expenseResult.data || [];
   const payroll = payrollResult.data || [];
 
-  const failed = [projectResult, expenseResult, payrollResult].some(result => result.error);
+  const failed = [projectResult, expenseResult, payrollResult, inventoryResult].some(result => result.error);
   if (failed) {
     const warning = document.getElementById('biQuality');
     if (warning) { warning.setAttribute('role','alert'); warning.textContent = 'Financial data could not be fully loaded. Charts are withheld to avoid incomplete totals. Refresh when the connection is available.'; }
@@ -1298,6 +1299,21 @@ async function loadDashboard(){
   renderGraphDashboard(projects, expenses, payroll);
   const savedCostAlerts = canViewCostOverrunAlerts() ? await loadSavedCostAlerts() : [];
   const financialProjects = projects.filter(isFinancialProject);
+  // Original summary card formulas; charts retain their own metrics.
+  const financialExpenses = expenses.filter(item => recordBelongsToProjects(item, financialProjects));
+  const financialPayroll = payroll.filter(item => recordBelongsToProjects(item, financialProjects));
+  const projectMaterials = getApprovedCompletedCctvQuotationMaterials(financialProjects, inventoryResult.data || []);
+  const analytics = getProjectAnalytics(financialProjects, financialExpenses, financialPayroll, projectMaterials);
+  const revenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
+  const totalCost = analytics.reduce((sum, item) => sum + number(item.totalCost), 0);
+  const profit = revenue - totalCost;
+  setText("totalRevenue", peso(revenue));
+  setText("totalExpenses", peso(totalCost));
+  setText("netProfit", peso(profit));
+  setText("profitMarginKpi", (revenue > 0 ? profit / revenue * 100 : 0).toFixed(2) + "%");
+  setText("projectCount", financialProjects.length);
+  setText("criticalProjectCount", analytics.filter(item => ["Critical", "Over Budget"].includes(getBudgetStatusInfo(item).label)).length);
+
   latestCostAlerts = canViewCostOverrunAlerts()
     ? await syncCostOverrunAlerts(buildCostOverrunAlerts(financialProjects, expenses, savedCostAlerts, payroll), savedCostAlerts)
     : [];
