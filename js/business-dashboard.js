@@ -9,8 +9,6 @@ export function renderGraphDashboard(projects, expenses, payroll) {
  text('totalRevenue',money(m.totals.contract)); text('totalExpenses',money(m.totals.spending));
  text('netProfit',money(m.totals.expected)); text('profitMarginKpi',m.totals.margin === null ? 'N/A' : m.totals.margin.toFixed(2)+'%');
  text('projectCount',m.rows.length); text('criticalProjectCount',m.rows.filter(r => r.utilization >= 85 || (r.budget <= 0 && r.spending > 0)).length);
- text('biScope',m.rows.length + ' approved, ongoing and completed projects • All recorded dates • Amounts in PHP');
- text('biQuality',m.rows.length ? (m.excluded + ' unlinked, out-of-scope or unapproved cost records excluded. ' + money(m.undated) + ' of spending has no transaction date and is excluded from the monthly chart.') : 'No eligible projects. Add or approve a project to begin.');
  const chart = (id,type,labels,datasets,opts={}) => {
    const canvas=document.getElementById(id); if(!canvas) return;
    charts.get(id)?.destroy();
