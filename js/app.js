@@ -181,8 +181,8 @@ if (!publicPages.has(pageName)) {
 }
 
 if (pageModule) {
-  const pageVersion = pageName === "dashboard.html" ? "20261115-clean-dashboard"
-    : pageName === "reports-audit.html" ? "20261021-summary-template-v3"
+  const pageVersion = pageName === "dashboard.html" ? "20261115-reconcile-bi"
+    : pageName === "reports-audit.html" ? "20261115-reconcile-bi"
     : pageName === "revenue.html" ? "20261029-operational-expenses" : appVersion;
   await import(`${pageModule}?v=${pageVersion}`);
   cloudReadyPromise.then(() => {

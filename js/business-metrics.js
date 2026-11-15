@@ -50,6 +50,7 @@ export function buildBusinessMetrics(projects = [], expenses = [], payroll = [])
   }
   for (const row of rows) {
     if (row.opening) { add('Opening recorded cost', row.opening); undated += row.opening; }
+    row.severity = row.budget <= 0 ? (row.spending > 0 ? 'Over Budget' : 'Healthy') : row.spending > row.budget ? 'Over Budget' : row.spending / row.budget >= .85 ? 'Critical' : row.spending / row.budget >= .70 ? 'Warning' : 'Healthy';
     row.expected = row.contract - row.budget - row.tax;
     row.remaining = row.budget - row.spending;
     row.utilization = row.budget > 0 ? row.spending / row.budget * 100 : null;

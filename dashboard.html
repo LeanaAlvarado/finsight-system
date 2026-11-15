@@ -49,13 +49,13 @@
     </div>
     <div class="dashboard-toolbar-actions">
       <div class="notification-wrap" id="costAlertNotification" hidden>
-        <button type="button" class="notification-bell" id="costAlertBell" aria-label="Cost overrun alerts" aria-expanded="false">
+        <button type="button" class="notification-bell" id="costAlertBell" aria-label="Budget warnings and critical alerts" aria-expanded="false">
           <span aria-hidden="true">!</span>
           <strong id="costAlertBadge" hidden>0</strong>
         </button>
         <div class="notification-panel" id="costAlertDropdown" hidden>
           <div class="notification-panel-head">
-            <strong>Cost Overrun Alerts</strong>
+            <strong>Budget Alerts</strong>
             <small id="costAlertDropdownCount">0 active</small>
           </div>
           <div id="costAlertDropdownList" class="notification-list"></div>
@@ -91,7 +91,7 @@
         <small>Total Expenses</small>
       </div>
       <h2 id="totalExpenses">PHP 0.00</h2>
-      <p>Project budget cost plus overruns</p>
+      <p>Project budgets plus applicable unbudgeted materials</p>
     </div>
 
     <div class="card kpi metric-card metric-profit">
@@ -127,7 +127,7 @@
         <small>Critical Projects</small>
       </div>
       <h2 id="criticalProjectCount">0</h2>
-      <p>Near or over project budget</p>
+      <p>85% or more used, or spending without a budget</p>
     </div>
   </section>
 
@@ -138,10 +138,10 @@
 <section class="card"><div class="bi-question">04 / Spending trend</div><h3>Monthly recorded spending</h3><p>How does spending change over time? Uses expense dates and payroll pay dates across all recorded months.</p><div class="bi-chart"><canvas id="biTrendChart" role="img" aria-label="Monthly recorded spending. Exact project values are available in the data table below."></canvas><div class="bi-empty" hidden>No recorded data to plot.</div></div></section>
 <section class="card"><div class="bi-question">05 / Expected return</div><h3>Expected project contribution</h3><p>Which projects have the highest planned contribution? Top 8. Contract − planned budget − contract tax; not realized net profit.</p><div id="biContributionSummary" class="bi-summary"></div><div class="bi-chart"><canvas id="biContributionChart" role="img" aria-label="Expected project contribution. Exact project values are available in the data table below."></canvas><div class="bi-empty" hidden>No recorded data to plot.</div></div></section>
 <section class="card"><div class="bi-question">06 / Delivery mix</div><h3>Project status</h3><p>How many eligible projects are approved, ongoing or completed? Counts projects, not monetary value.</p><div class="bi-chart"><canvas id="biStatusChart" role="img" aria-label="Project status. Exact project values are available in the data table below."></canvas><div class="bi-empty" hidden>No recorded data to plot.</div></div></section>
-<section class="card bi-wide"><details><summary>View exact figures and computation basis</summary><div class="bi-info">Contract value = saved contract amount. Planned tax = contract × saved tax percentage ÷ 100. Expected contribution = contract − planned budget − planned tax. Expected margin = total expected contribution ÷ total contract × 100; N/A when contract is zero.<br>Recorded spending = opening recorded cost + approved/validated expenses (legacy entries with no status are included) + gross payroll. Payroll-category expense copies are excluded where the project has payroll records. Budget balance may be negative. Budget utilization = recorded spending ÷ planned budget; undefined when budget is zero.<br>Inventory value is excluded because stock value is not proof of consumption and may duplicate expense entries. Planned tax and budget are not added to recorded spending. Opening costs must represent costs not already entered as transactions. This view covers eligible projects only, not company-wide overhead or audited profit.</div><div class="bi-data"><table><thead><tr><th>Project</th><th>Contract</th><th>Budget</th><th>Planned tax</th><th>Recorded spending</th><th>Budget balance</th><th>Budget used</th><th>Expected contribution</th></tr></thead><tbody id="biDataRows"></tbody><tfoot><tr id="biTotals"></tr></tfoot></table></div></details></section></section>
+<section class="card bi-wide"><details><summary>View exact figures and computation basis</summary><div class="bi-info">Contract value = saved contract amount. Planned tax = contract × saved tax percentage ÷ 100. Expected contribution = contract − planned budget − planned tax. Expected margin = total expected contribution ÷ total contract × 100; N/A when contract is zero.<br>Recorded spending = opening recorded cost + approved/validated expenses (legacy entries with no status are included) + gross payroll. Payroll-category expense copies are excluded where the project has payroll records. Budget balance may be negative. Budget utilization = recorded spending ÷ planned budget; undefined when budget is zero.<br>Inventory value is excluded because stock value is not proof of consumption and may duplicate expense entries. Planned tax and budget are not added to recorded spending. Opening costs must represent costs not already entered as transactions. This view covers eligible projects only, not company-wide overhead or audited profit.</div><div class="bi-data"><table><thead><tr><th>Project</th><th>Contract</th><th>Budget</th><th>Planned tax</th><th>Recorded spending</th><th>Budget balance</th><th>Budget used</th><th>Expected contribution</th><th>Budget status</th></tr></thead><tbody id="biDataRows"></tbody><tfoot><tr id="biTotals"></tr></tfoot></table></div></details></section></section>
 </main>
 
-<script type="module" src="js/app.js?v=20261115-clean-dashboard"></script>
+<script type="module" src="js/app.js?v=20261115-reconcile-bi"></script>
 
 
 </body>

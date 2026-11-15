@@ -1,3 +1,4 @@
+import { buildBusinessMetrics } from './business-metrics.js?v=20261115-reconcile-bi';
 import { escapeHtml, formatDate, netPayrollAmount, number, peso, readTable, recordAuditEvent, setText, supabase } from "./supabase.js?v=20260921-audit-descriptions-v259";
 import { createAuditFeed } from "./audit-feed.js?v=20261021-audit-lazy-v1";
 import { matchesAuditView } from "./audit-presentation.js?v=20260921-audit-descriptions-v259";
@@ -28,7 +29,7 @@ let auditIdentity = null;
 let auditStopped = false;
 
 const reportCoverageState = {
-  mode: "month",
+  mode: "all",
   startDate: null,
   endDate: null
 };
@@ -729,7 +730,13 @@ function renderReports() {
   const operationsOnly = isOperationsScope();
 
   const totalRevenue = financialProjects.reduce((sum, project) => sum + number(project.contract_amount), 0);
-  const totalProjectCost = financialProjects.reduce((sum, project) => sum + number(project.project_budget), 0);
+  const materials = getReportCctvProjectMaterials(financialProjects, reportRecords.inventory);
+  const totalProjectCost = financialProjects.reduce((sum, project) => sum + number(project.project_budget) + (number(project.project_budget) > 0 ? 0 : materials.filter(item => recordBelongsToProject(item, project)).reduce((cost, item) => cost + number(item.qty) * number(item.price), 0)), 0);
+  // Budget risk is a lifetime snapshot for the projects in the selected coverage.
+  const riskRows = buildBusinessMetrics(financialProjects, reportRecords.expenses, reportRecords.payroll).rows;
+  const criticalRows = riskRows.filter(row => ['Critical', 'Over Budget'].includes(row.severity));
+  setText('reportCritical', operationsOnly ? '-' : criticalRows.length);
+  setText('reportCriticalDetails', operationsOnly ? '' : criticalRows.map(row => row.label + ': ' + row.severity + ' (' + (row.utilization === null ? 'No budget' : row.utilization.toFixed(2) + '% used') + ')').join('; ') || 'No critical or over-budget projects.');
   // Payroll-linked expenses are already saved and displayed in the expenses table.
   // Count the same source used by Expense Records to avoid counting payroll twice.
   const expenseRecords = expenses.length;
@@ -754,22 +761,38 @@ function renderReports() {
   renderAuditTable();
 }
 
+async function readFinancialReportTable(table) {
+  const data = [];
+  for (let start = 0; ; ) {
+    const page = await supabase.from(table).select('*').order('id', {ascending:true}).range(start, start + 499);
+    if (page.error) return {data:[], error:page.error};
+    const rows = page.data || [];
+    if (!rows.length) return {data, error:null};
+    data.push(...rows); start += rows.length;
+  }
+}
+
 async function loadReports() {
   const [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult] = await Promise.all([
-    readTable("projects", { orderBy: "created_at" }),
-    readTable("expenses", { orderBy: "created_at" }),
-    readTable("payroll", { orderBy: "created_at" }),
-    readTable("inventory", { orderBy: "created_at" }),
+    readFinancialReportTable("projects"),
+    readFinancialReportTable("expenses"),
+    readFinancialReportTable("payroll"),
+    readFinancialReportTable("inventory"),
     readTable("feedback", { orderBy: "created_at" })
   ]);
 
   const loadError = [projectResult, expenseResult, payrollResult, inventoryResult, feedbackResult].find(result => result.error)?.error;
 
+  if ([projectResult, expenseResult, payrollResult, inventoryResult].some(result => result.error)) {
+    for (const id of ['reportRevenue','reportExpenses','reportProfit','reportMargin','reportCritical','projectReportCount']) setText(id, 'Unavailable');
+    setText('reportCriticalDetails', 'Financial records could not be fully loaded. Refresh to retry.');
+    return;
+  }
   reportRecords = {
-    projects: mergeCurrentRecords(projectResult.error ? [] : projectResult.data, "lemyu_saved_projects", ["id", "project_code"]),
+    projects: projectResult.data || [],
     expenses: expenseResult.error ? [] : expenseResult.data,
     payroll: payrollResult.error ? [] : payrollResult.data,
-    inventory: mergeCurrentRecords(inventoryResult.error ? [] : inventoryResult.data, "lemyu_saved_inventory", ["id"]),
+    inventory: inventoryResult.data || [],
     feedback: feedbackResult.error ? [] : feedbackResult.data,
     auditLogs: []
   };
@@ -983,6 +1006,8 @@ document.getElementById("generateSummaryReportBtn")?.addEventListener("click", (
     ["Project Cost Estimated", "reportExpenses"],
     ["Estimated Profit", "reportProfit"],
     ["Net Result Margin", "reportMargin"],
+    ["Critical Projects", "reportCritical"],
+    ["Budget Risk Details", "reportCriticalDetails"],
     ["Client Feedback", "reportFeedback"]
   ].filter(([, id]) => (!isOperationsScope() || id === "projectReportCount")
     && (!isFinanceScope() || id !== "reportFeedback"));

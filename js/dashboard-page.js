@@ -1,4 +1,5 @@
-import { renderGraphDashboard } from './business-dashboard.js?v=20261109-bi';
+import { buildBusinessMetrics } from './business-metrics.js?v=20261115-reconcile-bi';
+import { renderGraphDashboard } from './business-dashboard.js?v=20261115-reconcile-bi';
 import { supabase, escapeHtml, peso, number, readTable, setText } from "./supabase.js?v=20260914-payroll-monitoring-v254";
 
 let dashboardChart = null;
@@ -711,18 +712,18 @@ function buildCostOverrunAlerts(projects, expenses, savedAlerts = [], payroll = 
     savedAlerts.map(alert => [`${alert.project_id}|${alert.severity}`, alert])
   );
 
-  return projects
-    .map(project => {
-      const budget = Math.max(number(project.project_budget), 0);
-      if (budget <= 0) return null;
+  return buildBusinessMetrics(projects, expenses, payroll).rows
+    .map(row => {
+      const project = row.project;
+      const budget = row.budget / 100;
 
       const projectIdentifier = String(project.id || project.project_code || getProjectLabel(project)).trim();
       if (!projectIdentifier) return null;
 
-      const actualExpenses = getProjectActualExpenses(project, expenses, payroll);
-      const utilization = (actualExpenses / budget) * 100;
-      const severity = getAlertSeverity(utilization);
-      if (!severity) return null;
+      const actualExpenses = row.spending / 100;
+      const utilization = row.utilization ?? 0;
+      const severity = row.severity;
+      if (severity === 'Healthy') return null;
 
       const exceededAmount = Math.max(actualExpenses - budget, 0);
       const remainingAmount = Math.max(budget - actualExpenses, 0);
@@ -734,6 +735,7 @@ function buildCostOverrunAlerts(projects, expenses, savedAlerts = [], payroll = 
         projectCode: project.project_code || "",
         projectName: getProjectLabel(project),
         budget,
+        hasBudget: budget > 0,
         actualExpenses,
         utilization,
         exceededAmount,
@@ -825,7 +827,7 @@ function renderCostAlertNotifications(alerts) {
   badge.hidden = !activeAlerts.length;
   badge.textContent = activeAlerts.length;
   if (dropdownCount) {
-    dropdownCount.textContent = `${activeAlerts.length} active`;
+    dropdownCount.textContent = `${activeAlerts.filter(a => a.severity === "Warning").length} warnings / ${activeAlerts.filter(a => a.severity !== "Warning").length} critical or over budget`;
   }
 
   if (!activeAlerts.length) {
@@ -849,7 +851,7 @@ function renderCostAlertNotifications(alerts) {
           <span>Budget: ${peso(alert.budget)}</span>
           <span>Actual: ${peso(alert.actualExpenses)}</span>
           <span>${amountLabel}</span>
-          <span>${alert.utilization.toFixed(2)}% used</span>
+          <span>${alert.hasBudget === false ? "No budget recorded" : alert.utilization.toFixed(2) + "% used"}</span>
           <span>Generated: ${getAlertTimestamp(alert.createdAt)}</span>
         </div>
         <button type="button" class="small-action-btn" onclick="viewCostAlert('${escapeHtml(alert.id)}', '${escapeHtml(alert.projectId)}')">View Project</button>
@@ -1313,7 +1315,7 @@ async function loadDashboard(){
   setText("netProfit", peso(profit));
   setText("profitMarginKpi", (revenue > 0 ? profit / revenue * 100 : 0).toFixed(2) + "%");
   setText("projectCount", financialProjects.length);
-  setText("criticalProjectCount", analytics.filter(item => ["Critical", "Over Budget"].includes(getBudgetStatusInfo(item).label)).length);
+  setText("criticalProjectCount", buildBusinessMetrics(projects, expenses, payroll).rows.filter(row => ["Critical", "Over Budget"].includes(row.severity)).length);
 
   latestCostAlerts = canViewCostOverrunAlerts()
     ? await syncCostOverrunAlerts(buildCostOverrunAlerts(financialProjects, expenses, savedCostAlerts, payroll), savedCostAlerts)

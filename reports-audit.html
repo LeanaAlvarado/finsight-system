@@ -46,7 +46,7 @@
   <section class="print-report-header print-only">
     <div class="tag">LEMYU FIBER OPTIC INSTALLATION AND SERVICES</div>
     <h1>Reports and Audit Logs</h1>
-    <p id="printCoverageText">Report Coverage: This Month</p>
+    <p id="printCoverageText">Report Coverage: All Records</p>
     <p id="printGeneratedText">Generated: -</p>
   </section>
 
@@ -106,7 +106,7 @@
   <section class="grid2">
     <section class="card printable-report-section">
       <h3><span class="num">01</span> Management Report Summary</h3>
-      <p class="muted" id="reportCoverageSummary">Showing report records for this month.</p>
+      <p class="muted" id="reportCoverageSummary">Showing all report records.</p>
 
       <div class="mini-grid">
         <div class="mini-card">
@@ -124,6 +124,7 @@
         <div class="mini-card">
           <small>Net Result Margin</small>
           <h3 id="reportMargin">0.00%</h3>
+        </div><div class="mini-card"><small>Critical Projects</small><h3 id="reportCritical">0</h3><p id="reportCriticalDetails"></p>
         </div>
         <div class="mini-card">
           <small>Client Feedback</small>
@@ -149,10 +150,10 @@
       <div class="coverage-controls" id="reportCoverageControls">
         <button type="button" data-coverage="today">Today</button>
         <button type="button" data-coverage="week">This Week</button>
-        <button type="button" data-coverage="month" class="active">This Month</button>
+        <button type="button" data-coverage="month">This Month</button>
         <button type="button" data-coverage="quarter">This Quarter</button>
         <button type="button" data-coverage="year">This Year</button>
-        <button type="button" data-coverage="all">All Records</button>
+        <button type="button" data-coverage="all" class="active">All Records</button>
         <button type="button" data-coverage="custom">Custom Date Range</button>
       </div>
 
@@ -255,7 +256,7 @@
   </section>
 </main>
 
-<script type="module" src="js/app.js?v=20261021-summary-template-v3"></script>
+<script type="module" src="js/app.js?v=20261115-reconcile-bi"></script>
 
 </body>
 </html>

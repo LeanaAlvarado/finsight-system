@@ -1,5 +1,5 @@
 
-import { buildBusinessMetrics } from './business-metrics.js?v=20261109-bi';
+import { buildBusinessMetrics } from './business-metrics.js?v=20261115-reconcile-bi';
 const charts = new Map();
 const money = cents => 'PHP ' + (cents / 100).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
 const colors = ['#244e78','#14a89a','#e5a541','#a36bca','#d76662','#8093a8'];
@@ -38,7 +38,7 @@ export function renderGraphDashboard(projects, expenses, payroll) {
  text('biBudgetSummary',money(m.totals.spending)+' recorded / '+money(m.totals.budget)+' planned');
  text('biContributionSummary','Expected margin: '+(m.totals.margin===null?'N/A':m.totals.margin.toFixed(2)+'%'));
  const body=document.getElementById('biDataRows'); body.replaceChildren();
- for(const r of m.rows){const tr=document.createElement('tr');for(const value of [r.label,money(r.contract),money(r.budget),money(r.tax),money(r.spending),money(r.remaining),r.utilization===null?'No budget':r.utilization.toFixed(2)+'%',money(r.expected)]) {const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
+ for(const r of m.rows){const tr=document.createElement('tr');for(const value of [r.label,money(r.contract),money(r.budget),money(r.tax),money(r.spending),money(r.remaining),r.utilization===null?'No budget':r.utilization.toFixed(2)+'%',money(r.expected),r.severity]) {const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
  const totals=document.getElementById('biTotals'); totals.replaceChildren();
- for(const value of ['Portfolio total',money(m.totals.contract),money(m.totals.budget),money(m.totals.tax),money(m.totals.spending),money(m.totals.budget-m.totals.spending),'—',money(m.totals.expected)]) {const td=document.createElement('td');td.textContent=value;totals.append(td);}
+ for(const value of ['Portfolio total',money(m.totals.contract),money(m.totals.budget),money(m.totals.tax),money(m.totals.spending),money(m.totals.budget-m.totals.spending),'—',money(m.totals.expected),"?"]) {const td=document.createElement('td');td.textContent=value;totals.append(td);}
 }
